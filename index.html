@@ -3,48 +3,678 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DopeTown - Coming Soon</title>
+    <title>Dope Science - Suomisaundi Label</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@400;700;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --neon-pink: #ff00ff;
+            --neon-green: #39ff14;
+            --neon-blue: #00f0ff;
+            --neon-orange: #ff6600;
+            --neon-yellow: #ffff00;
+            --deep-purple: #1a0033;
         }
 
         body {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--deep-purple);
             color: #fff;
+            font-family: 'Space Mono', monospace;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated psychedelic background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(255,0,255,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(57,255,20,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(0,240,255,0.12) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(255,102,0,0.08) 0%, transparent 40%);
+            animation: psychBg 20s ease-in-out infinite;
+            z-index: -2;
+        }
+
+        @keyframes psychBg {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.1); }
+        }
+
+        /* Scrolling grid overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(255,0,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(57,255,20,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridScroll 8s linear infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes gridScroll {
+            0% { transform: perspective(500px) rotateX(0deg) translateY(0); }
+            100% { transform: perspective(500px) rotateX(0deg) translateY(40px); }
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: floatParticle linear infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Header */
+        .header {
             text-align: center;
+            padding: 3rem 1rem 2rem;
+            position: relative;
         }
 
-        .container {
-            padding: 2rem;
+        .logo {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 3px solid var(--neon-pink);
+            box-shadow:
+                0 0 20px var(--neon-pink),
+                0 0 40px var(--neon-pink),
+                0 0 80px rgba(255,0,255,0.3),
+                inset 0 0 20px rgba(255,0,255,0.2);
+            animation: logoPulse 3s ease-in-out infinite, logoSpin 30s linear infinite;
+            margin-bottom: 1.5rem;
         }
 
-        h1 {
-            font-size: 4rem;
-            font-weight: 700;
-            letter-spacing: 0.15em;
+        @keyframes logoPulse {
+            0%, 100% { box-shadow: 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink), 0 0 80px rgba(255,0,255,0.3); }
+            33% { box-shadow: 0 0 20px var(--neon-green), 0 0 40px var(--neon-green), 0 0 80px rgba(57,255,20,0.3); }
+            66% { box-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue), 0 0 80px rgba(0,240,255,0.3); }
+        }
+
+        @keyframes logoSpin {
+            0% { border-color: var(--neon-pink); }
+            25% { border-color: var(--neon-green); }
+            50% { border-color: var(--neon-blue); }
+            75% { border-color: var(--neon-orange); }
+            100% { border-color: var(--neon-pink); }
+        }
+
+        .site-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900;
             text-transform: uppercase;
-            margin-bottom: 1rem;
+            letter-spacing: 0.2em;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-yellow), var(--neon-pink));
+            background-size: 400% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: rainbowText 4s linear infinite;
+            text-shadow: none;
+            filter: drop-shadow(0 0 10px rgba(255,0,255,0.5));
         }
 
-        p {
-            font-size: 1.25rem;
-            opacity: 0.7;
-            letter-spacing: 0.05em;
+        @keyframes rainbowText {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 400% 50%; }
+        }
+
+        .subtitle {
+            font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+            color: var(--neon-green);
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+            text-shadow: 0 0 10px var(--neon-green);
+            animation: subtitleFlicker 5s ease-in-out infinite;
+        }
+
+        @keyframes subtitleFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+            92% { opacity: 1; }
+            93% { opacity: 0.3; }
+            94% { opacity: 1; }
+        }
+
+        /* Section styling */
+        .section {
+            padding: 2rem 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            text-align: center;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-pink), var(--neon-blue), transparent);
+            animation: lineGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes lineGlow {
+            0%, 100% { width: 100px; opacity: 0.5; }
+            50% { width: 300px; opacity: 1; }
+        }
+
+        .section-title.pink { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); }
+        .section-title.green { color: var(--neon-green); text-shadow: 0 0 20px var(--neon-green); }
+        .section-title.blue { color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue); }
+        .section-title.orange { color: var(--neon-orange); text-shadow: 0 0 20px var(--neon-orange); }
+        .section-title.yellow { color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow); }
+
+        /* Embed grids */
+        .embed-grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .embed-grid.two-col { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .embed-grid.three-col { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        .embed-grid.four-col { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+
+        .embed-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,0,255,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .embed-card::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px;
+            right: -1px; bottom: -1px;
+            border-radius: 8px;
+            background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-orange));
+            background-size: 400% 400%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            animation: borderRainbow 6s linear infinite;
+        }
+
+        @keyframes borderRainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .embed-card:hover::before { opacity: 1; }
+        .embed-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 10px 40px rgba(255,0,255,0.2);
+        }
+
+        .embed-card iframe {
+            width: 100%;
+            border: none;
+            display: block;
+        }
+
+        .embed-label {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--neon-blue);
+            background: rgba(0,0,0,0.5);
+            border-top: 1px solid rgba(0,240,255,0.1);
+        }
+
+        /* Bandcamp full-width feature */
+        .feature-embed {
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Spotify & YouTube large embeds */
+        .large-embed {
+            max-width: 900px;
+            margin: 0 auto 2rem;
+        }
+
+        .large-embed iframe {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid rgba(255,0,255,0.2);
+        }
+
+        /* Instagram section */
+        .insta-section {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        .insta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.2rem 3rem;
+            background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+            color: #fff;
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(131,58,180,0.4);
+        }
+
+        .insta-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 50px rgba(131,58,180,0.6), 0 0 100px rgba(253,29,29,0.3);
+        }
+
+        .insta-link svg {
+            width: 28px;
+            height: 28px;
+            fill: #fff;
+        }
+
+        /* Dividers */
+        .divider {
+            height: 2px;
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: linear-gradient(90deg,
+                transparent,
+                var(--neon-pink),
+                var(--neon-blue),
+                var(--neon-green),
+                var(--neon-blue),
+                var(--neon-pink),
+                transparent
+            );
+            background-size: 200% 100%;
+            animation: dividerMove 4s linear infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes dividerMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 3rem 1rem;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 0.1em;
+        }
+
+        .footer a {
+            color: var(--neon-pink);
+            text-decoration: none;
+        }
+
+        /* Marquee */
+        .marquee-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 0.8rem 0;
+            background: rgba(0,0,0,0.3);
+            border-top: 1px solid rgba(255,0,255,0.1);
+            border-bottom: 1px solid rgba(57,255,20,0.1);
+        }
+
+        .marquee {
+            display: inline-block;
+            animation: marqueeScroll 30s linear infinite;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .marquee span {
+            margin: 0 3rem;
+        }
+
+        .marquee .pink { color: var(--neon-pink); }
+        .marquee .green { color: var(--neon-green); }
+        .marquee .blue { color: var(--neon-blue); }
+        .marquee .orange { color: var(--neon-orange); }
+        .marquee .yellow { color: var(--neon-yellow); }
+
+        @keyframes marqueeScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Glitch effect on hover for section titles */
+        .section-title:hover {
+            animation: glitch 0.3s ease-in-out;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-3px, 3px); }
+            40% { transform: translate(3px, -3px); }
+            60% { transform: translate(-3px, -3px); }
+            80% { transform: translate(3px, 3px); }
+            100% { transform: translate(0); }
+        }
+
+        /* Scanline overlay */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.03) 0px,
+                rgba(0,0,0,0.03) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .embed-grid.two-col,
+            .embed-grid.three-col,
+            .embed-grid.four-col {
+                grid-template-columns: 1fr;
+            }
+            .logo { width: 140px; height: 140px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Coming Soon</h1>
-        <p>Something dope is on its way. Stay tuned.</p>
+
+<div class="scanlines"></div>
+
+<!-- Floating particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Scrolling marquee -->
+<div class="marquee-wrap">
+    <div class="marquee">
+        <span class="pink">Suomisaundi</span>
+        <span class="green">Dope Science</span>
+        <span class="blue">Psytrance</span>
+        <span class="orange">Kirna</span>
+        <span class="yellow">Sonic Bandits</span>
+        <span class="pink">Kyril &amp; Eskobar</span>
+        <span class="green">Captain Kirk</span>
+        <span class="blue">Freeform</span>
+        <span class="orange">Espoo</span>
+        <span class="yellow">Finland</span>
+        <span class="pink">Suomisaundi</span>
+        <span class="green">Dope Science</span>
+        <span class="blue">Psytrance</span>
+        <span class="orange">Kirna</span>
+        <span class="yellow">Sonic Bandits</span>
+        <span class="pink">Kyril &amp; Eskobar</span>
+        <span class="green">Captain Kirk</span>
+        <span class="blue">Freeform</span>
+        <span class="orange">Espoo</span>
+        <span class="yellow">Finland</span>
     </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+    <img src="https://f4.bcbits.com/img/0024213087_20.jpg" alt="Dope Science" class="logo">
+    <h1 class="site-title">Dope Science</h1>
+    <p class="subtitle">Suomisaundi Record Label</p>
+</header>
+
+<div class="divider"></div>
+
+<!-- BANDCAMP RELEASES -->
+<section class="section">
+    <h2 class="section-title pink">Releases on Bandcamp</h2>
+
+    <!-- Featured album -->
+    <div class="feature-embed">
+        <div class="embed-card">
+            <iframe style="height:472px;" src="https://bandcamp.com/EmbeddedPlayer/album=2648697879/size=large/bgcol=1a0033/linkcol=ff00ff/artwork=small/transparent=true/" seamless></iframe>
+            <div class="embed-label">Sun Home EP - Kyril &amp; Eskobar</div>
+        </div>
+    </div>
+
+    <!-- Track grid -->
+    <div class="embed-grid three-col">
+        <div class="embed-card">
+            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=859961740/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+            <div class="embed-label">Flying Anomaly - Sonic Bandits</div>
+        </div>
+        <div class="embed-card">
+            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=821773663/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+            <div class="embed-label">Glitter2000 - Kirna</div>
+        </div>
+        <div class="embed-card">
+            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2867781422/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+            <div class="embed-label">Hallucination Machine - Sonic Bandits</div>
+        </div>
+        <div class="embed-card">
+            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=828630973/size=large/bgcol=1a0033/linkcol=ff00ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+            <div class="embed-label">Bonuskortti - Kyril &amp; Eskobar</div>
+        </div>
+        <div class="embed-card">
+            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2639064853/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+            <div class="embed-label">Spaceman - Kirna</div>
+        </div>
+        <div class="embed-card">
+            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=4056131575/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+            <div class="embed-label">Flow Fusion - Kirna</div>
+        </div>
+        <div class="embed-card">
+            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=1402992685/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+            <div class="embed-label">Night Freaks - Sonic Bandits</div>
+        </div>
+    </div>
+
+    <!-- Full discography link -->
+    <div style="text-align:center; margin-top:1rem;">
+        <a href="https://dopescience.bandcamp.com/" target="_blank"
+           style="color:var(--neon-pink); font-family:'Orbitron',sans-serif; letter-spacing:0.15em; text-transform:uppercase; text-decoration:none; border-bottom:1px solid var(--neon-pink); padding-bottom:2px; transition: all 0.3s;">
+            Browse Full Discography
+        </a>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SPOTIFY -->
+<section class="section">
+    <h2 class="section-title green">Spotify Playlist</h2>
+    <div class="large-embed">
+        <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1vQQcHHxrwmN13oKKtIj0R?utm_source=generator&theme=0" width="100%" height="552" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- YOUTUBE -->
+<section class="section">
+    <h2 class="section-title blue">YouTube</h2>
+    <div class="large-embed">
+        <iframe width="100%" height="500" src="https://www.youtube.com/embed/videoseries?list=PLVbC7883e3Zw" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px; border:1px solid rgba(0,240,255,0.2);"></iframe>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SOUNDCLOUD -->
+<section class="section">
+    <h2 class="section-title orange">SoundCloud Artists</h2>
+
+    <!-- Kirna -->
+    <h3 style="color:var(--neon-pink); font-family:'Orbitron',sans-serif; font-size:1rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:1rem; text-align:center; text-shadow:0 0 10px var(--neon-pink);">Kirna</h3>
+    <div class="embed-grid three-col">
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/glitter2000&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/i-want-2-ride&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/algoriddim&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+    </div>
+
+    <!-- Sonic Bandits -->
+    <h3 style="color:var(--neon-green); font-family:'Orbitron',sans-serif; font-size:1rem; letter-spacing:0.2em; text-transform:uppercase; margin:2rem 0 1rem; text-align:center; text-shadow:0 0 10px var(--neon-green);">Sonic Bandits</h3>
+    <div class="embed-grid three-col">
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/flying_anomaly&color=%23ff6600&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/frewbells-bollocks&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-hongos-longos-stretching-waves-official-release&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+    </div>
+
+    <!-- Kyril & Eskobar -->
+    <h3 style="color:var(--neon-blue); font-family:'Orbitron',sans-serif; font-size:1rem; letter-spacing:0.2em; text-transform:uppercase; margin:2rem 0 1rem; text-align:center; text-shadow:0 0 10px var(--neon-blue);">Kyril &amp; Eskobar</h3>
+    <div class="embed-grid three-col">
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/bonuskortti&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/neanderilainen-lauku-official&color=%23ff6600&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/eyes-breaker-official-release&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+    </div>
+
+    <!-- Captain Kirk -->
+    <h3 style="color:var(--neon-orange); font-family:'Orbitron',sans-serif; font-size:1rem; letter-spacing:0.2em; text-transform:uppercase; margin:2rem 0 1rem; text-align:center; text-shadow:0 0 10px var(--neon-orange);">Captain Kirk</h3>
+    <div class="embed-grid two-col">
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/captain_kirk/captain-kirk-vesuvius&color=%23ff6600&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+        <div class="embed-card">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/captain_kirk/captain-kirk-mixtape-2011&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- INSTAGRAM -->
+<section class="insta-section">
+    <h2 class="section-title yellow">Follow on Instagram</h2>
+    <a href="https://www.instagram.com/captainkirna/" target="_blank" class="insta-link">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+        </svg>
+        @captainkirna
+    </a>
+</section>
+
+<!-- Bottom marquee -->
+<div class="marquee-wrap">
+    <div class="marquee">
+        <span class="green">Dope Science</span>
+        <span class="pink">Suomisaundi</span>
+        <span class="blue">Psytrance</span>
+        <span class="yellow">Goa</span>
+        <span class="orange">Freeform</span>
+        <span class="pink">Acid</span>
+        <span class="green">Full On</span>
+        <span class="blue">Progressive</span>
+        <span class="yellow">Techno</span>
+        <span class="orange">Experimental</span>
+        <span class="green">Dope Science</span>
+        <span class="pink">Suomisaundi</span>
+        <span class="blue">Psytrance</span>
+        <span class="yellow">Goa</span>
+        <span class="orange">Freeform</span>
+        <span class="pink">Acid</span>
+        <span class="green">Full On</span>
+        <span class="blue">Progressive</span>
+        <span class="yellow">Techno</span>
+        <span class="orange">Experimental</span>
+    </div>
+</div>
+
+<footer class="footer">
+    <p>&copy; 2026 <a href="https://dopescience.bandcamp.com/" target="_blank">Dope Science</a> &mdash; Suomisaundi from Finland</p>
+</footer>
+
+<script>
+    // Generate floating particles
+    const particlesContainer = document.getElementById('particles');
+    const colors = ['#ff00ff', '#39ff14', '#00f0ff', '#ff6600', '#ffff00'];
+
+    for (let i = 0; i < 40; i++) {
+        const p = document.createElement('div');
+        p.classList.add('particle');
+        const size = Math.random() * 6 + 2;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        p.style.cssText = `
+            width: ${size}px;
+            height: ${size}px;
+            background: ${color};
+            box-shadow: 0 0 ${size * 2}px ${color};
+            left: ${Math.random() * 100}%;
+            animation-duration: ${Math.random() * 15 + 10}s;
+            animation-delay: ${Math.random() * 10}s;
+        `;
+        particlesContainer.appendChild(p);
+    }
+</script>
+
 </body>
 </html>
