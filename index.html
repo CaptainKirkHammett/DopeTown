@@ -357,8 +357,56 @@
             border: 1px solid rgba(255,0,255,0.2);
         }
 
+        /* SoundCloud 3-column layout */
+        .soundcloud-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .soundcloud-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .soundcloud-scroll {
+            overflow-y: auto;
+            border: 1px solid rgba(255,102,0,0.2);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            height: 420px;
+        }
+
+        .soundcloud-scroll .embed-card {
+            flex-shrink: 0;
+        }
+
+        .soundcloud-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .soundcloud-scroll::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+            border-radius: 3px;
+        }
+        .soundcloud-scroll::-webkit-scrollbar-thumb {
+            background: var(--neon-orange);
+            border-radius: 3px;
+            box-shadow: 0 0 6px var(--neon-orange);
+        }
+        .soundcloud-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-yellow);
+            box-shadow: 0 0 6px var(--neon-yellow);
+        }
+
         @media (max-width: 800px) {
-            .music-row {
+            .music-row,
+            .soundcloud-row {
                 grid-template-columns: 1fr;
             }
         }
@@ -629,45 +677,53 @@
 <section class="section">
     <h2 class="section-title orange">SoundCloud Artists</h2>
 
-    <!-- Kirna -->
-    <h3 style="color:var(--neon-pink); font-family:'Orbitron',sans-serif; font-size:1rem; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:1rem; text-align:center; text-shadow:0 0 10px var(--neon-pink);">Kirna</h3>
-    <div class="embed-grid three-col">
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/glitter2000&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+    <div class="soundcloud-row">
+        <!-- Kirna -->
+        <div class="soundcloud-column">
+            <div class="music-column-title pink">Kirna</div>
+            <div class="soundcloud-scroll">
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/glitter2000&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/i-want-2-ride&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/algoriddim&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+            </div>
         </div>
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/i-want-2-ride&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
-        </div>
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/algoriddim&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
-        </div>
-    </div>
 
-    <!-- Sonic Bandits -->
-    <h3 style="color:var(--neon-green); font-family:'Orbitron',sans-serif; font-size:1rem; letter-spacing:0.2em; text-transform:uppercase; margin:2rem 0 1rem; text-align:center; text-shadow:0 0 10px var(--neon-green);">Sonic Bandits</h3>
-    <div class="embed-grid three-col">
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/flying_anomaly&color=%23ff6600&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        <!-- Sonic Bandits -->
+        <div class="soundcloud-column">
+            <div class="music-column-title green">Sonic Bandits</div>
+            <div class="soundcloud-scroll">
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/flying_anomaly&color=%23ff6600&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/frewbells-bollocks&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-hongos-longos-stretching-waves-official-release&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+            </div>
         </div>
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/frewbells-bollocks&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
-        </div>
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-hongos-longos-stretching-waves-official-release&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
-        </div>
-    </div>
 
-    <!-- Kyril & Eskobar -->
-    <h3 style="color:var(--neon-blue); font-family:'Orbitron',sans-serif; font-size:1rem; letter-spacing:0.2em; text-transform:uppercase; margin:2rem 0 1rem; text-align:center; text-shadow:0 0 10px var(--neon-blue);">Kyril &amp; Eskobar</h3>
-    <div class="embed-grid three-col">
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/bonuskortti&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
-        </div>
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/neanderilainen-lauku-official&color=%23ff6600&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
-        </div>
-        <div class="embed-card">
-            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/eyes-breaker-official-release&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+        <!-- Kyril & Eskobar -->
+        <div class="soundcloud-column">
+            <div class="music-column-title blue">Kyril &amp; Eskobar</div>
+            <div class="soundcloud-scroll">
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/bonuskortti&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/neanderilainen-lauku-official&color=%23ff6600&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+                <div class="embed-card">
+                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/eyes-breaker-official-release&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                </div>
+            </div>
         </div>
     </div>
 
