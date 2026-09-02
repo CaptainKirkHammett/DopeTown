@@ -992,6 +992,7 @@
     const canvas = document.getElementById('psychCanvas');
     const ctx = canvas.getContext('2d');
     let time = 0;
+    let scrollFactor = 0;
 
     function resizeCanvas() {
         canvas.width = window.innerWidth;
@@ -1000,6 +1001,15 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
+    // Track scroll for morphing + logo fade
+    const logo = document.querySelector('.logo');
+    window.addEventListener('scroll', () => {
+        const scrollY = window.scrollY;
+        const maxScroll = document.body.scrollHeight - window.innerHeight;
+        scrollFactor = maxScroll > 0 ? scrollY / maxScroll : 0;
+        logo.style.opacity = Math.max(0.3, 1 - (scrollY / 800) * 0.7);
+    });
+
     function drawPsychedelic() {
         time += 0.008;
         ctx.fillStyle = 'rgba(26, 0, 51, 0.15)';
@@ -1007,24 +1017,26 @@
 
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
+        const sf = scrollFactor;
 
-        // Rotating spirograph shapes
+        // Spirograph shapes — scroll morphs the petal multipliers and radii
+        const petalA = 7 + sf * 12;
+        const petalB = 5 + sf * 8;
         for (let s = 0; s < 5; s++) {
             ctx.beginPath();
-            const hue = (s * 72 + time * 30) % 360;
+            const hue = (s * 72 + time * 30 + sf * 180) % 360;
             ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.12)`;
             ctx.lineWidth = 1.5;
 
+            const r1 = 120 + s * 60 + sf * 80;
+            const r2 = 40 + s * 15 + sf * 40;
+            const speed1 = time * (0.3 + s * 0.1);
+            const speed2 = time * (0.7 + s * 0.15);
+
             for (let i = 0; i < 360; i += 2) {
                 const angle = (i * Math.PI) / 180;
-                const r1 = 120 + s * 60;
-                const r2 = 40 + s * 15;
-                const speed1 = time * (0.3 + s * 0.1);
-                const speed2 = time * (0.7 + s * 0.15);
-
-                const x = cx + (r1 * Math.cos(angle + speed1)) + (r2 * Math.cos(angle * 7 + speed2));
-                const y = cy + (r1 * Math.sin(angle + speed1)) + (r2 * Math.sin(angle * 5 + speed2));
-
+                const x = cx + (r1 * Math.cos(angle + speed1)) + (r2 * Math.cos(angle * petalA + speed2));
+                const y = cy + (r1 * Math.sin(angle + speed1)) + (r2 * Math.sin(angle * petalB + speed2));
                 if (i === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
@@ -1032,24 +1044,42 @@
             ctx.stroke();
         }
 
-        // Pulsing concentric rings
-        for (let r = 0; r < 8; r++) {
-            const radius = 50 + r * 80 + Math.sin(time * 2 + r) * 30;
-            const hue = (r * 45 + time * 50) % 360;
+        // Concentric rings — scroll adds more rings and warps them
+        const ringCount = 8 + Math.floor(sf * 8);
+        for (let r = 0; r < ringCount; r++) {
+            const warp = sf * Math.sin(time * 3 + r * 0.7) * 50;
+            const radius = 50 + r * (80 - sf * 30) + Math.sin(time * 2 + r) * 30 + warp;
+            if (radius < 5) continue;
+            const hue = (r * 45 + time * 50 + sf * 120) % 360;
             ctx.beginPath();
-            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            // Scroll morphs circles into wobbly shapes
+            const wobble = sf * 4;
+            if (wobble < 0.5) {
+                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            } else {
+                for (let i = 0; i <= 72; i++) {
+                    const a = (i / 72) * Math.PI * 2;
+                    const rr = radius + Math.sin(a * (3 + Math.floor(sf * 6)) + time * 2) * (wobble * 15);
+                    const px = cx + Math.cos(a) * rr;
+                    const py = cy + Math.sin(a) * rr;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+            }
             ctx.strokeStyle = `hsla(${hue}, 100%, 55%, ${0.06 + Math.sin(time + r) * 0.03})`;
             ctx.lineWidth = 2;
             ctx.stroke();
         }
 
-        // Floating geometric shapes
+        // Floating shapes — scroll changes number of sides and size
         for (let g = 0; g < 12; g++) {
-            const gx = cx + Math.sin(time * 0.5 + g * 1.3) * (canvas.width * 0.35);
-            const gy = cy + Math.cos(time * 0.4 + g * 0.9) * (canvas.height * 0.35);
-            const size = 15 + Math.sin(time + g) * 10;
-            const hue = (g * 30 + time * 40) % 360;
-            const sides = 3 + (g % 5);
+            const spread = 0.35 + sf * 0.15;
+            const gx = cx + Math.sin(time * 0.5 + g * 1.3 + sf * 2) * (canvas.width * spread);
+            const gy = cy + Math.cos(time * 0.4 + g * 0.9 + sf * 1.5) * (canvas.height * spread);
+            const size = 15 + Math.sin(time + g) * 10 + sf * 25;
+            const hue = (g * 30 + time * 40 + sf * 200) % 360;
+            const sides = 3 + ((g + Math.floor(sf * 8)) % 9);
 
             ctx.beginPath();
             for (let i = 0; i <= sides; i++) {
@@ -1067,14 +1097,6 @@
         requestAnimationFrame(drawPsychedelic);
     }
     drawPsychedelic();
-
-    // Logo fade on scroll: 100% opacity at top → 30% at ~800px scroll
-    const logo = document.querySelector('.logo');
-    window.addEventListener('scroll', () => {
-        const scrollY = window.scrollY;
-        const opacity = Math.max(0.3, 1 - (scrollY / 800) * 0.7);
-        logo.style.opacity = opacity;
-    });
 </script>
 
 </body>
