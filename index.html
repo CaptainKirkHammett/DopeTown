@@ -1048,10 +1048,10 @@
 
     // Visitor counter
     const counterEl = document.getElementById('visitorCount');
-    fetch('https://api.counterapi.dev/v1/dopetown-dopescience/visits/up')
+    fetch('https://counterapi.com/api/dopetown-dopescience/up')
         .then(res => res.json())
         .then(data => {
-            counterEl.textContent = String(data.count).padStart(6, '0');
+            counterEl.textContent = String(data.value).padStart(6, '0');
             counterEl.classList.remove('loading');
         })
         .catch(() => {
