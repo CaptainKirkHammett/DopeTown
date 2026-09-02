@@ -207,6 +207,118 @@
         .section-title.orange { color: var(--neon-orange); text-shadow: 0 0 20px var(--neon-orange); }
         .section-title.yellow { color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow); }
 
+        /* Clickable section title links */
+        a.section-title-link {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            text-align: center;
+            display: block;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            text-decoration: none;
+            position: relative;
+            padding-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        a.section-title-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-pink), var(--neon-blue), transparent);
+            animation: lineGlow 3s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        a.section-title-link::before {
+            content: '[ ';
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        a.section-title-link span::after {
+            content: ' ]';
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        a.section-title-link:hover::before,
+        a.section-title-link:hover span::after {
+            opacity: 1;
+        }
+
+        a.section-title-link:hover {
+            transform: scale(1.08);
+            filter: brightness(1.4);
+            letter-spacing: 0.25em;
+        }
+
+        a.section-title-link:hover::after {
+            width: 90%;
+            height: 3px;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        a.section-title-link.pink { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); }
+        a.section-title-link.pink::after { background: linear-gradient(90deg, transparent, var(--neon-pink), transparent); }
+        a.section-title-link.green { color: var(--neon-green); text-shadow: 0 0 20px var(--neon-green); }
+        a.section-title-link.green::after { background: linear-gradient(90deg, transparent, var(--neon-green), transparent); }
+        a.section-title-link.blue { color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue); }
+        a.section-title-link.blue::after { background: linear-gradient(90deg, transparent, var(--neon-blue), transparent); }
+        a.section-title-link.orange { color: var(--neon-orange); text-shadow: 0 0 20px var(--neon-orange); }
+        a.section-title-link.orange::after { background: linear-gradient(90deg, transparent, var(--neon-orange), transparent); }
+        a.section-title-link.yellow { color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow); }
+        a.section-title-link.yellow::after { background: linear-gradient(90deg, transparent, var(--neon-yellow), transparent); }
+
+        /* SoundCloud artist title links (column-level) */
+        a.artist-title-link {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            text-align: center;
+            display: block;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            text-decoration: none;
+            position: relative;
+            padding-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        a.artist-title-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: currentColor;
+            box-shadow: 0 0 8px currentColor;
+            transition: width 0.4s ease;
+        }
+
+        a.artist-title-link:hover {
+            transform: scale(1.1);
+            filter: brightness(1.5);
+            letter-spacing: 0.25em;
+        }
+
+        a.artist-title-link:hover::after {
+            width: 100%;
+        }
+
+        a.artist-title-link.pink { color: var(--neon-pink); text-shadow: 0 0 15px var(--neon-pink); }
+        a.artist-title-link.green { color: var(--neon-green); text-shadow: 0 0 15px var(--neon-green); }
+        a.artist-title-link.blue { color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue); }
+
         /* Side-by-side music layout */
         .music-row {
             display: grid;
@@ -603,12 +715,10 @@
 
 <!-- BANDCAMP + SPOTIFY SIDE BY SIDE -->
 <section class="section">
-    <h2 class="section-title pink">Listen</h2>
-
     <div class="music-row">
         <!-- Bandcamp scrollable column -->
         <div class="music-column">
-            <div class="music-column-title pink">Bandcamp Releases</div>
+            <a href="https://dopescience.bandcamp.com/" target="_blank" class="section-title-link pink"><span>Bandcamp</span></a>
             <div class="bandcamp-scroll">
                 <div class="embed-card">
                     <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/album=2648697879/size=large/bgcol=1a0033/linkcol=ff00ff/artwork=small/transparent=true/" seamless></iframe>
@@ -643,17 +753,11 @@
                     <div class="embed-label">Night Freaks - Sonic Bandits</div>
                 </div>
             </div>
-            <div style="text-align:center; margin-top:1rem;">
-                <a href="https://dopescience.bandcamp.com/" target="_blank"
-                   style="color:var(--neon-pink); font-family:'Orbitron',sans-serif; letter-spacing:0.15em; text-transform:uppercase; text-decoration:none; border-bottom:1px solid var(--neon-pink); padding-bottom:2px; transition: all 0.3s; font-size:0.8rem;">
-                    Browse Full Discography
-                </a>
-            </div>
         </div>
 
         <!-- Spotify column -->
         <div class="music-column">
-            <div class="music-column-title green">Spotify Playlist</div>
+            <a href="https://open.spotify.com/playlist/1vQQcHHxrwmN13oKKtIj0R" target="_blank" class="section-title-link green"><span>Spotify</span></a>
             <div class="spotify-wrapper">
                 <iframe src="https://open.spotify.com/embed/playlist/1vQQcHHxrwmN13oKKtIj0R?utm_source=generator&theme=0" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
             </div>
@@ -665,9 +769,16 @@
 
 <!-- YOUTUBE -->
 <section class="section">
-    <h2 class="section-title blue">YouTube</h2>
-    <div class="large-embed">
-        <iframe width="100%" height="500" src="https://www.youtube.com/embed/videoseries?list=PLVbC7883e3Zw" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px; border:1px solid rgba(0,240,255,0.2);"></iframe>
+    <a href="https://www.youtube.com/playlist?list=PLVbC7883e3Zw" target="_blank" class="section-title-link blue"><span>YouTube</span></a>
+    <div class="embed-grid two-col">
+        <div class="embed-card">
+            <iframe width="100%" height="350" src="https://www.youtube.com/embed/JMJkHQIgqCY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
+            <div class="embed-label">Dentamental</div>
+        </div>
+        <div class="embed-card">
+            <iframe width="100%" height="350" src="https://www.youtube.com/embed/rxashm7zbjo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
+            <div class="embed-label">Spongy Company</div>
+        </div>
     </div>
 </section>
 
@@ -675,12 +786,10 @@
 
 <!-- SOUNDCLOUD -->
 <section class="section">
-    <h2 class="section-title orange">SoundCloud Artists</h2>
-
     <div class="soundcloud-row">
         <!-- Kirna -->
         <div class="soundcloud-column">
-            <div class="music-column-title pink">Kirna</div>
+            <a href="https://soundcloud.com/kirna" target="_blank" class="artist-title-link pink">Kirna</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
                     <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/glitter2000&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
@@ -717,7 +826,7 @@
 
         <!-- Sonic Bandits -->
         <div class="soundcloud-column">
-            <div class="music-column-title green">Sonic Bandits</div>
+            <a href="https://soundcloud.com/sonic-bandits" target="_blank" class="artist-title-link green">Sonic Bandits</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
                     <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/flying_anomaly&color=%23ff6600&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
@@ -745,7 +854,7 @@
 
         <!-- Kyril & Eskobar -->
         <div class="soundcloud-column">
-            <div class="music-column-title blue">Kyril &amp; Eskobar</div>
+            <a href="https://soundcloud.com/kyril-eskobar" target="_blank" class="artist-title-link blue">Kyril &amp; Eskobar</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
                     <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/bonuskortti&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
