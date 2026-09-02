@@ -659,35 +659,40 @@
             text-decoration: none;
         }
 
-        /* Instagram icon row, top right, aligned with panel edges */
-        .insta-top-row {
+        /* Social icon column, top right, aligned with panel edges */
+        .social-top-row {
             max-width: 1400px;
             margin: 0 auto;
             padding: 0.75rem 1rem 0;
             display: flex;
-            justify-content: flex-end;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
         }
 
-        .insta-fab {
+        .social-fab {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 40px;
             height: 40px;
             border-radius: 4px;
-            background: #E1306C;
             transition: opacity 0.2s ease;
         }
 
-        .insta-fab svg {
+        .social-fab svg {
             width: 22px;
             height: 22px;
             fill: #fff;
         }
 
-        .insta-fab:hover {
+        .social-fab:hover {
             opacity: 0.8;
         }
+
+        .insta-fab { background: #E1306C; }
+        .tiktok-fab { background: #010101; }
+        .facebook-fab { background: #1877F2; }
 
         /* Marquee */
         .marquee-wrap {
@@ -769,13 +774,13 @@
             .logo { width: 65vw; }
             .site-title { display: none; }
 
-            .insta-top-row { padding: 0.5rem 0.75rem 0; }
+            .social-top-row { padding: 0.5rem 0.75rem 0; gap: 0.4rem; }
 
-            .insta-fab {
+            .social-fab {
                 width: 34px;
                 height: 34px;
             }
-            .insta-fab svg {
+            .social-fab svg {
                 width: 18px;
                 height: 18px;
             }
@@ -901,11 +906,21 @@
     </div>
 </div>
 
-<!-- Instagram icon, top right, aligned with panel edges -->
-<div class="insta-top-row">
-    <a href="https://www.instagram.com/captainkirna/" target="_blank" class="insta-fab" aria-label="Follow on Instagram">
+<!-- Social icons, top right, aligned with panel edges -->
+<div class="social-top-row">
+    <a href="https://www.instagram.com/captainkirna/" target="_blank" class="social-fab insta-fab" aria-label="Follow on Instagram">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+        </svg>
+    </a>
+    <a href="https://www.tiktok.com/@captainkirna" target="_blank" class="social-fab tiktok-fab" aria-label="Follow on TikTok">
+        <svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
+            <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0h88.81a121.18,121.18,0,0,0,1.9,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z"/>
+        </svg>
+    </a>
+    <a href="https://www.facebook.com/share/g/1BSaLsbZxm/" target="_blank" class="social-fab facebook-fab" aria-label="Follow on Facebook">
+        <svg viewBox="0 0 320 512" xmlns="http://www.w3.org/2000/svg">
+            <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/>
         </svg>
     </a>
 </div>
