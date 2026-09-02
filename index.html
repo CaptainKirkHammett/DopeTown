@@ -604,6 +604,48 @@
         }
 
         /* Footer */
+        /* LED visitor counter */
+        .visitor-counter {
+            text-align: center;
+            padding: 1.5rem 1rem;
+        }
+
+        .counter-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 0.5rem;
+        }
+
+        .led-display {
+            display: inline-block;
+            padding: 0.6rem 1.5rem;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(57,255,20,0.3);
+            border-radius: 6px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 10px rgba(57,255,20,0.1);
+        }
+
+        .led-digits {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--neon-green);
+            text-shadow: 0 0 8px var(--neon-green), 0 0 20px var(--neon-green), 0 0 40px rgba(57,255,20,0.3);
+            letter-spacing: 0.15em;
+        }
+
+        .led-digits.loading {
+            animation: ledBlink 1s ease-in-out infinite;
+        }
+
+        @keyframes ledBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
         .footer {
             text-align: center;
             padding: 3rem 1rem;
@@ -970,6 +1012,14 @@
     </div>
 </div>
 
+<!-- Visitor Counter -->
+<div class="visitor-counter">
+    <div class="counter-label">Visitors</div>
+    <div class="led-display">
+        <span class="led-digits loading" id="visitorCount">------</span>
+    </div>
+</div>
+
 <footer class="footer">
     <p>&copy; 2026 <a href="https://dopescience.bandcamp.com/" target="_blank">Dope Science</a></p>
 </footer>
@@ -995,6 +1045,19 @@
         `;
         particlesContainer.appendChild(p);
     }
+
+    // Visitor counter
+    const counterEl = document.getElementById('visitorCount');
+    fetch('https://api.counterapi.dev/v1/dopetown-dopescience/visits/up')
+        .then(res => res.json())
+        .then(data => {
+            counterEl.textContent = String(data.count).padStart(6, '0');
+            counterEl.classList.remove('loading');
+        })
+        .catch(() => {
+            counterEl.textContent = '------';
+            counterEl.classList.remove('loading');
+        });
 
     // Psychedelic background animation
     const canvas = document.getElementById('psychCanvas');
