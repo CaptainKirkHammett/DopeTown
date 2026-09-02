@@ -690,6 +690,35 @@
             opacity: 0.8;
         }
 
+        /* Background toggle button */
+        .bg-toggle {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--neon-pink);
+            background: rgba(0,0,0,0.6);
+            color: var(--neon-pink);
+            font-family: 'Barrio', cursive;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(255,0,255,0.3);
+        }
+
+        .bg-toggle:hover {
+            transform: scale(1.15) rotate(15deg);
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0,240,255,0.5), 0 0 40px rgba(0,240,255,0.2);
+        }
+
         .insta-fab { background: #E1306C; }
         .tiktok-fab { background: #010101; }
         .facebook-fab { background: #1877F2; }
@@ -865,6 +894,7 @@
 <body>
 
 <canvas id="psychCanvas"></canvas>
+<button class="bg-toggle" id="bgToggle" title="Switch background">?</button>
 <div class="scanlines"></div>
 
 <!-- Floating particles -->
@@ -1198,11 +1228,12 @@
             counterEl.classList.remove('loading');
         });
 
-    // Psychedelic background animation
+    // Psychedelic background animation system
     const canvas = document.getElementById('psychCanvas');
     const ctx = canvas.getContext('2d');
     let time = 0;
     let scrollFactor = 0;
+    let bgMode = Math.random() < 0.5 ? 'geometric' : 'tentacles';
 
     function resizeCanvas() {
         canvas.width = window.innerWidth;
@@ -1221,16 +1252,18 @@
         logo.style.opacity = Math.max(0, 1 - (scrollY / halfPage));
     });
 
-    function drawPsychedelic() {
-        time += 0.008;
-        ctx.fillStyle = 'rgba(26, 0, 51, 0.15)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Toggle button
+    document.getElementById('bgToggle').addEventListener('click', () => {
+        bgMode = bgMode === 'geometric' ? 'tentacles' : 'geometric';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
 
+    // === MODE 1: Geometric spirographs ===
+    function drawGeometric() {
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
         const sf = scrollFactor;
 
-        // Spirograph shapes — scroll morphs the petal multipliers and radii
         const petalA = 7 + sf * 12;
         const petalB = 5 + sf * 8;
         for (let s = 0; s < 5; s++) {
@@ -1238,24 +1271,20 @@
             const hue = (s * 72 + time * 30 + sf * 180) % 360;
             ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.12)`;
             ctx.lineWidth = 1.5;
-
             const r1 = 120 + s * 60 + sf * 80;
             const r2 = 40 + s * 15 + sf * 40;
             const speed1 = time * (0.3 + s * 0.1);
             const speed2 = time * (0.7 + s * 0.15);
-
             for (let i = 0; i < 360; i += 2) {
                 const angle = (i * Math.PI) / 180;
                 const x = cx + (r1 * Math.cos(angle + speed1)) + (r2 * Math.cos(angle * petalA + speed2));
                 const y = cy + (r1 * Math.sin(angle + speed1)) + (r2 * Math.sin(angle * petalB + speed2));
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
             ctx.closePath();
             ctx.stroke();
         }
 
-        // Concentric rings — scroll adds more rings and warps them
         const ringCount = 8 + Math.floor(sf * 8);
         for (let r = 0; r < ringCount; r++) {
             const warp = sf * Math.sin(time * 3 + r * 0.7) * 50;
@@ -1263,7 +1292,6 @@
             if (radius < 5) continue;
             const hue = (r * 45 + time * 50 + sf * 120) % 360;
             ctx.beginPath();
-            // Scroll morphs circles into wobbly shapes
             const wobble = sf * 4;
             if (wobble < 0.5) {
                 ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -1271,10 +1299,8 @@
                 for (let i = 0; i <= 72; i++) {
                     const a = (i / 72) * Math.PI * 2;
                     const rr = radius + Math.sin(a * (3 + Math.floor(sf * 6)) + time * 2) * (wobble * 15);
-                    const px = cx + Math.cos(a) * rr;
-                    const py = cy + Math.sin(a) * rr;
-                    if (i === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
+                    if (i === 0) ctx.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+                    else ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
                 }
                 ctx.closePath();
             }
@@ -1283,7 +1309,6 @@
             ctx.stroke();
         }
 
-        // Floating shapes — scroll changes number of sides and size
         for (let g = 0; g < 12; g++) {
             const spread = 0.35 + sf * 0.15;
             const gx = cx + Math.sin(time * 0.5 + g * 1.3 + sf * 2) * (canvas.width * spread);
@@ -1291,23 +1316,125 @@
             const size = 15 + Math.sin(time + g) * 10 + sf * 25;
             const hue = (g * 30 + time * 40 + sf * 200) % 360;
             const sides = 3 + ((g + Math.floor(sf * 8)) % 9);
-
             ctx.beginPath();
             for (let i = 0; i <= sides; i++) {
                 const angle = (i / sides) * Math.PI * 2 + time * (0.5 + g * 0.1);
                 const px = gx + Math.cos(angle) * size;
                 const py = gy + Math.sin(angle) * size;
-                if (i === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
+                if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
             }
             ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.1)`;
             ctx.lineWidth = 1;
             ctx.stroke();
         }
-
-        requestAnimationFrame(drawPsychedelic);
     }
-    drawPsychedelic();
+
+    // === MODE 2: Organic tentacles ===
+    function drawTentacles() {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const sf = scrollFactor;
+        const tentacleCount = 8;
+        const segments = 40 + Math.floor(sf * 30);
+
+        for (let t = 0; t < tentacleCount; t++) {
+            const baseAngle = (t / tentacleCount) * Math.PI * 2 + time * 0.2;
+            const hue = (t * 45 + time * 25 + sf * 150) % 360;
+            const tentacleLen = 180 + sf * 150 + Math.sin(time + t) * 40;
+
+            // Draw thick tentacle with gradient thickness
+            for (let pass = 0; pass < 3; pass++) {
+                ctx.beginPath();
+                let px = cx, py = cy;
+                const thickness = (12 - pass * 4) * (1 + sf * 0.5);
+                const alpha = 0.08 + pass * 0.04;
+                const lightness = 50 + pass * 10;
+
+                for (let s = 0; s <= segments; s++) {
+                    const progress = s / segments;
+                    const curl = sf * 3 + 1.5;
+                    const wave1 = Math.sin(progress * curl * Math.PI + time * 2 + t * 1.7) * (60 + sf * 50);
+                    const wave2 = Math.cos(progress * (curl + 1) * Math.PI + time * 1.5 + t * 2.3) * (30 + sf * 30);
+                    const wave3 = Math.sin(progress * 7 + time * 3 + t) * (8 + sf * 15);
+
+                    const dist = progress * tentacleLen;
+                    const angleOff = wave1 * 0.004 + wave2 * 0.003;
+
+                    px = cx + Math.cos(baseAngle + angleOff) * dist + wave2 * Math.cos(baseAngle + Math.PI / 2);
+                    py = cy + Math.sin(baseAngle + angleOff) * dist + wave1 * Math.sin(baseAngle + Math.PI / 2) * 0.5;
+
+                    // Taper: thick at base, thin at tip
+                    const taper = 1 - progress * 0.85;
+                    const w = thickness * taper + wave3 * taper * 0.3;
+
+                    if (s === 0) {
+                        ctx.moveTo(px, py);
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+
+                ctx.strokeStyle = `hsla(${hue}, 80%, ${lightness}%, ${alpha})`;
+                ctx.lineWidth = thickness * (1 - 0.4 * (segments > 0 ? 0.5 : 0));
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            }
+
+            // Suction cups / bumps along the tentacle
+            for (let s = 3; s < segments; s += 3) {
+                const progress = s / segments;
+                const curl = sf * 3 + 1.5;
+                const wave1 = Math.sin(progress * curl * Math.PI + time * 2 + t * 1.7) * (60 + sf * 50);
+                const wave2 = Math.cos(progress * (curl + 1) * Math.PI + time * 1.5 + t * 2.3) * (30 + sf * 30);
+
+                const dist = progress * tentacleLen;
+                const angleOff = wave1 * 0.004 + wave2 * 0.003;
+
+                const bx = cx + Math.cos(baseAngle + angleOff) * dist + wave2 * Math.cos(baseAngle + Math.PI / 2);
+                const by = cy + Math.sin(baseAngle + angleOff) * dist + wave1 * Math.sin(baseAngle + Math.PI / 2) * 0.5;
+
+                const taper = 1 - progress * 0.85;
+                const bumpSize = (4 + sf * 3) * taper;
+                const bumpHue = (hue + 40) % 360;
+
+                ctx.beginPath();
+                ctx.arc(bx, by, bumpSize, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${bumpHue}, 70%, 60%, ${0.06 * taper})`;
+                ctx.fill();
+            }
+        }
+
+        // Central pulsing body
+        const bodySize = 40 + Math.sin(time * 1.5) * 10 + sf * 20;
+        const bodyHue = (time * 30 + sf * 100) % 360;
+        for (let ring = 3; ring >= 0; ring--) {
+            const r = bodySize + ring * 8;
+            const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+            grad.addColorStop(0, `hsla(${bodyHue}, 80%, 50%, ${0.12 - ring * 0.02})`);
+            grad.addColorStop(1, `hsla(${bodyHue}, 80%, 50%, 0)`);
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+    }
+
+    // === Main animation loop ===
+    function animate() {
+        time += 0.008;
+        ctx.fillStyle = 'rgba(26, 0, 51, 0.15)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (bgMode === 'geometric') {
+            drawGeometric();
+        } else {
+            drawTentacles();
+        }
+
+        requestAnimationFrame(animate);
+    }
+    animate();
 </script>
 
 </body>
