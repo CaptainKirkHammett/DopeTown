@@ -207,6 +207,80 @@
         .section-title.orange { color: var(--neon-orange); text-shadow: 0 0 20px var(--neon-orange); }
         .section-title.yellow { color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow); }
 
+        /* Side-by-side music layout */
+        .music-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: stretch;
+        }
+
+        .music-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .music-column-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .music-column-title.pink { color: var(--neon-pink); text-shadow: 0 0 15px var(--neon-pink); }
+        .music-column-title.green { color: var(--neon-green); text-shadow: 0 0 15px var(--neon-green); }
+
+        /* Scrollable bandcamp container */
+        .bandcamp-scroll {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid rgba(255,0,255,0.2);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            min-height: 552px;
+            max-height: 552px;
+        }
+
+        /* Custom scrollbar */
+        .bandcamp-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .bandcamp-scroll::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+            border-radius: 3px;
+        }
+        .bandcamp-scroll::-webkit-scrollbar-thumb {
+            background: var(--neon-pink);
+            border-radius: 3px;
+            box-shadow: 0 0 6px var(--neon-pink);
+        }
+        .bandcamp-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-blue);
+            box-shadow: 0 0 6px var(--neon-blue);
+        }
+
+        /* Spotify column */
+        .spotify-wrapper {
+            flex: 1;
+            min-height: 552px;
+        }
+
+        .spotify-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 552px;
+            border-radius: 12px;
+            border: 1px solid rgba(57,255,20,0.2);
+        }
+
         /* Embed grids */
         .embed-grid {
             display: grid;
@@ -269,13 +343,7 @@
             border-top: 1px solid rgba(0,240,255,0.1);
         }
 
-        /* Bandcamp full-width feature */
-        .feature-embed {
-            max-width: 700px;
-            margin: 0 auto 2rem;
-        }
-
-        /* Spotify & YouTube large embeds */
+        /* YouTube large embeds */
         .large-embed {
             max-width: 900px;
             margin: 0 auto 2rem;
@@ -285,6 +353,12 @@
             width: 100%;
             border-radius: 12px;
             border: 1px solid rgba(255,0,255,0.2);
+        }
+
+        @media (max-width: 800px) {
+            .music-row {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Instagram section */
@@ -477,66 +551,63 @@
 
 <div class="divider"></div>
 
-<!-- BANDCAMP RELEASES -->
+<!-- BANDCAMP + SPOTIFY SIDE BY SIDE -->
 <section class="section">
-    <h2 class="section-title pink">Releases on Bandcamp</h2>
+    <h2 class="section-title pink">Listen</h2>
 
-    <!-- Featured album -->
-    <div class="feature-embed">
-        <div class="embed-card">
-            <iframe style="height:472px;" src="https://bandcamp.com/EmbeddedPlayer/album=2648697879/size=large/bgcol=1a0033/linkcol=ff00ff/artwork=small/transparent=true/" seamless></iframe>
-            <div class="embed-label">Sun Home EP - Kyril &amp; Eskobar</div>
+    <div class="music-row">
+        <!-- Bandcamp scrollable column -->
+        <div class="music-column">
+            <div class="music-column-title pink">Bandcamp Releases</div>
+            <div class="bandcamp-scroll">
+                <div class="embed-card">
+                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/album=2648697879/size=large/bgcol=1a0033/linkcol=ff00ff/artwork=small/transparent=true/" seamless></iframe>
+                    <div class="embed-label">Sun Home EP - Kyril &amp; Eskobar</div>
+                </div>
+                <div class="embed-card">
+                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=859961740/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <div class="embed-label">Flying Anomaly - Sonic Bandits</div>
+                </div>
+                <div class="embed-card">
+                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=821773663/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <div class="embed-label">Glitter2000 - Kirna</div>
+                </div>
+                <div class="embed-card">
+                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2867781422/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <div class="embed-label">Hallucination Machine - Sonic Bandits</div>
+                </div>
+                <div class="embed-card">
+                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=828630973/size=large/bgcol=1a0033/linkcol=ff00ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <div class="embed-label">Bonuskortti - Kyril &amp; Eskobar</div>
+                </div>
+                <div class="embed-card">
+                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2639064853/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <div class="embed-label">Spaceman - Kirna</div>
+                </div>
+                <div class="embed-card">
+                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=4056131575/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <div class="embed-label">Flow Fusion - Kirna</div>
+                </div>
+                <div class="embed-card">
+                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=1402992685/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <div class="embed-label">Night Freaks - Sonic Bandits</div>
+                </div>
+            </div>
+            <div style="text-align:center; margin-top:1rem;">
+                <a href="https://dopescience.bandcamp.com/" target="_blank"
+                   style="color:var(--neon-pink); font-family:'Orbitron',sans-serif; letter-spacing:0.15em; text-transform:uppercase; text-decoration:none; border-bottom:1px solid var(--neon-pink); padding-bottom:2px; transition: all 0.3s; font-size:0.8rem;">
+                    Browse Full Discography
+                </a>
+            </div>
         </div>
-    </div>
 
-    <!-- Track grid -->
-    <div class="embed-grid three-col">
-        <div class="embed-card">
-            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=859961740/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
-            <div class="embed-label">Flying Anomaly - Sonic Bandits</div>
+        <!-- Spotify column -->
+        <div class="music-column">
+            <div class="music-column-title green">Spotify Playlist</div>
+            <div class="spotify-wrapper">
+                <iframe src="https://open.spotify.com/embed/playlist/1vQQcHHxrwmN13oKKtIj0R?utm_source=generator&theme=0" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+            </div>
         </div>
-        <div class="embed-card">
-            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=821773663/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
-            <div class="embed-label">Glitter2000 - Kirna</div>
-        </div>
-        <div class="embed-card">
-            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2867781422/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
-            <div class="embed-label">Hallucination Machine - Sonic Bandits</div>
-        </div>
-        <div class="embed-card">
-            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=828630973/size=large/bgcol=1a0033/linkcol=ff00ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
-            <div class="embed-label">Bonuskortti - Kyril &amp; Eskobar</div>
-        </div>
-        <div class="embed-card">
-            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2639064853/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
-            <div class="embed-label">Spaceman - Kirna</div>
-        </div>
-        <div class="embed-card">
-            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=4056131575/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
-            <div class="embed-label">Flow Fusion - Kirna</div>
-        </div>
-        <div class="embed-card">
-            <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=1402992685/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
-            <div class="embed-label">Night Freaks - Sonic Bandits</div>
-        </div>
-    </div>
-
-    <!-- Full discography link -->
-    <div style="text-align:center; margin-top:1rem;">
-        <a href="https://dopescience.bandcamp.com/" target="_blank"
-           style="color:var(--neon-pink); font-family:'Orbitron',sans-serif; letter-spacing:0.15em; text-transform:uppercase; text-decoration:none; border-bottom:1px solid var(--neon-pink); padding-bottom:2px; transition: all 0.3s;">
-            Browse Full Discography
-        </a>
-    </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- SPOTIFY -->
-<section class="section">
-    <h2 class="section-title green">Spotify Playlist</h2>
-    <div class="large-embed">
-        <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1vQQcHHxrwmN13oKKtIj0R?utm_source=generator&theme=0" width="100%" height="552" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
     </div>
 </section>
 
