@@ -100,11 +100,17 @@
         }
 
         .logo {
-            width: clamp(280px, 40vw, 500px);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: clamp(500px, 70vw, 1000px);
             height: auto;
-            margin-top: 1.5rem;
+            opacity: 0.12;
             filter: drop-shadow(0 0 20px rgba(255,0,255,0.4)) drop-shadow(0 0 40px rgba(0,240,255,0.3));
             animation: logoPulse 3s ease-in-out infinite;
+            z-index: -1;
+            pointer-events: none;
         }
 
         @keyframes logoPulse {
