@@ -1235,7 +1235,9 @@
     const ctx = canvas.getContext('2d');
     let time = 0;
     let scrollFactor = 0;
-    let bgMode = Math.random() < 0.5 ? 'geometric' : 'tentacles';
+    const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal'];
+    let bgModeIndex = Math.floor(Math.random() * bgModes.length);
+    let bgMode = bgModes[bgModeIndex];
 
     function resizeCanvas() {
         canvas.width = window.innerWidth;
@@ -1256,7 +1258,8 @@
 
     // Toggle button
     document.getElementById('bgToggle').addEventListener('click', () => {
-        bgMode = bgMode === 'geometric' ? 'tentacles' : 'geometric';
+        bgModeIndex = (bgModeIndex + 1) % bgModes.length;
+        bgMode = bgModes[bgModeIndex];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     });
 
@@ -1422,18 +1425,621 @@
         }
     }
 
+    // === MODE 3: Space ===
+    function drawSpace() {
+        const cx = canvas.width / 2, cy = canvas.height / 2, sf = scrollFactor;
+        // Stars
+        for (let i = 0; i < 60; i++) {
+            const sx = (Math.sin(i * 127.1 + time * 0.1) * 0.5 + 0.5) * canvas.width;
+            const sy = (Math.cos(i * 311.7 + time * 0.05) * 0.5 + 0.5) * canvas.height;
+            const twinkle = Math.sin(time * 3 + i * 2) * 0.5 + 0.5;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 1 + twinkle, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${0.15 + twinkle * 0.15})`;
+            ctx.fill();
+        }
+        // Planets with rings
+        for (let p = 0; p < 5; p++) {
+            const orbitR = 100 + p * 90 + sf * 60;
+            const speed = 0.15 - p * 0.02;
+            const px = cx + Math.cos(time * speed + p * 1.3) * orbitR;
+            const py = cy + Math.sin(time * speed + p * 1.3) * orbitR * 0.5;
+            const planetSize = 12 + p * 8 + sf * 10;
+            const hue = (p * 60 + time * 15 + sf * 100) % 360;
+            // Orbit trail
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, orbitR, orbitR * 0.5, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = `hsla(${hue}, 50%, 50%, 0.04)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            // Planet body
+            const grad = ctx.createRadialGradient(px - planetSize * 0.3, py - planetSize * 0.3, 0, px, py, planetSize);
+            grad.addColorStop(0, `hsla(${hue}, 70%, 65%, 0.2)`);
+            grad.addColorStop(1, `hsla(${hue}, 70%, 30%, 0.08)`);
+            ctx.beginPath();
+            ctx.arc(px, py, planetSize, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            // Ring for larger planets
+            if (p > 1) {
+                ctx.beginPath();
+                ctx.ellipse(px, py, planetSize * 1.8, planetSize * 0.4, time * 0.5 + p, 0, Math.PI * 2);
+                ctx.strokeStyle = `hsla(${hue}, 60%, 60%, 0.1)`;
+                ctx.lineWidth = 2 + sf * 2;
+                ctx.stroke();
+            }
+        }
+        // Nebula clouds
+        for (let n = 0; n < 3; n++) {
+            const nx = cx + Math.sin(time * 0.2 + n * 2) * 200;
+            const ny = cy + Math.cos(time * 0.15 + n * 3) * 150;
+            const nr = 80 + sf * 60 + Math.sin(time + n) * 20;
+            const hue = (n * 120 + time * 10) % 360;
+            const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr);
+            grad.addColorStop(0, `hsla(${hue}, 80%, 50%, 0.06)`);
+            grad.addColorStop(1, `hsla(${hue}, 80%, 50%, 0)`);
+            ctx.beginPath();
+            ctx.arc(nx, ny, nr, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+    }
+
+    // === MODE 4: Vegetation ===
+    function drawVegetation() {
+        const cx = canvas.width / 2, cy = canvas.height, sf = scrollFactor;
+        // Growing vines
+        for (let v = 0; v < 7; v++) {
+            const baseX = (v / 6) * canvas.width;
+            ctx.beginPath();
+            const hue = (80 + v * 15 + sf * 40) % 160;
+            let vx = baseX, vy = cy;
+            for (let s = 0; s < 50; s++) {
+                const progress = s / 50;
+                const sway = Math.sin(progress * (3 + sf * 4) * Math.PI + time * 1.5 + v) * (40 + sf * 30);
+                vx = baseX + sway;
+                vy = cy - progress * (canvas.height * 0.8 + sf * canvas.height * 0.2);
+                if (s === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
+            }
+            ctx.strokeStyle = `hsla(${hue}, 70%, 40%, 0.12)`;
+            ctx.lineWidth = 4 + sf * 3;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            // Leaves
+            for (let l = 0; l < 8 + sf * 5; l++) {
+                const lp = (l + 1) / (9 + sf * 5);
+                const lsway = Math.sin(lp * (3 + sf * 4) * Math.PI + time * 1.5 + v) * (40 + sf * 30);
+                const lx = baseX + lsway;
+                const ly = cy - lp * (canvas.height * 0.8);
+                const leafSize = 8 + Math.sin(time + l + v) * 4 + sf * 6;
+                const leafAngle = Math.sin(time * 2 + l) * 0.5 + (l % 2 === 0 ? -0.8 : 0.8);
+                ctx.beginPath();
+                ctx.ellipse(lx + Math.cos(leafAngle) * leafSize, ly + Math.sin(leafAngle) * leafSize * 0.3, leafSize, leafSize * 0.4, leafAngle, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue + 20}, 80%, 45%, 0.08)`;
+                ctx.fill();
+            }
+        }
+        // Floating pollen/spores
+        for (let p = 0; p < 15; p++) {
+            const px = (Math.sin(p * 73.1 + time * 0.3) * 0.5 + 0.5) * canvas.width;
+            const py = (Math.cos(p * 171.7 + time * 0.2) * 0.5 + 0.5) * canvas.height;
+            ctx.beginPath();
+            ctx.arc(px, py, 2 + Math.sin(time + p) * 1, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(60, 80%, 70%, ${0.1 + Math.sin(time * 2 + p) * 0.05})`;
+            ctx.fill();
+        }
+    }
+
+    // === MODE 5: PCB / Electronic ===
+    function drawPCB() {
+        const sf = scrollFactor;
+        const gridSize = 30 + sf * 10;
+        const cols = Math.ceil(canvas.width / gridSize);
+        const rows = Math.ceil(canvas.height / gridSize);
+        // Traces
+        for (let t = 0; t < 15 + sf * 10; t++) {
+            ctx.beginPath();
+            const startCol = Math.floor(Math.sin(t * 47.3 + time * 0.3) * cols * 0.5 + cols * 0.5);
+            const startRow = Math.floor(Math.cos(t * 83.1 + time * 0.2) * rows * 0.5 + rows * 0.5);
+            let tx = startCol * gridSize, ty = startRow * gridSize;
+            ctx.moveTo(tx, ty);
+            const segments = 5 + Math.floor(sf * 8);
+            for (let s = 0; s < segments; s++) {
+                const dir = Math.floor(Math.sin(t * 13 + s * 7 + time * 0.5) * 2 + 2) % 4;
+                if (dir === 0) tx += gridSize;
+                else if (dir === 1) ty += gridSize;
+                else if (dir === 2) tx -= gridSize;
+                else ty -= gridSize;
+                ctx.lineTo(tx, ty);
+            }
+            const hue = (120 + t * 20 + sf * 100) % 360;
+            ctx.strokeStyle = `hsla(${hue}, 90%, 55%, 0.1)`;
+            ctx.lineWidth = 2 + sf;
+            ctx.stroke();
+            // Solder point at end
+            ctx.beginPath();
+            ctx.arc(tx, ty, 3 + sf * 2, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, 90%, 60%, 0.15)`;
+            ctx.fill();
+        }
+        // IC chips
+        for (let c = 0; c < 4; c++) {
+            const chipX = Math.sin(c * 3.7 + time * 0.1) * canvas.width * 0.3 + canvas.width * 0.5;
+            const chipY = Math.cos(c * 5.1 + time * 0.08) * canvas.height * 0.3 + canvas.height * 0.5;
+            const chipW = 30 + sf * 15;
+            const chipH = 20 + sf * 10;
+            const hue = (180 + c * 40 + time * 20) % 360;
+            ctx.strokeStyle = `hsla(${hue}, 80%, 55%, 0.1)`;
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(chipX - chipW / 2, chipY - chipH / 2, chipW, chipH);
+            // Pins
+            for (let pin = 0; pin < 4; pin++) {
+                const pinX = chipX - chipW / 2 + (pin + 0.5) * (chipW / 4);
+                ctx.beginPath();
+                ctx.moveTo(pinX, chipY - chipH / 2);
+                ctx.lineTo(pinX, chipY - chipH / 2 - 8);
+                ctx.moveTo(pinX, chipY + chipH / 2);
+                ctx.lineTo(pinX, chipY + chipH / 2 + 8);
+                ctx.stroke();
+            }
+        }
+    }
+
+    // === MODE 6: Machinery / Gears ===
+    function drawMachinery() {
+        const cx = canvas.width / 2, cy = canvas.height / 2, sf = scrollFactor;
+        for (let g = 0; g < 7; g++) {
+            const gx = cx + Math.sin(g * 1.8 + time * 0.1) * (150 + g * 60);
+            const gy = cy + Math.cos(g * 2.3 + time * 0.08) * (100 + g * 40);
+            const teeth = 8 + g * 2 + Math.floor(sf * 6);
+            const innerR = 25 + g * 15 + sf * 10;
+            const outerR = innerR + 10 + sf * 8;
+            const rot = time * (0.5 - g * 0.08) * (g % 2 === 0 ? 1 : -1);
+            const hue = (g * 50 + time * 20 + sf * 120) % 360;
+            // Gear outline
+            ctx.beginPath();
+            for (let i = 0; i <= teeth * 2; i++) {
+                const angle = (i / (teeth * 2)) * Math.PI * 2 + rot;
+                const r = i % 2 === 0 ? outerR : innerR;
+                const px = gx + Math.cos(angle) * r;
+                const py = gy + Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = `hsla(${hue}, 60%, 55%, 0.1)`;
+            ctx.lineWidth = 2 + sf;
+            ctx.stroke();
+            // Center hole
+            ctx.beginPath();
+            ctx.arc(gx, gy, innerR * 0.3, 0, Math.PI * 2);
+            ctx.strokeStyle = `hsla(${hue}, 60%, 55%, 0.08)`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // Spokes
+            for (let s = 0; s < 3; s++) {
+                const sa = (s / 3) * Math.PI * 2 + rot;
+                ctx.beginPath();
+                ctx.moveTo(gx + Math.cos(sa) * innerR * 0.3, gy + Math.sin(sa) * innerR * 0.3);
+                ctx.lineTo(gx + Math.cos(sa) * innerR * 0.9, gy + Math.sin(sa) * innerR * 0.9);
+                ctx.stroke();
+            }
+        }
+        // Pistons / connecting rods
+        for (let p = 0; p < 3; p++) {
+            const px1 = canvas.width * (0.2 + p * 0.3);
+            const stroke = 40 + sf * 30;
+            const py1 = cy + Math.sin(time * 2 + p * 2) * stroke;
+            ctx.beginPath();
+            ctx.moveTo(px1, py1 - 20);
+            ctx.lineTo(px1, py1 + 20);
+            ctx.strokeStyle = `hsla(30, 50%, 55%, 0.08)`;
+            ctx.lineWidth = 6 + sf * 3;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+    }
+
+    // === MODE 7: Forest ===
+    function drawForest() {
+        const sf = scrollFactor;
+        // Trees
+        for (let t = 0; t < 8; t++) {
+            const tx = (t / 7) * canvas.width;
+            const treeH = canvas.height * (0.4 + sf * 0.3);
+            const baseY = canvas.height;
+            const sway = Math.sin(time * 0.8 + t * 1.5) * (5 + sf * 10);
+            const hue = 25 + t * 3;
+            // Trunk
+            ctx.beginPath();
+            ctx.moveTo(tx, baseY);
+            ctx.quadraticCurveTo(tx + sway * 0.5, baseY - treeH * 0.5, tx + sway, baseY - treeH);
+            ctx.strokeStyle = `hsla(${hue}, 40%, 30%, 0.1)`;
+            ctx.lineWidth = 5 + sf * 3;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            // Branches
+            for (let b = 0; b < 4 + sf * 3; b++) {
+                const bp = 0.3 + (b / (4 + sf * 3)) * 0.6;
+                const bx = tx + sway * bp;
+                const by = baseY - treeH * bp;
+                const branchLen = 30 + sf * 25 + Math.sin(time + b + t) * 10;
+                const branchAngle = (b % 2 === 0 ? -1 : 1) * (0.5 + sf * 0.3) + Math.sin(time + b) * 0.2;
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.lineTo(bx + Math.cos(branchAngle - Math.PI / 2) * branchLen, by + Math.sin(branchAngle - Math.PI / 2) * branchLen);
+                ctx.strokeStyle = `hsla(${hue}, 40%, 30%, 0.07)`;
+                ctx.lineWidth = 2 + sf;
+                ctx.stroke();
+                // Leaf cluster
+                const lx = bx + Math.cos(branchAngle - Math.PI / 2) * branchLen;
+                const ly = by + Math.sin(branchAngle - Math.PI / 2) * branchLen;
+                ctx.beginPath();
+                ctx.arc(lx, ly, 12 + sf * 8, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${100 + t * 5}, 70%, 35%, 0.06)`;
+                ctx.fill();
+            }
+        }
+        // Falling leaves
+        for (let l = 0; l < 20; l++) {
+            const lx = (Math.sin(l * 47 + time * 0.4) * 0.5 + 0.5) * canvas.width;
+            const ly = ((l * 0.05 + time * 0.03) % 1) * canvas.height;
+            const rot = time * 2 + l * 3;
+            const leafSize = 4 + Math.sin(l) * 2;
+            ctx.beginPath();
+            ctx.ellipse(lx, ly, leafSize, leafSize * 0.5, rot, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${80 + l * 10}, 70%, 45%, 0.08)`;
+            ctx.fill();
+        }
+    }
+
+    // === MODE 8: Underwater ===
+    function drawUnderwater() {
+        const cx = canvas.width / 2, cy = canvas.height / 2, sf = scrollFactor;
+        // Water caustics / light rays
+        for (let r = 0; r < 6; r++) {
+            const rx = (r / 5) * canvas.width;
+            const rw = 30 + Math.sin(time * 1.5 + r) * 20;
+            ctx.beginPath();
+            ctx.moveTo(rx + Math.sin(time + r) * 20, 0);
+            ctx.lineTo(rx + Math.sin(time + r) * 40 - rw, canvas.height);
+            ctx.lineTo(rx + Math.sin(time + r) * 40 + rw, canvas.height);
+            ctx.closePath();
+            ctx.fillStyle = `hsla(190, 80%, 60%, 0.02)`;
+            ctx.fill();
+        }
+        // Seaweed
+        for (let s = 0; s < 8; s++) {
+            const baseX = (s / 7) * canvas.width;
+            ctx.beginPath();
+            let sx = baseX, sy = canvas.height;
+            for (let seg = 0; seg < 30; seg++) {
+                const progress = seg / 30;
+                sx = baseX + Math.sin(progress * (2 + sf * 3) * Math.PI + time * 2 + s) * (20 + sf * 20);
+                sy = canvas.height - progress * (canvas.height * 0.5 + sf * canvas.height * 0.3);
+                if (seg === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+            }
+            ctx.strokeStyle = `hsla(${140 + s * 10}, 70%, 35%, 0.1)`;
+            ctx.lineWidth = 3 + sf * 2;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+        // Bubbles
+        for (let b = 0; b < 25; b++) {
+            const bx = (Math.sin(b * 73 + time * 0.2) * 0.5 + 0.5) * canvas.width;
+            const by = canvas.height - ((b * 0.04 + time * 0.05 + b * 0.01) % 1) * canvas.height;
+            const br = 3 + Math.sin(b * 5) * 2 + sf * 3;
+            ctx.beginPath();
+            ctx.arc(bx + Math.sin(time * 2 + b) * 5, by, br, 0, Math.PI * 2);
+            ctx.strokeStyle = `hsla(200, 70%, 70%, 0.1)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            // Highlight
+            ctx.beginPath();
+            ctx.arc(bx + Math.sin(time * 2 + b) * 5 - br * 0.3, by - br * 0.3, br * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(200, 80%, 80%, 0.08)`;
+            ctx.fill();
+        }
+        // Fish
+        for (let f = 0; f < 5; f++) {
+            const fx = ((time * 0.05 * (1 + f * 0.3) + f * 0.2) % 1.2 - 0.1) * canvas.width;
+            const fy = canvas.height * (0.2 + f * 0.15) + Math.sin(time * 1.5 + f * 2) * 20;
+            const fSize = 8 + f * 3 + sf * 5;
+            const hue = (200 + f * 30 + time * 10) % 360;
+            // Body
+            ctx.beginPath();
+            ctx.ellipse(fx, fy, fSize, fSize * 0.5, 0, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.08)`;
+            ctx.fill();
+            // Tail
+            ctx.beginPath();
+            ctx.moveTo(fx - fSize, fy);
+            ctx.lineTo(fx - fSize * 1.6, fy - fSize * 0.4);
+            ctx.lineTo(fx - fSize * 1.6, fy + fSize * 0.4);
+            ctx.closePath();
+            ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.06)`;
+            ctx.fill();
+        }
+    }
+
+    // === MODE 9: Laboratory ===
+    function drawLaboratory() {
+        const cx = canvas.width / 2, cy = canvas.height / 2, sf = scrollFactor;
+        // Molecules / atom structures
+        for (let m = 0; m < 6; m++) {
+            const mx = cx + Math.sin(time * 0.3 + m * 1.8) * (canvas.width * 0.3);
+            const my = cy + Math.cos(time * 0.25 + m * 2.1) * (canvas.height * 0.3);
+            const atomCount = 3 + Math.floor(sf * 3);
+            const hue = (m * 55 + time * 15 + sf * 100) % 360;
+            // Bonds
+            for (let a = 0; a < atomCount; a++) {
+                const angle = (a / atomCount) * Math.PI * 2 + time * 0.5 + m;
+                const dist = 25 + sf * 20;
+                const ax = mx + Math.cos(angle) * dist;
+                const ay = my + Math.sin(angle) * dist;
+                ctx.beginPath();
+                ctx.moveTo(mx, my);
+                ctx.lineTo(ax, ay);
+                ctx.strokeStyle = `hsla(${hue}, 60%, 55%, 0.1)`;
+                ctx.lineWidth = 2 + sf;
+                ctx.stroke();
+                // Atom
+                ctx.beginPath();
+                ctx.arc(ax, ay, 5 + sf * 3, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${(hue + 60) % 360}, 70%, 55%, 0.1)`;
+                ctx.fill();
+            }
+            // Central atom
+            ctx.beginPath();
+            ctx.arc(mx, my, 7 + sf * 4, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.12)`;
+            ctx.fill();
+            // Electron orbits
+            for (let o = 0; o < 2; o++) {
+                ctx.beginPath();
+                ctx.ellipse(mx, my, 35 + o * 15 + sf * 15, 15 + o * 8, time * 0.8 + o * 1.2 + m, 0, Math.PI * 2);
+                ctx.strokeStyle = `hsla(${hue}, 50%, 55%, 0.05)`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                // Electron
+                const eAngle = time * (3 - o * 0.5) + m;
+                const ex = mx + Math.cos(eAngle) * (35 + o * 15 + sf * 15) * Math.cos(time * 0.8 + o * 1.2 + m) - Math.sin(eAngle) * (15 + o * 8) * Math.sin(time * 0.8 + o * 1.2 + m);
+                const ey = my + Math.cos(eAngle) * (35 + o * 15 + sf * 15) * Math.sin(time * 0.8 + o * 1.2 + m) + Math.sin(eAngle) * (15 + o * 8) * Math.cos(time * 0.8 + o * 1.2 + m);
+                ctx.beginPath();
+                ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 90%, 70%, 0.15)`;
+                ctx.fill();
+            }
+        }
+        // Beaker outlines
+        for (let b = 0; b < 3; b++) {
+            const bx = canvas.width * (0.2 + b * 0.3) + Math.sin(time * 0.3 + b) * 20;
+            const by = canvas.height * 0.7;
+            const bw = 30 + sf * 15;
+            const bh = 50 + sf * 20;
+            const hue = (180 + b * 40 + time * 10) % 360;
+            ctx.beginPath();
+            ctx.moveTo(bx - bw * 0.7, by - bh);
+            ctx.lineTo(bx - bw, by);
+            ctx.lineTo(bx + bw, by);
+            ctx.lineTo(bx + bw * 0.7, by - bh);
+            ctx.strokeStyle = `hsla(${hue}, 50%, 60%, 0.07)`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            // Bubbling liquid
+            const liquidH = bh * (0.4 + sf * 0.3 + Math.sin(time + b) * 0.1);
+            const liquidY = by - liquidH;
+            ctx.beginPath();
+            ctx.moveTo(bx - bw + (bh - liquidH) / bh * bw * 0.3, liquidY);
+            ctx.lineTo(bx + bw - (bh - liquidH) / bh * bw * 0.3, liquidY);
+            ctx.lineTo(bx + bw, by);
+            ctx.lineTo(bx - bw, by);
+            ctx.closePath();
+            ctx.fillStyle = `hsla(${hue}, 70%, 50%, 0.04)`;
+            ctx.fill();
+        }
+    }
+
+    // === MODE 10: Mushrooms / Mycelium ===
+    function drawMushrooms() {
+        const sf = scrollFactor;
+        // Mycelium network
+        for (let n = 0; n < 12; n++) {
+            const sx = (Math.sin(n * 37.7) * 0.5 + 0.5) * canvas.width;
+            const sy = (Math.cos(n * 71.3) * 0.5 + 0.5) * canvas.height;
+            for (let b = 0; b < 3 + sf * 3; b++) {
+                ctx.beginPath();
+                ctx.moveTo(sx, sy);
+                let bx = sx, by = sy;
+                const segments = 8 + Math.floor(sf * 6);
+                for (let s = 0; s < segments; s++) {
+                    bx += Math.sin(n * 13 + b * 7 + s * 3 + time * 0.5) * 20;
+                    by += Math.cos(n * 17 + b * 11 + s * 5 + time * 0.3) * 20;
+                    ctx.lineTo(bx, by);
+                }
+                const hue = (280 + n * 10 + time * 8) % 360;
+                ctx.strokeStyle = `hsla(${hue}, 40%, 55%, 0.06)`;
+                ctx.lineWidth = 1 + sf;
+                ctx.stroke();
+                // Node
+                ctx.beginPath();
+                ctx.arc(bx, by, 2 + sf * 2, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 50%, 60%, 0.08)`;
+                ctx.fill();
+            }
+        }
+        // Mushroom caps
+        for (let m = 0; m < 6; m++) {
+            const mx = (Math.sin(m * 53.1 + time * 0.1) * 0.4 + 0.5) * canvas.width;
+            const my = canvas.height * (0.5 + m * 0.08) + Math.sin(time * 0.5 + m) * 15;
+            const capW = 20 + m * 5 + sf * 15;
+            const capH = 12 + sf * 8;
+            const stemH = 20 + sf * 15;
+            const hue = (300 + m * 20 + time * 12 + sf * 80) % 360;
+            // Stem
+            ctx.beginPath();
+            ctx.moveTo(mx - 3 - sf * 2, my);
+            ctx.lineTo(mx - 2, my + stemH);
+            ctx.lineTo(mx + 2, my + stemH);
+            ctx.lineTo(mx + 3 + sf * 2, my);
+            ctx.fillStyle = `hsla(40, 30%, 60%, 0.06)`;
+            ctx.fill();
+            // Cap
+            ctx.beginPath();
+            ctx.ellipse(mx, my, capW, capH, 0, Math.PI, 0);
+            ctx.fillStyle = `hsla(${hue}, 70%, 45%, 0.08)`;
+            ctx.fill();
+            ctx.strokeStyle = `hsla(${hue}, 70%, 55%, 0.1)`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            // Spots
+            for (let s = 0; s < 3; s++) {
+                const spotAngle = (s / 3) * Math.PI + 0.3;
+                const spotX = mx + Math.cos(spotAngle) * capW * 0.5;
+                const spotY = my - Math.sin(spotAngle) * capH * 0.5;
+                ctx.beginPath();
+                ctx.arc(spotX, spotY, 2 + sf, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(60, 60%, 75%, 0.08)`;
+                ctx.fill();
+            }
+        }
+    }
+
+    // === MODE 11: Neural Network ===
+    function drawNeural() {
+        const cx = canvas.width / 2, cy = canvas.height / 2, sf = scrollFactor;
+        const neurons = [];
+        const count = 20 + Math.floor(sf * 15);
+        for (let n = 0; n < count; n++) {
+            neurons.push({
+                x: (Math.sin(n * 127.1 + time * 0.1 + n * 0.01) * 0.45 + 0.5) * canvas.width,
+                y: (Math.cos(n * 311.7 + time * 0.08 + n * 0.01) * 0.45 + 0.5) * canvas.height,
+                hue: (n * 25 + time * 15) % 360
+            });
+        }
+        // Synaptic connections
+        for (let i = 0; i < neurons.length; i++) {
+            for (let j = i + 1; j < neurons.length; j++) {
+                const dx = neurons[j].x - neurons[i].x;
+                const dy = neurons[j].y - neurons[i].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const maxDist = 150 + sf * 80;
+                if (dist < maxDist) {
+                    const alpha = (1 - dist / maxDist) * 0.08;
+                    const firing = Math.sin(time * 4 + i + j) > 0.7;
+                    ctx.beginPath();
+                    ctx.moveTo(neurons[i].x, neurons[i].y);
+                    ctx.lineTo(neurons[j].x, neurons[j].y);
+                    ctx.strokeStyle = firing ?
+                        `hsla(${neurons[i].hue}, 90%, 70%, ${alpha * 3})` :
+                        `hsla(${neurons[i].hue}, 50%, 50%, ${alpha})`;
+                    ctx.lineWidth = firing ? 2.5 : 1;
+                    ctx.stroke();
+                    // Traveling signal
+                    if (firing) {
+                        const signalPos = (Math.sin(time * 5 + i) * 0.5 + 0.5);
+                        const sx = neurons[i].x + dx * signalPos;
+                        const sy = neurons[i].y + dy * signalPos;
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsla(${neurons[i].hue}, 90%, 75%, 0.2)`;
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+        // Neuron bodies
+        for (const n of neurons) {
+            const pulse = Math.sin(time * 3 + n.x * 0.01) * 0.5 + 0.5;
+            const r = 4 + sf * 3 + pulse * 3;
+            const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 2);
+            grad.addColorStop(0, `hsla(${n.hue}, 80%, 60%, 0.15)`);
+            grad.addColorStop(1, `hsla(${n.hue}, 80%, 60%, 0)`);
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, r * 2, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${n.hue}, 80%, 60%, 0.12)`;
+            ctx.fill();
+        }
+    }
+
+    // === MODE 12: Crystal ===
+    function drawCrystal() {
+        const cx = canvas.width / 2, cy = canvas.height / 2, sf = scrollFactor;
+        // Crystal formations
+        for (let c = 0; c < 8; c++) {
+            const baseX = (Math.sin(c * 47.3) * 0.4 + 0.5) * canvas.width;
+            const baseY = (Math.cos(c * 83.1) * 0.4 + 0.5) * canvas.height;
+            const shardCount = 3 + Math.floor(sf * 4);
+            const hue = (c * 45 + time * 10 + sf * 80) % 360;
+            for (let s = 0; s < shardCount; s++) {
+                const angle = (s / shardCount) * Math.PI * 2 + c * 0.5 + Math.sin(time * 0.3 + c) * 0.3;
+                const len = 30 + s * 10 + sf * 30 + Math.sin(time + s + c) * 10;
+                const width = 6 + sf * 4;
+                const tipX = baseX + Math.cos(angle) * len;
+                const tipY = baseY + Math.sin(angle) * len;
+                const leftX = baseX + Math.cos(angle + 0.15) * width;
+                const leftY = baseY + Math.sin(angle + 0.15) * width;
+                const rightX = baseX + Math.cos(angle - 0.15) * width;
+                const rightY = baseY + Math.sin(angle - 0.15) * width;
+                // Crystal shard
+                ctx.beginPath();
+                ctx.moveTo(tipX, tipY);
+                ctx.lineTo(leftX, leftY);
+                ctx.lineTo(rightX, rightY);
+                ctx.closePath();
+                const shardHue = (hue + s * 15) % 360;
+                ctx.fillStyle = `hsla(${shardHue}, 60%, 55%, 0.05)`;
+                ctx.fill();
+                ctx.strokeStyle = `hsla(${shardHue}, 70%, 65%, 0.1)`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                // Inner facet line
+                ctx.beginPath();
+                ctx.moveTo(tipX, tipY);
+                ctx.lineTo(baseX, baseY);
+                ctx.strokeStyle = `hsla(${shardHue}, 60%, 70%, 0.06)`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+            // Glow at base
+            const grad = ctx.createRadialGradient(baseX, baseY, 0, baseX, baseY, 20 + sf * 10);
+            grad.addColorStop(0, `hsla(${hue}, 80%, 60%, 0.1)`);
+            grad.addColorStop(1, `hsla(${hue}, 80%, 60%, 0)`);
+            ctx.beginPath();
+            ctx.arc(baseX, baseY, 20 + sf * 10, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+        // Sparkles
+        for (let sp = 0; sp < 15; sp++) {
+            const spx = (Math.sin(sp * 127 + time * 0.5) * 0.5 + 0.5) * canvas.width;
+            const spy = (Math.cos(sp * 311 + time * 0.3) * 0.5 + 0.5) * canvas.height;
+            const flash = Math.sin(time * 5 + sp * 3) > 0.8 ? 0.2 : 0;
+            if (flash > 0) {
+                ctx.beginPath();
+                ctx.arc(spx, spy, 2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${flash})`;
+                ctx.fill();
+            }
+        }
+    }
+
     // === Main animation loop ===
+    const drawFns = {
+        geometric: drawGeometric, tentacles: drawTentacles, space: drawSpace,
+        vegetation: drawVegetation, pcb: drawPCB, machinery: drawMachinery,
+        forest: drawForest, underwater: drawUnderwater, laboratory: drawLaboratory,
+        mushrooms: drawMushrooms, neural: drawNeural, crystal: drawCrystal
+    };
+
     function animate() {
         time += 0.008;
         ctx.fillStyle = 'rgba(26, 0, 51, 0.15)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        if (bgMode === 'geometric') {
-            drawGeometric();
-        } else {
-            drawTentacles();
-        }
-
+        drawFns[bgMode]();
         requestAnimationFrame(animate);
     }
     animate();
