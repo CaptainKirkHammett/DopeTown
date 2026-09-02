@@ -704,7 +704,7 @@
             height: 40px;
             border-radius: 4px;
             border: none;
-            background: var(--neon-pink);
+            background: #1a237e;
             color: #fff;
             font-family: 'Barrio', cursive;
             font-size: 1.2rem;
@@ -1342,21 +1342,21 @@
         for (let t = 0; t < tentacleCount; t++) {
             const baseAngle = (t / tentacleCount) * Math.PI * 2 + time * 0.2;
             const hue = (t * 45 + time * 25 + sf * 150) % 360;
-            const tentacleLen = 180 + sf * 150 + Math.sin(time + t) * 40;
+            const tentacleLen = 450 + sf * 350 + Math.sin(time + t) * 60;
 
             // Draw thick tentacle with gradient thickness
             for (let pass = 0; pass < 3; pass++) {
                 ctx.beginPath();
                 let px = cx, py = cy;
-                const thickness = (12 - pass * 4) * (1 + sf * 0.5);
+                const thickness = (18 - pass * 5) * (1 + sf * 0.5);
                 const alpha = 0.08 + pass * 0.04;
                 const lightness = 50 + pass * 10;
 
                 for (let s = 0; s <= segments; s++) {
                     const progress = s / segments;
                     const curl = sf * 3 + 1.5;
-                    const wave1 = Math.sin(progress * curl * Math.PI + time * 2 + t * 1.7) * (60 + sf * 50);
-                    const wave2 = Math.cos(progress * (curl + 1) * Math.PI + time * 1.5 + t * 2.3) * (30 + sf * 30);
+                    const wave1 = Math.sin(progress * curl * Math.PI + time * 2 + t * 1.7) * (120 + sf * 100);
+                    const wave2 = Math.cos(progress * (curl + 1) * Math.PI + time * 1.5 + t * 2.3) * (60 + sf * 60);
                     const wave3 = Math.sin(progress * 7 + time * 3 + t) * (8 + sf * 15);
 
                     const dist = progress * tentacleLen;
@@ -1387,8 +1387,8 @@
             for (let s = 3; s < segments; s += 3) {
                 const progress = s / segments;
                 const curl = sf * 3 + 1.5;
-                const wave1 = Math.sin(progress * curl * Math.PI + time * 2 + t * 1.7) * (60 + sf * 50);
-                const wave2 = Math.cos(progress * (curl + 1) * Math.PI + time * 1.5 + t * 2.3) * (30 + sf * 30);
+                const wave1 = Math.sin(progress * curl * Math.PI + time * 2 + t * 1.7) * (120 + sf * 100);
+                const wave2 = Math.cos(progress * (curl + 1) * Math.PI + time * 1.5 + t * 2.3) * (60 + sf * 60);
 
                 const dist = progress * tentacleLen;
                 const angleOff = wave1 * 0.004 + wave2 * 0.003;
