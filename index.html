@@ -101,12 +101,12 @@
 
         .logo {
             position: fixed;
-            top: 50%;
+            top: 0;
             left: 50%;
-            transform: translate(-50%, -50%);
-            width: clamp(500px, 70vw, 1000px);
+            transform: translateX(-50%);
+            width: 100vw;
+            max-width: 1200px;
             height: auto;
-            opacity: 0.12;
             filter: drop-shadow(0 0 20px rgba(255,0,255,0.4)) drop-shadow(0 0 40px rgba(0,240,255,0.3));
             animation: logoPulse 3s ease-in-out infinite;
             z-index: -1;
