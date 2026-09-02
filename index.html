@@ -732,6 +732,86 @@
             }
 
         }
+
+        /* Mobile: compact layout, no scrollable track lists, 3 newest tracks per section */
+        @media (max-width: 768px) {
+            .header { padding: 1.5rem 1rem 1rem; }
+            .logo { width: 65vw; }
+
+            .section { padding: 1rem 0.75rem; }
+
+            .section-title,
+            a.section-title-link {
+                margin-bottom: 0.75rem;
+                padding-bottom: 0.6rem;
+            }
+
+            .music-row,
+            .soundcloud-row {
+                gap: 1.25rem;
+            }
+
+            .music-column-title,
+            a.artist-title-link {
+                margin-bottom: 0.5rem;
+            }
+
+            /* Turn scrollable track boxes into compact, non-scrolling lists */
+            .bandcamp-scroll,
+            .soundcloud-scroll {
+                overflow-y: visible;
+                height: auto;
+                max-height: none;
+                padding: 0.5rem;
+                gap: 0.5rem;
+            }
+
+            /* Only show the 3 newest tracks per section on mobile */
+            .bandcamp-scroll .embed-card:nth-child(n+4),
+            .soundcloud-scroll .embed-card:nth-child(n+4) {
+                display: none;
+            }
+
+            /* Shrink embedded players to save vertical space */
+            .bandcamp-scroll .embed-card iframe {
+                height: 90px !important;
+            }
+
+            .soundcloud-scroll .embed-card iframe {
+                height: 100px !important;
+            }
+
+            .embed-label {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.65rem;
+            }
+
+            .spotify-wrapper,
+            .spotify-wrapper iframe {
+                min-height: 280px;
+            }
+
+            .embed-grid {
+                gap: 0.9rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .embed-grid.two-col .embed-card iframe {
+                height: 200px !important;
+            }
+
+            .large-embed iframe {
+                height: 200px;
+            }
+
+            .divider { margin: 1.25rem auto; }
+
+            .insta-section { padding: 1.75rem 1rem; }
+            .insta-link { padding: 0.9rem 1.8rem; font-size: 0.9rem; }
+
+            .visitor-counter { padding: 1rem 1rem; }
+            .footer { padding: 1.75rem 1rem; }
+        }
     </style>
 </head>
 <body>
