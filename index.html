@@ -48,7 +48,7 @@
            canvas drawing (see animate() in the script). No blur/turbulence
            here, this runs over the full viewport so it has to stay light. */
         body.acid-bg #psychCanvas {
-            animation: acidBgHue 3s linear infinite;
+            animation: acidBgHue 1s linear infinite;
         }
 
         @keyframes acidBgHue {
@@ -2300,7 +2300,13 @@
             const skewX = acidWave(lt, 81) * 6;
             const skewY = acidWave(lt, 91) * 6;
             const rotate = acidWave(lt, 101) * 5;
-            el.style.transform = `translateX(-50%) scale(${scaleX.toFixed(3)}, ${scaleY.toFixed(3)}) `
+            // Fast shiver: same acidWave noise but sampled at a much
+            // higher rate (lt * 14) so it jitters quickly regardless of
+            // how slow/fast the overall warp speed is right now.
+            const shiverX = acidWave(lt * 14, 201) * 5;
+            const shiverY = acidWave(lt * 14, 211) * 5;
+            el.style.transform = `translate(calc(-50% + ${shiverX.toFixed(1)}px), ${shiverY.toFixed(1)}px) `
+                + `scale(${scaleX.toFixed(3)}, ${scaleY.toFixed(3)}) `
                 + `skew(${skewX.toFixed(2)}deg, ${skewY.toFixed(2)}deg) rotate(${rotate.toFixed(2)}deg)`;
         });
     }
