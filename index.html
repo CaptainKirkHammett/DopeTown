@@ -667,7 +667,7 @@
             background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
             color: #fff;
             text-decoration: none;
-            font-family: 'Orbitron', sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             font-size: 1.1rem;
             font-weight: 700;
             letter-spacing: 0.1em;
@@ -866,6 +866,45 @@
 
         .bg-toggle:hover {
             opacity: 0.8;
+        }
+
+        /* Back-to-top button — fixed bottom-right, only shown once the
+           page has scrolled down a bit (toggled in updateScrollFactor). */
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: #1a237e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 50;
+        }
+
+        .scroll-top-btn.visible {
+            opacity: 0.85;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .scroll-top-btn:hover {
+            opacity: 1;
+        }
+
+        .scroll-top-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #fff;
         }
 
         .insta-fab { background: #E1306C; }
@@ -1391,6 +1430,12 @@
     <p>&copy; 2026 <a href="https://dopescience.bandcamp.com/" target="_blank">Dope Science</a></p>
 </footer>
 
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top" title="Back to top">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 5l-7 7h4v7h6v-7h4z"/>
+    </svg>
+</button>
+
 <script>
     // Acid trip mode — tap/click the logo to toggle wild distortion, tap again to undo.
     // The logo itself sits at z-index:-1 for visual layering, so clicks are captured
@@ -1594,6 +1639,12 @@
     // jump in big steps. Polling every frame guarantees it always reflects
     // the true current scroll position.
     const logo = document.getElementById('logoMain');
+    const scrollTopBtn = document.getElementById('scrollTopBtn');
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
     function updateScrollFactor() {
         const scrollY = window.scrollY;
         const maxScroll = document.body.scrollHeight - window.innerHeight;
@@ -1601,6 +1652,9 @@
         const halfPage = document.body.scrollHeight / 2;
         const logoOpacity = Math.max(0, 1 - (scrollY / halfPage));
         logo.style.opacity = logoOpacity;
+        if (scrollTopBtn) {
+            scrollTopBtn.classList.toggle('visible', scrollY > 400);
+        }
         // The click target is a fixed-position overlay sitting above
         // whatever has scrolled into that screen region. Its own fade
         // used to follow the logo's (halfPage can be thousands of
