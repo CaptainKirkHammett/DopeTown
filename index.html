@@ -1830,10 +1830,11 @@
             const my = cy + Math.cos(time * speedY + m * 2.1 + phase) * ampY;
             const atomCount = 4 + Math.floor(labRand(m * 6.6) * 4) + Math.floor(sf * 4);
             const hue = (m * 55 + time * 15 + sf * 100) % 360;
+            const molScale = 3;
             // Bonds
             for (let a = 0; a < atomCount; a++) {
                 const angle = (a / atomCount) * Math.PI * 2 + time * spinSpeed + m;
-                const dist = 25 + sf * 20;
+                const dist = (25 + sf * 20) * molScale;
                 const ax = mx + Math.cos(angle) * dist;
                 const ay = my + Math.sin(angle) * dist;
                 ctx.beginPath();
@@ -1844,29 +1845,31 @@
                 ctx.stroke();
                 // Atom
                 ctx.beginPath();
-                ctx.arc(ax, ay, (5 + sf * 3) * 3, 0, Math.PI * 2);
+                ctx.arc(ax, ay, (5 + sf * 3) * molScale, 0, Math.PI * 2);
                 ctx.fillStyle = `hsla(${(hue + 60) % 360}, 70%, 55%, 0.1)`;
                 ctx.fill();
             }
             // Central atom
             ctx.beginPath();
-            ctx.arc(mx, my, (7 + sf * 4) * 3, 0, Math.PI * 2);
+            ctx.arc(mx, my, (7 + sf * 4) * molScale, 0, Math.PI * 2);
             ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.12)`;
             ctx.fill();
             // Electron orbits
             for (let o = 0; o < 2; o++) {
+                const orbitRx = (35 + o * 15 + sf * 15) * molScale;
+                const orbitRy = (15 + o * 8) * molScale;
                 const orbitAngle = time * spinSpeed * 1.6 + o * 1.2 + m;
                 ctx.beginPath();
-                ctx.ellipse(mx, my, 35 + o * 15 + sf * 15, 15 + o * 8, orbitAngle, 0, Math.PI * 2);
+                ctx.ellipse(mx, my, orbitRx, orbitRy, orbitAngle, 0, Math.PI * 2);
                 ctx.strokeStyle = `hsla(${hue}, 50%, 55%, 0.05)`;
                 ctx.lineWidth = 1;
                 ctx.stroke();
                 // Electron
                 const eAngle = time * (spinSpeed * 3.5 - o * 0.8) + m;
-                const ex = mx + Math.cos(eAngle) * (35 + o * 15 + sf * 15) * Math.cos(orbitAngle) - Math.sin(eAngle) * (15 + o * 8) * Math.sin(orbitAngle);
-                const ey = my + Math.cos(eAngle) * (35 + o * 15 + sf * 15) * Math.sin(orbitAngle) + Math.sin(eAngle) * (15 + o * 8) * Math.cos(orbitAngle);
+                const ex = mx + Math.cos(eAngle) * orbitRx * Math.cos(orbitAngle) - Math.sin(eAngle) * orbitRy * Math.sin(orbitAngle);
+                const ey = my + Math.cos(eAngle) * orbitRx * Math.sin(orbitAngle) + Math.sin(eAngle) * orbitRy * Math.cos(orbitAngle);
                 ctx.beginPath();
-                ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+                ctx.arc(ex, ey, 2.5 * molScale, 0, Math.PI * 2);
                 ctx.fillStyle = `hsla(${hue}, 90%, 70%, 0.15)`;
                 ctx.fill();
             }
