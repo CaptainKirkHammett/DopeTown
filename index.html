@@ -1846,14 +1846,20 @@
                 // Atom
                 ctx.beginPath();
                 ctx.arc(ax, ay, (5 + sf * 3) * molScale, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${(hue + 60) % 360}, 70%, 55%, 0.1)`;
+                ctx.fillStyle = `hsla(${(hue + 60) % 360}, 75%, 60%, 0.16)`;
                 ctx.fill();
+                ctx.strokeStyle = `hsla(${(hue + 60) % 360}, 90%, 75%, 0.3)`;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
             }
             // Central atom
             ctx.beginPath();
             ctx.arc(mx, my, (7 + sf * 4) * molScale, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.12)`;
+            ctx.fillStyle = `hsla(${hue}, 75%, 60%, 0.2)`;
             ctx.fill();
+            ctx.strokeStyle = `hsla(${hue}, 95%, 80%, 0.35)`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
             // Electron orbits
             for (let o = 0; o < 2; o++) {
                 const orbitRx = (35 + o * 15 + sf * 15) * molScale;
@@ -2056,7 +2062,8 @@
 
     function animate() {
         time += 0.008;
-        ctx.fillStyle = 'rgba(26, 0, 51, 0.15)';
+        const clearAlpha = bgMode === 'laboratory' ? 0.6 : 0.15;
+        ctx.fillStyle = `rgba(26, 0, 51, ${clearAlpha})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         drawFns[bgMode]();
         requestAnimationFrame(animate);
