@@ -159,7 +159,9 @@
             --echoBlur: 0px;
         }
         .logo-echo-1 { z-index: -2; }
-        .logo-echo-2 { z-index: -3; }
+        /* Second echo layer retired — acid-trip mode now uses the same
+           single-echo, no-warp effect on every device (was mobile-only). */
+        .logo-echo-2 { display: none; }
 
         .logo-echo-1.acid-trip { opacity: 0.4; --echoBlur: 3px; }
         .logo-echo-2.acid-trip { opacity: 0.22; --echoBlur: 6px; }
@@ -878,12 +880,6 @@
             .logo { width: 65vw; }
             .logo-click-target { width: 65vw; }
             .site-title { display: none; }
-
-            /* Lighter acid-trip mode on phones: drop the second echo layer
-               and skip the feTurbulence/feDisplacementMap warp (the most
-               expensive part) — updateAcidLogoStyles() checks screen width
-               each frame and omits url(#acidWarp) below this breakpoint. */
-            .logo-echo-2 { display: none; }
 
             .social-top-row { padding: 0.5rem 0.75rem 0; }
             .social-left, .social-right { gap: 0.4rem; }
@@ -2250,16 +2246,14 @@
 
     function updateAcidLogoStyles(t) {
         if (!acidLogo.classList.contains('acid-trip')) return;
-        const isMobile = window.innerWidth <= 768;
+        // Same lighter effect on every device now (was mobile-only): no
+        // feTurbulence/feDisplacementMap warp, 2 drop-shadow layers, and
+        // just one trailing echo.
         const layers = [{ el: acidLogo, lag: 0 }];
         const echo1 = document.querySelector('.logo-echo-1');
         if (echo1) layers.push({ el: echo1, lag: 0.7 });
-        if (!isMobile) {
-            const echo2 = document.querySelector('.logo-echo-2');
-            if (echo2) layers.push({ el: echo2, lag: 1.4 });
-        }
-        const warpPrefix = isMobile ? '' : 'url(#acidWarp) ';
-        const shadowCount = isMobile ? 2 : 3;
+        const warpPrefix = '';
+        const shadowCount = 2;
 
         layers.forEach(({ el, lag }) => {
             const lt = t - lag + acidSeed;
@@ -2267,8 +2261,8 @@
             // keyframes) plus an organic wobble on top — pure noise alone
             // moved too slowly/narrowly to read as a real hue shift.
             const hue = lt * 80 + acidWave(lt, 1) * 35;
-            const sat = isMobile ? 4.6 + acidWave(lt, 11) * 1.2 : 5 + acidWave(lt, 11) * 1.4;
-            const con = isMobile ? 1.75 + acidWave(lt, 21) * 0.35 : 1.9 + acidWave(lt, 21) * 0.45;
+            const sat = 4.6 + acidWave(lt, 11) * 1.2;
+            const con = 1.75 + acidWave(lt, 21) * 0.35;
             const bri = 1.2 + acidWave(lt, 31) * 0.18;
             const shadows = [];
             for (let s = 0; s < shadowCount; s++) {
