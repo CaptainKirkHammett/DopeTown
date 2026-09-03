@@ -1401,6 +1401,7 @@
     let scrollFactor = 0;
     let rawScrollFactor = 0;
     let acidBackgroundActive = false;
+    let acidClock = 0;
     const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal'];
     let bgModeIndex = Math.floor(Math.random() * bgModes.length);
     let bgMode = bgModes[bgModeIndex];
@@ -2289,7 +2290,14 @@
         // the scrollFactor scaling each draw function already has — no
         // extra rendering cost, just wilder numbers fed into it.
         time += acidBackgroundActive ? 0.022 : 0.008;
-        updateAcidLogoStyles(time);
+        // The logo's own clock runs at a randomly drifting speed — a slow
+        // noise wave (driven off "time", not off itself, so it can't
+        // feedback loop) modulates the playback rate between a dreamy
+        // crawl and a frantic rush, settling into each mood for a few
+        // seconds at a time rather than jittering frame to frame.
+        const acidSpeed = Math.max(0.15, 1.15 + acidWave(time * 0.3, 500) * 0.95);
+        acidClock += 0.022 * acidSpeed;
+        updateAcidLogoStyles(acidClock);
         // Ease scrollFactor toward its target instead of snapping to it.
         // Several draw functions do Math.floor(scrollFactor * N) to pick
         // ring/branch/side counts, so a big scroll delta (momentum/fling
