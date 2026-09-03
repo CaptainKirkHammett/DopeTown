@@ -1409,6 +1409,7 @@
     const acidLayers = document.querySelectorAll('.logo');
     const acidClickTarget = document.getElementById('logoClickTarget');
     let acidSeed = 0;
+    let marqueeMirrorInterval = null;
 
     // Build the header divider's waveform bars once. Hidden via CSS until
     // acid-trip mode is on; each bar's own randomized animation timing
@@ -1447,6 +1448,19 @@
             document.body.classList.toggle('acid-bg', nowActive);
             acidMirrorMarquee('marqueeTop', nowActive);
             acidMirrorMarquee('marqueeBottom', nowActive);
+            if (marqueeMirrorInterval) {
+                clearInterval(marqueeMirrorInterval);
+                marqueeMirrorInterval = null;
+            }
+            if (nowActive) {
+                // Keep reshuffling which characters are mirrored for as
+                // long as acid mode stays on, instead of freezing at the
+                // pattern picked on toggle.
+                marqueeMirrorInterval = setInterval(() => {
+                    rerollMarqueeMirror('marqueeTop');
+                    rerollMarqueeMirror('marqueeBottom');
+                }, 400);
+            }
         });
     }
 
@@ -1508,6 +1522,20 @@
                 }
                 charSpan.textContent = ch;
                 word.appendChild(charSpan);
+            }
+        });
+    }
+
+    // Re-rolls which characters are mirrored on the spans acidMirrorMarquee
+    // already built, so the pattern keeps reshuffling for as long as acid
+    // mode stays on instead of freezing at whatever it picked on toggle.
+    function rerollMarqueeMirror(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.querySelectorAll('.mchar').forEach(charSpan => {
+            charSpan.classList.remove('mirror-h', 'mirror-v');
+            if (Math.random() < 0.35) {
+                charSpan.classList.add(Math.random() < 0.5 ? 'mirror-h' : 'mirror-v');
             }
         });
     }
