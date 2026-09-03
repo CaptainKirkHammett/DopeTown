@@ -950,6 +950,15 @@
             opacity: 0.8;
         }
 
+        /* The "!" button hides the Bandcamp/Spotify/YouTube/SoundCloud
+           embed sections (and their titles) along with the dividers
+           between them, leaving the logo, marquees, social links,
+           Instagram section and footer untouched. */
+        body.embeds-hidden .section,
+        body.embeds-hidden .divider:not(#headerDivider) {
+            display: none;
+        }
+
         /* Back-to-top button — fixed bottom-right, only shown once the
            page has scrolled down a bit (toggled in updateScrollFactor). */
         .scroll-top-btn {
@@ -1276,6 +1285,7 @@
 <div class="social-top-row">
     <div class="social-left">
         <button class="bg-toggle" id="bgToggle" title="Switch background">?</button>
+        <button class="bg-toggle" id="embedsToggle" title="Show/hide embeds">!</button>
     </div>
     <div class="social-right">
     <a href="https://www.instagram.com/captainkirna/" target="_blank" class="social-fab insta-fab" aria-label="Follow on Instagram">
@@ -1775,6 +1785,10 @@
         bgModeIndex = (bgModeIndex + 1) % bgModes.length;
         bgMode = bgModes[bgModeIndex];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    document.getElementById('embedsToggle').addEventListener('click', () => {
+        document.body.classList.toggle('embeds-hidden');
     });
 
     // === MODE 1: Geometric spirographs ===
