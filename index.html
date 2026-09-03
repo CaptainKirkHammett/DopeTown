@@ -732,9 +732,11 @@
         }
 
         /* The header divider (the thin line behind the logo) turns into a
-           jittery audio waveform while acid-trip mode is on: hide its
-           plain gradient line and reveal a row of bars bouncing to their
-           own randomized CSS animation. */
+           wavy audio waveform while acid-trip mode is on: hide its plain
+           gradient line and reveal a row of bars whose heights are driven
+           per-frame from JS (see updateHeaderWaveform in the main script)
+           so the shape ripples and randomly shifts instead of each bar
+           just bouncing on its own fixed loop. */
         body.acid-bg #headerDivider {
             background: none;
             animation: none;
@@ -764,12 +766,6 @@
             height: 4px;
             border-radius: 2px;
             background: linear-gradient(180deg, var(--neon-pink), var(--neon-blue), var(--neon-green));
-            animation: waveBounce 0.4s ease-in-out infinite;
-        }
-
-        @keyframes waveBounce {
-            0%, 100% { height: 4px; }
-            50% { height: 28px; }
         }
 
         /* Footer */
@@ -1402,19 +1398,19 @@
     let acidSeed = 0;
 
     // Build the header divider's waveform bars once. Hidden via CSS until
-    // acid-trip mode is on; each bar's own randomized animation timing
-    // makes the row bounce like a real audio waveform instead of a
-    // uniform pulse.
+    // acid-trip mode is on; heights are driven per-frame from JS (see
+    // updateHeaderWaveform further down) rather than a fixed CSS loop, so
+    // the row ripples and randomly reshapes instead of just pulsing.
     const headerWaveform = document.getElementById('headerWaveform');
+    let waveBars = [];
     if (headerWaveform) {
         const barCount = 56;
         for (let i = 0; i < barCount; i++) {
             const bar = document.createElement('span');
             bar.className = 'wave-bar';
-            bar.style.animationDelay = (Math.random() * 0.4).toFixed(2) + 's';
-            bar.style.animationDuration = (0.25 + Math.random() * 0.35).toFixed(2) + 's';
             headerWaveform.appendChild(bar);
         }
+        waveBars = Array.from(headerWaveform.children);
     }
     if (acidLogo && acidClickTarget) {
         acidClickTarget.addEventListener('click', () => {
@@ -1514,6 +1510,7 @@
     let acidBackgroundActive = false;
     let acidClock = 0;
     let bgHueClock = 0;
+    let waveClock = 0;
     const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal'];
     let bgModeIndex = Math.floor(Math.random() * bgModes.length);
     let bgMode = bgModes[bgModeIndex];
@@ -2417,6 +2414,20 @@
             + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)})`;
     }
 
+    function updateHeaderWaveform(t) {
+        if (!acidBackgroundActive || waveBars.length === 0) return;
+        // A traveling sine (phase offset per bar) gives the row an actual
+        // wave shape rippling across it; an acidWave noise term per bar on
+        // top makes that shape randomly reform instead of repeating the
+        // same ripple every cycle.
+        for (let i = 0; i < waveBars.length; i++) {
+            const travel = Math.sin(t * 2.4 + i * 0.28) * 9;
+            const noise = acidWave(t * 1.6 + i * 0.5, 800 + i * 3) * 9;
+            const h = Math.max(3, 15 + travel + noise);
+            waveBars[i].style.height = h.toFixed(1) + 'px';
+        }
+    }
+
     function animate() {
         // Poll the real scroll position fresh every frame — see
         // updateScrollFactor() above for why this replaced a 'scroll'
@@ -2437,6 +2448,8 @@
         updateAcidLogoStyles(acidClock);
         bgHueClock += acidBackgroundActive ? 0.06 : 0;
         updateAcidBackgroundFilter(bgHueClock);
+        waveClock += acidBackgroundActive ? 0.09 : 0;
+        updateHeaderWaveform(waveClock);
         // Ease scrollFactor toward its target instead of snapping to it.
         // Several draw functions do Math.floor(scrollFactor * N) to pick
         // ring/branch/side counts, so a big scroll delta (momentum/fling
