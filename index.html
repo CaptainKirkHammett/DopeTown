@@ -2309,15 +2309,16 @@
 
     function updateAcidBackgroundFilter(t) {
         if (!acidBackgroundActive) return;
-        // Steady hue drift (guarantees a slow full sweep through the color
-        // wheel rather than a short loop) plus two unrelated-frequency
-        // wobbles layered on top, so the path is unpredictable and lands
-        // on non-primary hues (oranges, teals, limes, purples) instead of
-        // oscillating cleanly between red and blue.
-        const hue = t * 47 + acidWave(t, 601) * 130 + acidWave(t * 0.23, 611) * 70;
-        const sat = 3.5 + acidWave(t * 0.6, 621) * 1.3;
-        const con = 1.35 + acidWave(t * 0.5, 631) * 0.25;
-        const bri = 1.4 + acidWave(t * 0.4, 641) * 0.3;
+        // Bounded noise wobble (no steady drift) around a -20deg center,
+        // which nudges the site's existing pink/green/blue neon palette
+        // toward violet, neon green and turquoise instead of sweeping
+        // through the full wheel into red/orange/yellow territory. Lower
+        // saturate/contrast/brightness peaks read as a colored tint over
+        // the drawing rather than a blown-out primary-color wash.
+        const hue = -20 + acidWave(t, 601) * 35 + acidWave(t * 0.31, 611) * 10;
+        const sat = 2.0 + acidWave(t * 0.6, 621) * 0.6;
+        const con = 1.15 + acidWave(t * 0.5, 631) * 0.15;
+        const bri = 1.15 + acidWave(t * 0.4, 641) * 0.15;
         canvas.style.filter = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(2)}) `
             + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)})`;
     }
