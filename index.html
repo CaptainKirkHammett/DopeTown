@@ -920,9 +920,16 @@
 
         /* Acid-trip mode: individual marquee characters randomly mirrored
            horizontally or vertically (see acidMirrorMarquee in the main
-           script, which picks ~35% of characters each time it's toggled). */
+           script, which picks ~35% of characters each time it's toggled).
+           letter-spacing renders as trailing space INSIDE each character's
+           box, so mirroring the box also flips that gap to the front —
+           the glyph reads as shifted/off-center against its neighbors.
+           Cancel the inherited letter-spacing and re-add the same gap as
+           a margin instead, which sits outside the box transform touches. */
         .marquee .mchar {
             display: inline-block;
+            letter-spacing: normal;
+            margin-right: 0.3em;
         }
         .marquee .mchar.mirror-h { transform: scaleX(-1); }
         .marquee .mchar.mirror-v { transform: scaleY(-1); }
