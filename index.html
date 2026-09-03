@@ -736,7 +736,7 @@
 
         .marquee {
             display: inline-block;
-            animation: marqueeScroll 30s linear infinite;
+            animation: marqueeScroll 16s linear infinite;
             font-family: 'Orbitron', sans-serif;
             font-size: 0.8rem;
             letter-spacing: 0.3em;
@@ -969,38 +969,7 @@
 
 <!-- Scrolling marquee -->
 <div class="marquee-wrap">
-    <div class="marquee">
-        <span class="pink">Suomisaundi</span>
-        <span class="green">Dope Science</span>
-        <span class="blue">Psytrance</span>
-        <span class="orange">Kirna</span>
-        <span class="yellow">Sonic Bandits</span>
-        <span class="pink">Kyril &amp; Eskobar</span>
-        <span class="green">02780</span>
-        <span class="blue">IDM</span>
-        <span class="orange">Goatrance</span>
-        <span class="yellow">Suomi</span>
-        <span class="pink">Suomisoundi</span>
-        <span class="green">Psychedelic</span>
-        <span class="blue">Freeform</span>
-        <span class="orange">Espoo</span>
-        <span class="yellow">Finland</span>
-        <span class="pink">Suomisaundi</span>
-        <span class="green">Dope Science</span>
-        <span class="blue">Psytrance</span>
-        <span class="orange">Kirna</span>
-        <span class="yellow">Sonic Bandits</span>
-        <span class="pink">Kyril &amp; Eskobar</span>
-        <span class="green">02780</span>
-        <span class="blue">IDM</span>
-        <span class="orange">Goatrance</span>
-        <span class="yellow">Suomi</span>
-        <span class="pink">Suomisoundi</span>
-        <span class="green">Psychedelic</span>
-        <span class="blue">Freeform</span>
-        <span class="orange">Espoo</span>
-        <span class="yellow">Finland</span>
-    </div>
+    <div class="marquee" id="marqueeTop"></div>
 </div>
 
 <!-- Social icons + toggle -->
@@ -1219,38 +1188,7 @@
 
 <!-- Bottom marquee -->
 <div class="marquee-wrap">
-    <div class="marquee">
-        <span class="green">Dope Science</span>
-        <span class="pink">Suomisaundi</span>
-        <span class="blue">Psytrance</span>
-        <span class="yellow">Goa</span>
-        <span class="orange">Freeform</span>
-        <span class="pink">02780</span>
-        <span class="green">IDM</span>
-        <span class="blue">Goatrance</span>
-        <span class="yellow">Suomi</span>
-        <span class="orange">Suomisoundi</span>
-        <span class="pink">Psychedelic</span>
-        <span class="green">Acid</span>
-        <span class="blue">Full On</span>
-        <span class="yellow">Techno</span>
-        <span class="orange">Experimental</span>
-        <span class="green">Dope Science</span>
-        <span class="pink">Suomisaundi</span>
-        <span class="blue">Psytrance</span>
-        <span class="yellow">Goa</span>
-        <span class="orange">Freeform</span>
-        <span class="pink">02780</span>
-        <span class="green">IDM</span>
-        <span class="blue">Goatrance</span>
-        <span class="yellow">Suomi</span>
-        <span class="orange">Suomisoundi</span>
-        <span class="pink">Psychedelic</span>
-        <span class="green">Acid</span>
-        <span class="blue">Full On</span>
-        <span class="yellow">Techno</span>
-        <span class="orange">Experimental</span>
-    </div>
+    <div class="marquee" id="marqueeBottom"></div>
 </div>
 
 <!-- Visitor Counter -->
@@ -1266,6 +1204,40 @@
 </footer>
 
 <script>
+    // Marquee keywords, shuffled into a random order per bar
+    const marqueeKeywords = [
+        'Suomisaundi', 'Dope Science', 'Psytrance', 'Kirna', 'Sonic Bandits',
+        'Kyril & Eskobar', '02780', 'IDM', 'Goatrance', 'Suomi', 'Suomisoundi',
+        'Psychedelic', 'Freeform', 'Espoo', 'Finland', 'Goa', 'Acid', 'Full On',
+        'Techno', 'Experimental', 'Kökkeli', 'Psyfunk', 'Trance',
+        'Untelligent Dance Music', 'Suolisaundi', 'Helsinki', 'Leppävaara',
+        'Itä-Pasila', 'Kivihaka', 'Spugedelic', 'Neo-folk', 'Rap', 'Eurodace'
+    ];
+    const marqueeColors = ['pink', 'green', 'blue', 'orange', 'yellow'];
+
+    function shuffled(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function populateMarquee(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const order = shuffled(marqueeKeywords);
+        const spansHtml = order.map((word, i) =>
+            `<span class="${marqueeColors[i % marqueeColors.length]}">${word}</span>`
+        ).join('');
+        // Duplicated once for a seamless CSS scroll loop
+        el.innerHTML = spansHtml + spansHtml;
+    }
+
+    populateMarquee('marqueeTop');
+    populateMarquee('marqueeBottom');
+
     // Generate floating particles
     const particlesContainer = document.getElementById('particles');
     const colors = ['#ff00ff', '#39ff14', '#00f0ff', '#ff6600', '#ffff00'];
