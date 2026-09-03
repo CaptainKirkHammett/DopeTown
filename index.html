@@ -1896,32 +1896,75 @@
             const breathe = 1 + Math.sin(time * breatheSpeed + m * 0.8) * 0.18;
             const capW = (32 + m * 5 + sf * 20) * breathe;
             const capH = (20 + sf * 10) * breathe;
-            const stemH = (28 + sf * 18) * (1 + Math.sin(time * breatheSpeed + m * 0.8) * 0.08);
+            const stemH = (30 + sf * 18) * (1 + Math.sin(time * breatheSpeed + m * 0.8) * 0.08);
             const hue = (300 + m * 20 + time * 12 + sf * 80) % 360;
-            // Stem
+            const stemTopW = 3.5 + sf * 1.5;
+            const stemBaseW = 7 + sf * 3;
+
+            // Stem (bulbous base, tapered neck — a real stipe, not a pole)
             ctx.beginPath();
-            ctx.moveTo(mx - 3 - sf * 2, my);
-            ctx.lineTo(mx - 2, my + stemH);
-            ctx.lineTo(mx + 2, my + stemH);
-            ctx.lineTo(mx + 3 + sf * 2, my);
-            ctx.fillStyle = `hsla(40, 30%, 60%, 0.06)`;
+            ctx.moveTo(mx - stemTopW, my);
+            ctx.quadraticCurveTo(mx - stemBaseW * 1.15, my + stemH * 0.6, mx - stemBaseW, my + stemH);
+            ctx.lineTo(mx + stemBaseW, my + stemH);
+            ctx.quadraticCurveTo(mx + stemBaseW * 1.15, my + stemH * 0.6, mx + stemTopW, my);
+            ctx.closePath();
+            ctx.fillStyle = `hsla(40, 25%, 75%, 0.09)`;
             ctx.fill();
-            // Cap
+            ctx.strokeStyle = `hsla(40, 30%, 80%, 0.09)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Ring / skirt around the stem
+            ctx.beginPath();
+            ctx.ellipse(mx, my + stemH * 0.32, stemBaseW * 0.85, 2 + sf * 0.5, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = `hsla(40, 30%, 85%, 0.1)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Gills on the underside of the cap
+            const gillCount = 9;
+            for (let g = 0; g <= gillCount; g++) {
+                const gt = g / gillCount;
+                const gx = mx + (gt * 2 - 1) * capW * 0.85;
+                const gillLen = capH * 0.35 * (1 - Math.abs(gt * 2 - 1) * 0.5);
+                ctx.beginPath();
+                ctx.moveTo(mx, my + 2);
+                ctx.lineTo(gx, my + gillLen);
+                ctx.strokeStyle = `hsla(30, 30%, 40%, 0.07)`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Cap (domed, shaded)
             ctx.beginPath();
             ctx.ellipse(mx, my, capW, capH, 0, Math.PI, 0);
-            ctx.fillStyle = `hsla(${hue}, 70%, 45%, 0.08)`;
+            const capGrad = ctx.createRadialGradient(mx - capW * 0.25, my - capH * 0.7, 2, mx, my - capH * 0.3, capW);
+            capGrad.addColorStop(0, `hsla(${hue}, 75%, 62%, 0.15)`);
+            capGrad.addColorStop(1, `hsla(${hue}, 70%, 38%, 0.08)`);
+            ctx.fillStyle = capGrad;
             ctx.fill();
-            ctx.strokeStyle = `hsla(${hue}, 70%, 55%, 0.1)`;
+            ctx.strokeStyle = `hsla(${hue}, 70%, 55%, 0.12)`;
             ctx.lineWidth = 1.5;
             ctx.stroke();
-            // Spots
-            for (let s = 0; s < 3; s++) {
-                const spotAngle = (s / 3) * Math.PI + 0.3;
-                const spotX = mx + Math.cos(spotAngle) * capW * 0.5;
-                const spotY = my - Math.sin(spotAngle) * capH * 0.5;
+
+            // Cap rim (the lip where the cap meets the gills)
+            ctx.beginPath();
+            ctx.ellipse(mx, my, capW, capH * 0.22, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = `hsla(${hue}, 60%, 70%, 0.1)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Spots, scattered irregularly like a fly agaric
+            const spotCount = 4 + Math.floor(labRand(m * 11.3) * 3);
+            for (let s = 0; s < spotCount; s++) {
+                const spotAngle = (s / spotCount) * Math.PI + 0.2 + labRand(m * 13 + s) * 0.4;
+                const spotDist = 0.3 + labRand(m * 17 + s) * 0.55;
+                const spotX = mx + Math.cos(spotAngle) * capW * spotDist;
+                const spotY = my - Math.sin(spotAngle) * capH * spotDist;
+                const spotSize = 1.5 + labRand(m * 19 + s) * 2 + sf;
                 ctx.beginPath();
-                ctx.arc(spotX, spotY, 2 + sf, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(60, 60%, 75%, 0.08)`;
+                ctx.arc(spotX, spotY, spotSize, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(50, 70%, 85%, 0.09)`;
                 ctx.fill();
             }
         }
