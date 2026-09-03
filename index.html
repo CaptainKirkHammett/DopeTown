@@ -2309,16 +2309,18 @@
 
     function updateAcidBackgroundFilter(t) {
         if (!acidBackgroundActive) return;
-        // Bounded noise wobble (no steady drift) around a -20deg center,
-        // which nudges the site's existing pink/green/blue neon palette
-        // toward violet, neon green and turquoise instead of sweeping
-        // through the full wheel into red/orange/yellow territory. Lower
-        // saturate/contrast/brightness peaks read as a colored tint over
-        // the drawing rather than a blown-out primary-color wash.
-        const hue = -20 + acidWave(t, 601) * 35 + acidWave(t * 0.31, 611) * 10;
-        const sat = 2.0 + acidWave(t * 0.6, 621) * 0.6;
-        const con = 1.15 + acidWave(t * 0.5, 631) * 0.15;
-        const bri = 1.15 + acidWave(t * 0.4, 641) * 0.15;
+        // A real sine (not the multi-term acidWave sum used elsewhere) so
+        // the hue actually reaches its full excursion every cycle instead
+        // of clustering near the middle — acidWave's several frequencies
+        // rarely line up, so it read as "barely moves off center, always
+        // dark blue/violet". A small acidWave wobble on top keeps it from
+        // feeling like a metronome. Center -15deg with a wide swing nudges
+        // the site's pink/green/blue neon palette between violet, neon
+        // green and turquoise rather than a full red/orange/yellow sweep.
+        const hue = -15 + Math.sin(t * 0.8) * 60 + acidWave(t * 1.7, 611) * 15;
+        const sat = 2.4 + acidWave(t * 0.6, 621) * 0.9;
+        const con = 1.2 + acidWave(t * 0.5, 631) * 0.2;
+        const bri = 1.25 + acidWave(t * 0.4, 641) * 0.2;
         canvas.style.filter = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(2)}) `
             + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)})`;
     }
