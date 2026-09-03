@@ -43,6 +43,20 @@
             pointer-events: none;
         }
 
+        /* Extra background wildness while acid-trip mode is engaged — a
+           cheap hue-rotate/saturate cycle on top of the already-boosted
+           canvas drawing (see animate() in the script). No blur/turbulence
+           here, this runs over the full viewport so it has to stay light. */
+        body.acid-bg #psychCanvas {
+            animation: acidBgHue 3s linear infinite;
+        }
+
+        @keyframes acidBgHue {
+            0%   { filter: hue-rotate(0deg) saturate(1.8) contrast(1.15); }
+            50%  { filter: hue-rotate(180deg) saturate(2.2) contrast(1.25); }
+            100% { filter: hue-rotate(360deg) saturate(1.8) contrast(1.15); }
+        }
+
         /* Scrolling grid overlay */
         body::after {
             content: '';
@@ -1341,6 +1355,10 @@
         acidClickTarget.addEventListener('click', () => {
             const nowActive = !acidLogo.classList.contains('acid-trip');
             acidLayers.forEach(el => el.classList.toggle('acid-trip', nowActive));
+            // Also crank up the psychedelic canvas background — see the
+            // background animation system further down for how this is used.
+            acidBackgroundActive = nowActive;
+            document.body.classList.toggle('acid-bg', nowActive);
         });
     }
 
@@ -1417,6 +1435,8 @@
     const ctx = canvas.getContext('2d');
     let time = 0;
     let scrollFactor = 0;
+    let rawScrollFactor = 0;
+    let acidBackgroundActive = false;
     const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal'];
     let bgModeIndex = Math.floor(Math.random() * bgModes.length);
     let bgMode = bgModes[bgModeIndex];
@@ -1429,11 +1449,11 @@
     window.addEventListener('resize', resizeCanvas);
 
     // Track scroll for morphing + logo fade
-    const logo = document.querySelector('.logo');
+    const logo = document.getElementById('logoMain');
     window.addEventListener('scroll', () => {
         const scrollY = window.scrollY;
         const maxScroll = document.body.scrollHeight - window.innerHeight;
-        scrollFactor = maxScroll > 0 ? scrollY / maxScroll : 0;
+        rawScrollFactor = maxScroll > 0 ? scrollY / maxScroll : 0;
         const halfPage = document.body.scrollHeight / 2;
         logo.style.opacity = Math.max(0, 1 - (scrollY / halfPage));
     });
@@ -2239,7 +2259,12 @@
     };
 
     function animate() {
-        time += 0.008;
+        // Acid-trip mode also cranks up the background: faster motion and
+        // a higher effective "scroll intensity" for every mode, reusing
+        // the scrollFactor scaling each draw function already has — no
+        // extra rendering cost, just wilder numbers fed into it.
+        time += acidBackgroundActive ? 0.022 : 0.008;
+        scrollFactor = acidBackgroundActive ? Math.min(1, rawScrollFactor + 0.55) : rawScrollFactor;
         const clearAlpha = bgMode === 'laboratory' ? 0.6 : 0.15;
         ctx.fillStyle = `rgba(26, 0, 51, ${clearAlpha})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
