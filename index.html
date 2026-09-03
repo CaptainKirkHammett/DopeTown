@@ -2256,7 +2256,10 @@
 
         layers.forEach(({ el, lag }) => {
             const lt = t - lag + acidSeed;
-            const hue = 180 + acidWave(lt, 1) * 200;
+            // A steady continuous rotation (like the old rainbow-cycling
+            // keyframes) plus an organic wobble on top — pure noise alone
+            // moved too slowly/narrowly to read as a real hue shift.
+            const hue = lt * 80 + acidWave(lt, 1) * 35;
             const sat = isMobile ? 4.6 + acidWave(lt, 11) * 1.2 : 5 + acidWave(lt, 11) * 1.4;
             const con = isMobile ? 1.75 + acidWave(lt, 21) * 0.35 : 1.9 + acidWave(lt, 21) * 0.45;
             const bri = 1.2 + acidWave(lt, 31) * 0.18;
