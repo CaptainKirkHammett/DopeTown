@@ -1844,13 +1844,13 @@
                 ctx.stroke();
                 // Atom
                 ctx.beginPath();
-                ctx.arc(ax, ay, 5 + sf * 3, 0, Math.PI * 2);
+                ctx.arc(ax, ay, (5 + sf * 3) * 3, 0, Math.PI * 2);
                 ctx.fillStyle = `hsla(${(hue + 60) % 360}, 70%, 55%, 0.1)`;
                 ctx.fill();
             }
             // Central atom
             ctx.beginPath();
-            ctx.arc(mx, my, 7 + sf * 4, 0, Math.PI * 2);
+            ctx.arc(mx, my, (7 + sf * 4) * 3, 0, Math.PI * 2);
             ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.12)`;
             ctx.fill();
             // Electron orbits
