@@ -731,16 +731,17 @@
             100% { background-position: 200% 0%; }
         }
 
-        /* The header divider (the thin line behind the logo) turns into a
-           jittery audio waveform while acid-trip mode is on: hide its
-           plain gradient line and reveal a row of bars bouncing to their
-           own randomized CSS animation. */
-        body.acid-bg #headerDivider {
+        /* Every thin section-divider line turns into a jittery audio
+           waveform while acid-trip mode is on: hide its plain gradient
+           line and reveal a row of bars bouncing to their own randomized
+           CSS animation (waveform spans are injected into each .divider
+           by JS — see the divider-waveform setup in the main script). */
+        body.acid-bg .divider {
             background: none;
             animation: none;
         }
 
-        #headerWaveform {
+        .divider .waveform {
             display: none;
             position: absolute;
             top: 50%; left: 50%;
@@ -754,7 +755,7 @@
             pointer-events: none;
         }
 
-        body.acid-bg #headerWaveform {
+        body.acid-bg .divider .waveform {
             display: flex;
         }
 
@@ -1244,9 +1245,7 @@
      captures the tap instead. -->
 <div class="logo-click-target" id="logoClickTarget" aria-hidden="true"></div>
 
-<div class="divider" id="headerDivider">
-    <span class="waveform" id="headerWaveform"></span>
-</div>
+<div class="divider" id="headerDivider"></div>
 
 <!-- BANDCAMP + SPOTIFY SIDE BY SIDE -->
 <section class="section">
@@ -1469,23 +1468,26 @@
     const headerDivider = document.getElementById('headerDivider');
     let marqueeMirrorInterval = null;
 
-    // Build the header divider's waveform bars once. Hidden via CSS until
-    // acid-trip mode is on; each bar's own randomized animation timing
-    // makes the row bounce like a real audio waveform instead of a
-    // uniform pulse.
-    const headerWaveform = document.getElementById('headerWaveform');
-    let waveBars = [];
-    if (headerWaveform) {
+    // Build waveform bars for every thin section-divider line (not just
+    // the one behind the logo). Hidden via CSS until acid-trip mode is on;
+    // each bar's own randomized animation timing makes the row bounce like
+    // a real audio waveform instead of a uniform pulse. Each divider gets
+    // its own bar set plus a phase offset so they don't all ripple in
+    // perfect lockstep — see updateDividerWaveforms further down.
+    const dividerWaveforms = Array.from(document.querySelectorAll('.divider')).map((divider, i) => {
+        const waveform = document.createElement('span');
+        waveform.className = 'waveform';
         const barCount = 56;
-        for (let i = 0; i < barCount; i++) {
+        for (let b = 0; b < barCount; b++) {
             const bar = document.createElement('span');
             bar.className = 'wave-bar';
             bar.style.animationDelay = (Math.random() * 0.4).toFixed(2) + 's';
             bar.style.animationDuration = (0.25 + Math.random() * 0.35).toFixed(2) + 's';
-            headerWaveform.appendChild(bar);
+            waveform.appendChild(bar);
         }
-        waveBars = Array.from(headerWaveform.children);
-    }
+        divider.appendChild(waveform);
+        return { bars: Array.from(waveform.children), phase: i * 1.7 };
+    });
     if (acidLogo && acidClickTarget) {
         acidClickTarget.addEventListener('click', () => {
             const nowActive = !acidLogo.classList.contains('acid-trip');
@@ -2579,17 +2581,20 @@
             + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)})`;
     }
 
-    function updateHeaderWaveformLine(t) {
-        if (!acidBackgroundActive || waveBars.length === 0) return;
+    function updateDividerWaveforms(t) {
+        if (!acidBackgroundActive) return;
         // Each bar still pulses its own height via the waveBounce CSS
         // animation — this only nudges every bar up/down with a traveling
-        // sine (phase offset by position), so the row of bars looks like
-        // it's sitting on a horizontal line that's gently waving instead
-        // of a flat baseline.
-        for (let i = 0; i < waveBars.length; i++) {
-            const y = Math.sin(t + i * 0.35) * 7;
-            waveBars[i].style.transform = `translateY(${y.toFixed(1)}px)`;
-        }
+        // sine (phase offset by position, plus a per-divider phase so the
+        // separate dividers don't all ripple in lockstep), so each row of
+        // bars looks like it's sitting on a horizontal line that's gently
+        // waving instead of a flat baseline.
+        dividerWaveforms.forEach(({ bars, phase }) => {
+            for (let i = 0; i < bars.length; i++) {
+                const y = Math.sin(t + phase + i * 0.35) * 7;
+                bars[i].style.transform = `translateY(${y.toFixed(1)}px)`;
+            }
+        });
     }
 
     function animate() {
@@ -2613,7 +2618,7 @@
         bgHueClock += acidBackgroundActive ? 0.06 : 0;
         updateAcidBackgroundFilter(bgHueClock);
         waveLineClock += acidBackgroundActive ? 0.05 : 0;
-        updateHeaderWaveformLine(waveLineClock);
+        updateDividerWaveforms(waveLineClock);
         // Ease scrollFactor toward its target instead of snapping to it.
         // Several draw functions do Math.floor(scrollFactor * N) to pick
         // ring/branch/side counts, so a big scroll delta (momentum/fling
