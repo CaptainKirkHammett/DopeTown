@@ -1400,22 +1400,7 @@
     const acidClickTarget = document.getElementById('logoClickTarget');
     let acidSeed = 0;
 
-    // The click target is forced to a 1:1 square to match the logo PNG's
-    // own canvas, but on narrower viewports that square is taller than
-    // the header's real content height and its bottom edge reaches down
-    // over the section title below — silently stealing clicks meant for
-    // that title even though the title renders visually on top. Cap the
-    // square's height so it never extends past where the header divider
-    // (and the title after it) begins.
-    function sizeLogoClickTarget() {
-        const headerDivider = document.getElementById('headerDivider');
-        if (!acidClickTarget || !headerDivider) return;
-        const margin = 16;
-        const maxHeight = Math.max(40, headerDivider.offsetTop - margin);
-        acidClickTarget.style.maxHeight = maxHeight + 'px';
-    }
-    sizeLogoClickTarget();
-    window.addEventListener('resize', sizeLogoClickTarget);
+    const headerDivider = document.getElementById('headerDivider');
     let marqueeMirrorInterval = null;
 
     // Build the header divider's waveform bars once. Hidden via CSS until
@@ -1625,6 +1610,20 @@
         // the top, so gate it on a small fixed scroll distance instead.
         if (acidClickTarget) {
             acidClickTarget.style.pointerEvents = scrollY < 120 ? 'auto' : 'none';
+            // The click target is forced to a 1:1 square to match the logo
+            // PNG's own canvas, but that square can be taller than the
+            // header's real content, reaching down over the section title
+            // below it and stealing clicks meant for that title even
+            // though the title renders visually on top. Measured live via
+            // getBoundingClientRect every frame (rather than once on load
+            // or resize) so it stays correct through web-font swaps and
+            // any other late layout shift near the top of the page.
+            if (headerDivider) {
+                const ctTop = acidClickTarget.getBoundingClientRect().top;
+                const dividerTop = headerDivider.getBoundingClientRect().top;
+                const maxHeight = Math.max(40, dividerTop - ctTop - 16);
+                acidClickTarget.style.maxHeight = maxHeight + 'px';
+            }
         }
     }
 
