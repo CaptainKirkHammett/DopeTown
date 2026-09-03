@@ -1399,6 +1399,23 @@
     const acidLayers = document.querySelectorAll('.logo');
     const acidClickTarget = document.getElementById('logoClickTarget');
     let acidSeed = 0;
+
+    // The click target is forced to a 1:1 square to match the logo PNG's
+    // own canvas, but on narrower viewports that square is taller than
+    // the header's real content height and its bottom edge reaches down
+    // over the section title below — silently stealing clicks meant for
+    // that title even though the title renders visually on top. Cap the
+    // square's height so it never extends past where the header divider
+    // (and the title after it) begins.
+    function sizeLogoClickTarget() {
+        const headerDivider = document.getElementById('headerDivider');
+        if (!acidClickTarget || !headerDivider) return;
+        const margin = 16;
+        const maxHeight = Math.max(40, headerDivider.offsetTop - margin);
+        acidClickTarget.style.maxHeight = maxHeight + 'px';
+    }
+    sizeLogoClickTarget();
+    window.addEventListener('resize', sizeLogoClickTarget);
     let marqueeMirrorInterval = null;
 
     // Build the header divider's waveform bars once. Hidden via CSS until
@@ -1597,7 +1614,15 @@
         const maxScroll = document.body.scrollHeight - window.innerHeight;
         rawScrollFactor = maxScroll > 0 ? scrollY / maxScroll : 0;
         const halfPage = document.body.scrollHeight / 2;
-        logo.style.opacity = Math.max(0, 1 - (scrollY / halfPage));
+        const logoOpacity = Math.max(0, 1 - (scrollY / halfPage));
+        logo.style.opacity = logoOpacity;
+        // The click target is a fixed-position overlay sitting above
+        // whatever has scrolled into that screen region, so once the logo
+        // has faded out it needs to stop intercepting clicks too — else it
+        // silently blocks content that's since scrolled in underneath it.
+        if (acidClickTarget) {
+            acidClickTarget.style.pointerEvents = logoOpacity > 0.05 ? 'auto' : 'none';
+        }
     }
 
     // Toggle button
