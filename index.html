@@ -853,6 +853,8 @@
             a.artist-title-link::after {
                 content: ' \276E';
                 position: static;
+                left: auto;
+                transform: none;
                 width: auto;
                 height: auto;
                 background: none;
@@ -860,6 +862,12 @@
                 display: inline-block;
                 opacity: 1;
                 animation: mobileArrowRight 1.4s ease-in-out infinite;
+            }
+
+            /* The old underline-expand rule still fires on touch long-press;
+               since ::after is now the arrow glyph, force it back to auto. */
+            a.artist-title-link:hover::after {
+                width: auto;
             }
 
             @keyframes mobileArrowLeft {
