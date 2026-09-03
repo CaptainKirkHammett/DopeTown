@@ -1617,11 +1617,14 @@
         const logoOpacity = Math.max(0, 1 - (scrollY / halfPage));
         logo.style.opacity = logoOpacity;
         // The click target is a fixed-position overlay sitting above
-        // whatever has scrolled into that screen region, so once the logo
-        // has faded out it needs to stop intercepting clicks too — else it
-        // silently blocks content that's since scrolled in underneath it.
+        // whatever has scrolled into that screen region. Its own fade
+        // used to follow the logo's (halfPage can be thousands of
+        // pixels on a long page, so it stayed clickable — and blocking —
+        // over content scrolled in far below the header). Acid mode
+        // should only be toggleable while the logo is genuinely up at
+        // the top, so gate it on a small fixed scroll distance instead.
         if (acidClickTarget) {
-            acidClickTarget.style.pointerEvents = logoOpacity > 0.05 ? 'auto' : 'none';
+            acidClickTarget.style.pointerEvents = scrollY < 120 ? 'auto' : 'none';
         }
     }
 
