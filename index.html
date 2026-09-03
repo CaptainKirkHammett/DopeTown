@@ -555,6 +555,39 @@
             box-shadow: 0 10px 40px rgba(255,0,255,0.2);
         }
 
+        /* Fast moving rainbow glow around every content card's edges while
+           acid-trip mode is on. The hover ::before glow sits behind the
+           card and gets clipped by its own overflow:hidden (needed to
+           round off the iframe's square corners), so it barely shows —
+           painting the gradient straight onto the border itself keeps it
+           fully visible while staying inside the box. */
+        body.acid-bg .embed-card {
+            border: 3px solid transparent;
+            background-image:
+                linear-gradient(rgba(10,0,20,0.9), rgba(10,0,20,0.9)),
+                linear-gradient(45deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-orange), var(--neon-pink));
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            background-size: 100% 100%, 300% 300%;
+            animation: borderRainbow 0.8s linear infinite;
+        }
+
+        .spotify-wrapper {
+            position: relative;
+        }
+
+        body.acid-bg .spotify-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -3px; left: -3px; right: -3px; bottom: -3px;
+            border-radius: 14px;
+            background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-orange));
+            background-size: 400% 400%;
+            z-index: -1;
+            filter: blur(4px);
+            animation: borderRainbow 0.8s linear infinite;
+        }
+
         .embed-card iframe {
             width: 100%;
             border: none;
