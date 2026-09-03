@@ -731,6 +731,47 @@
             100% { background-position: 200% 0%; }
         }
 
+        /* The header divider (the thin line behind the logo) turns into a
+           jittery audio waveform while acid-trip mode is on: hide its
+           plain gradient line and reveal a row of bars bouncing to their
+           own randomized CSS animation. */
+        body.acid-bg #headerDivider {
+            background: none;
+            animation: none;
+        }
+
+        #headerWaveform {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            align-items: center;
+            justify-content: space-between;
+            gap: 2px;
+            width: 90%;
+            max-width: 1100px;
+            height: 28px;
+            pointer-events: none;
+        }
+
+        body.acid-bg #headerWaveform {
+            display: flex;
+        }
+
+        .wave-bar {
+            flex: 1 1 auto;
+            max-width: 4px;
+            height: 4px;
+            border-radius: 2px;
+            background: linear-gradient(180deg, var(--neon-pink), var(--neon-blue), var(--neon-green));
+            animation: waveBounce 0.4s ease-in-out infinite;
+        }
+
+        @keyframes waveBounce {
+            0%, 100% { height: 4px; }
+            50% { height: 28px; }
+        }
+
         /* Footer */
         /* LED visitor counter */
         .visitor-counter {
@@ -1148,7 +1189,9 @@
      captures the tap instead. -->
 <div class="logo-click-target" id="logoClickTarget" aria-hidden="true"></div>
 
-<div class="divider"></div>
+<div class="divider" id="headerDivider">
+    <span class="waveform" id="headerWaveform"></span>
+</div>
 
 <!-- BANDCAMP + SPOTIFY SIDE BY SIDE -->
 <section class="section">
@@ -1357,6 +1400,22 @@
     const acidLayers = document.querySelectorAll('.logo');
     const acidClickTarget = document.getElementById('logoClickTarget');
     let acidSeed = 0;
+
+    // Build the header divider's waveform bars once. Hidden via CSS until
+    // acid-trip mode is on; each bar's own randomized animation timing
+    // makes the row bounce like a real audio waveform instead of a
+    // uniform pulse.
+    const headerWaveform = document.getElementById('headerWaveform');
+    if (headerWaveform) {
+        const barCount = 56;
+        for (let i = 0; i < barCount; i++) {
+            const bar = document.createElement('span');
+            bar.className = 'wave-bar';
+            bar.style.animationDelay = (Math.random() * 0.4).toFixed(2) + 's';
+            bar.style.animationDuration = (0.25 + Math.random() * 0.35).toFixed(2) + 's';
+            headerWaveform.appendChild(bar);
+        }
+    }
     if (acidLogo && acidClickTarget) {
         acidClickTarget.addEventListener('click', () => {
             const nowActive = !acidLogo.classList.contains('acid-trip');
