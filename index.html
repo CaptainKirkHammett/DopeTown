@@ -35,6 +35,21 @@
             position: relative;
         }
 
+        /* Visually hidden but still readable by search engines and screen
+           readers — used for the page's real <h1>, since the visible
+           "title" is text baked into the flask PNG logo. */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         /* Psychedelic canvas background */
         #psychCanvas {
             position: fixed;
@@ -1186,6 +1201,8 @@
     </style>
 </head>
 <body>
+
+<h1 class="sr-only">Dope Science — Suomisaundi, Psytrance, Goa, Forest</h1>
 
 <!-- Acid-trip warp filter for the logo, always animating (cheap while unused) -->
 <svg width="0" height="0" style="position:absolute">
