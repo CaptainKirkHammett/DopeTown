@@ -1912,21 +1912,17 @@
                 }
             }
         }
-        // Neuron bodies
+        // Neuron bodies (crisp, no soft glow)
         for (const n of neurons) {
             const pulse = Math.sin(time * 3 + n.x * 0.01) * 0.5 + 0.5;
-            const r = 4 + sf * 3 + pulse * 3;
-            const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 2);
-            grad.addColorStop(0, `hsla(${n.hue}, 80%, 60%, 0.15)`);
-            grad.addColorStop(1, `hsla(${n.hue}, 80%, 60%, 0)`);
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, r * 2, 0, Math.PI * 2);
-            ctx.fillStyle = grad;
-            ctx.fill();
+            const r = (4 + sf * 3 + pulse * 3) * 2;
             ctx.beginPath();
             ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${n.hue}, 80%, 60%, 0.12)`;
+            ctx.fillStyle = `hsla(${n.hue}, 85%, 60%, 0.22)`;
             ctx.fill();
+            ctx.strokeStyle = `hsla(${n.hue}, 95%, 78%, 0.4)`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
         }
     }
 
