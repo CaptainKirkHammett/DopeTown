@@ -1406,6 +1406,7 @@
     // makes the row bounce like a real audio waveform instead of a
     // uniform pulse.
     const headerWaveform = document.getElementById('headerWaveform');
+    let waveBars = [];
     if (headerWaveform) {
         const barCount = 56;
         for (let i = 0; i < barCount; i++) {
@@ -1415,6 +1416,7 @@
             bar.style.animationDuration = (0.25 + Math.random() * 0.35).toFixed(2) + 's';
             headerWaveform.appendChild(bar);
         }
+        waveBars = Array.from(headerWaveform.children);
     }
     if (acidLogo && acidClickTarget) {
         acidClickTarget.addEventListener('click', () => {
@@ -1514,6 +1516,7 @@
     let acidBackgroundActive = false;
     let acidClock = 0;
     let bgHueClock = 0;
+    let waveLineClock = 0;
     const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal'];
     let bgModeIndex = Math.floor(Math.random() * bgModes.length);
     let bgMode = bgModes[bgModeIndex];
@@ -2417,6 +2420,19 @@
             + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)})`;
     }
 
+    function updateHeaderWaveformLine(t) {
+        if (!acidBackgroundActive || waveBars.length === 0) return;
+        // Each bar still pulses its own height via the waveBounce CSS
+        // animation — this only nudges every bar up/down with a traveling
+        // sine (phase offset by position), so the row of bars looks like
+        // it's sitting on a horizontal line that's gently waving instead
+        // of a flat baseline.
+        for (let i = 0; i < waveBars.length; i++) {
+            const y = Math.sin(t + i * 0.35) * 7;
+            waveBars[i].style.transform = `translateY(${y.toFixed(1)}px)`;
+        }
+    }
+
     function animate() {
         // Poll the real scroll position fresh every frame — see
         // updateScrollFactor() above for why this replaced a 'scroll'
@@ -2437,6 +2453,8 @@
         updateAcidLogoStyles(acidClock);
         bgHueClock += acidBackgroundActive ? 0.06 : 0;
         updateAcidBackgroundFilter(bgHueClock);
+        waveLineClock += acidBackgroundActive ? 0.05 : 0;
+        updateHeaderWaveformLine(waveLineClock);
         // Ease scrollFactor toward its target instead of snapping to it.
         // Several draw functions do Math.floor(scrollFactor * N) to pick
         // ring/branch/side counts, so a big scroll delta (momentum/fling
