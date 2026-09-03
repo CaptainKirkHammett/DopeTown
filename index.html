@@ -161,10 +161,13 @@
         }
 
         @keyframes floatParticle {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            /* dvh here too — plain vh would let each particle's start/end
+               point shift when the mobile browser chrome hides/shows
+               mid-animation, same jump as the fixed overlays. */
+            0% { transform: translateY(100dvh) rotate(0deg); opacity: 0; }
             10% { opacity: 0.6; }
             90% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+            100% { transform: translateY(-10dvh) rotate(720deg); opacity: 0; }
         }
 
         /* Header */
