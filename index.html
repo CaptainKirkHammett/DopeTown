@@ -1448,15 +1448,20 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Track scroll for morphing + logo fade
+    // Track scroll for morphing + logo fade. Read window.scrollY fresh every
+    // animation frame (in animate(), below) instead of relying on the
+    // browser's 'scroll' event — that event fires sparsely/in bursts during
+    // momentum/fling scrolling, so rawScrollFactor could arrive stale and
+    // jump in big steps. Polling every frame guarantees it always reflects
+    // the true current scroll position.
     const logo = document.getElementById('logoMain');
-    window.addEventListener('scroll', () => {
+    function updateScrollFactor() {
         const scrollY = window.scrollY;
         const maxScroll = document.body.scrollHeight - window.innerHeight;
         rawScrollFactor = maxScroll > 0 ? scrollY / maxScroll : 0;
         const halfPage = document.body.scrollHeight / 2;
         logo.style.opacity = Math.max(0, 1 - (scrollY / halfPage));
-    });
+    }
 
     // Toggle button
     document.getElementById('bgToggle').addEventListener('click', () => {
@@ -2259,6 +2264,10 @@
     };
 
     function animate() {
+        // Poll the real scroll position fresh every frame — see
+        // updateScrollFactor() above for why this replaced a 'scroll'
+        // event listener.
+        updateScrollFactor();
         // Acid-trip mode also cranks up the background: faster motion and
         // a higher effective "scroll intensity" for every mode, reusing
         // the scrollFactor scaling each draw function already has — no
@@ -2271,7 +2280,7 @@
         // counts jump by whole integers instantly. Interpolating here
         // spreads that change smoothly across frames instead.
         const targetScrollFactor = acidBackgroundActive ? Math.min(1, rawScrollFactor + 0.55) : rawScrollFactor;
-        scrollFactor += (targetScrollFactor - scrollFactor) * 0.08;
+        scrollFactor += (targetScrollFactor - scrollFactor) * 0.05;
         const clearAlpha = bgMode === 'laboratory' ? 0.6 : 0.15;
         ctx.fillStyle = `rgba(26, 0, 51, ${clearAlpha})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
