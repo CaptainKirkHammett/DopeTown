@@ -820,6 +820,54 @@
                 padding-bottom: 0.6rem;
             }
 
+            /* Hover tooltips don't work on touch — replace with pointing arrows */
+            .tooltip-wrap .tooltip {
+                display: none;
+            }
+
+            a.section-title-link::before {
+                content: '\276F ';
+                opacity: 1;
+                display: inline-block;
+                animation: mobileArrowLeft 1.4s ease-in-out infinite;
+            }
+
+            a.section-title-link span::after {
+                content: ' \276E';
+                opacity: 1;
+                display: inline-block;
+                animation: mobileArrowRight 1.4s ease-in-out infinite;
+            }
+
+            a.artist-title-link::before {
+                content: '\276F ';
+                opacity: 1;
+                display: inline-block;
+                animation: mobileArrowLeft 1.4s ease-in-out infinite;
+            }
+
+            a.artist-title-link::after {
+                content: ' \276E';
+                position: static;
+                width: auto;
+                height: auto;
+                background: none;
+                box-shadow: none;
+                display: inline-block;
+                opacity: 1;
+                animation: mobileArrowRight 1.4s ease-in-out infinite;
+            }
+
+            @keyframes mobileArrowLeft {
+                0%, 100% { transform: translateX(0); }
+                50% { transform: translateX(-3px); }
+            }
+
+            @keyframes mobileArrowRight {
+                0%, 100% { transform: translateX(0); }
+                50% { transform: translateX(3px); }
+            }
+
             .music-row,
             .soundcloud-row {
                 gap: 1.25rem;
