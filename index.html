@@ -1977,15 +1977,21 @@
     // === MODE 12: Crystal ===
     function drawCrystal() {
         const cx = canvas.width / 2, cy = canvas.height / 2, sf = scrollFactor;
-        // Crystal formations
+        // Crystal formations, each drifting and spinning at its own speed
         for (let c = 0; c < 8; c++) {
-            const baseX = (Math.sin(c * 47.3) * 0.4 + 0.5) * canvas.width;
-            const baseY = (Math.cos(c * 83.1) * 0.4 + 0.5) * canvas.height;
+            const driftSpeed = 0.12 + labRand(c * 5.5) * 0.3;
+            const driftAmpX = 40 + labRand(c * 2.7) * 60;
+            const driftAmpY = 40 + labRand(c * 4.1) * 60;
+            const rotSpeed = 0.25 + labRand(c * 6.9) * 0.7;
+            const pulseSpeed = 0.8 + labRand(c * 8.3) * 1.4;
+            const baseX = (Math.sin(c * 47.3) * 0.4 + 0.5) * canvas.width + Math.sin(time * driftSpeed + c) * driftAmpX;
+            const baseY = (Math.cos(c * 83.1) * 0.4 + 0.5) * canvas.height + Math.cos(time * driftSpeed * 0.8 + c) * driftAmpY;
             const shardCount = 3 + Math.floor(sf * 4);
             const hue = (c * 45 + time * 10 + sf * 80) % 360;
+            const pulse = 1 + Math.sin(time * pulseSpeed + c) * 0.35;
             for (let s = 0; s < shardCount; s++) {
-                const angle = (s / shardCount) * Math.PI * 2 + c * 0.5 + Math.sin(time * 0.3 + c) * 0.3;
-                const len = 30 + s * 10 + sf * 30 + Math.sin(time + s + c) * 10;
+                const angle = (s / shardCount) * Math.PI * 2 + c * 0.5 + time * rotSpeed;
+                const len = (30 + s * 10 + sf * 30 + Math.sin(time * pulseSpeed + s + c) * 15) * pulse;
                 const width = 6 + sf * 4;
                 const tipX = baseX + Math.cos(angle) * len;
                 const tipY = baseY + Math.sin(angle) * len;
@@ -2023,13 +2029,14 @@
             ctx.fill();
         }
         // Sparkles
-        for (let sp = 0; sp < 15; sp++) {
-            const spx = (Math.sin(sp * 127 + time * 0.5) * 0.5 + 0.5) * canvas.width;
-            const spy = (Math.cos(sp * 311 + time * 0.3) * 0.5 + 0.5) * canvas.height;
-            const flash = Math.sin(time * 5 + sp * 3) > 0.8 ? 0.2 : 0;
+        for (let sp = 0; sp < 25; sp++) {
+            const spSpeed = 0.8 + labRand(sp * 3.7) * 1.6;
+            const spx = (Math.sin(sp * 127 + time * spSpeed) * 0.5 + 0.5) * canvas.width;
+            const spy = (Math.cos(sp * 311 + time * spSpeed * 0.6) * 0.5 + 0.5) * canvas.height;
+            const flash = Math.sin(time * 7 + sp * 3) > 0.6 ? 0.3 : 0;
             if (flash > 0) {
                 ctx.beginPath();
-                ctx.arc(spx, spy, 2, 0, Math.PI * 2);
+                ctx.arc(spx, spy, 2 + labRand(sp * 9.1) * 2, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(255,255,255,${flash})`;
                 ctx.fill();
             }
