@@ -208,6 +208,7 @@
             padding-bottom: 1rem;
             transition: all 0.3s ease;
             cursor: pointer;
+            white-space: nowrap;
         }
 
         a.section-title-link::after {
@@ -277,6 +278,7 @@
             padding-bottom: 0.5rem;
             transition: all 0.3s ease;
             cursor: pointer;
+            white-space: nowrap;
         }
 
         a.artist-title-link::after {
@@ -868,6 +870,16 @@
             @keyframes mobileArrowRight {
                 0%, 100% { transform: translateX(0); }
                 50% { transform: translateX(3px); }
+            }
+
+            /* Touch "hover" (long-press) shouldn't scale/spread the title —
+               it has nothing to do with the tap-arrow affordance above and
+               was pushing the trailing arrow into an overflow/wrap. */
+            a.section-title-link:hover,
+            a.artist-title-link:hover {
+                transform: none;
+                filter: none;
+                letter-spacing: 0.15em;
             }
 
             .music-row,
