@@ -92,6 +92,21 @@
             text-align: center;
             padding: 3rem 1rem 8rem;
             position: relative;
+            pointer-events: none;
+        }
+
+        .logo-click-target {
+            position: fixed;
+            top: 1%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50vw;
+            max-width: 600px;
+            aspect-ratio: 1 / 1;
+            z-index: 5;
+            pointer-events: auto;
+            cursor: pointer;
+            background: transparent;
         }
 
         .logo {
@@ -105,13 +120,41 @@
             filter: drop-shadow(0 0 20px rgba(255,0,255,0.4)) drop-shadow(0 0 40px rgba(0,240,255,0.3));
             animation: logoPulse 3s ease-in-out infinite;
             z-index: -1;
-            pointer-events: none;
+            pointer-events: auto;
+            cursor: pointer;
         }
 
         @keyframes logoPulse {
             0%, 100% { filter: drop-shadow(0 0 20px rgba(255,0,255,0.5)) drop-shadow(0 0 40px rgba(0,240,255,0.3)); }
             33% { filter: drop-shadow(0 0 20px rgba(57,255,20,0.5)) drop-shadow(0 0 40px rgba(255,0,255,0.3)); }
             66% { filter: drop-shadow(0 0 20px rgba(0,240,255,0.5)) drop-shadow(0 0 40px rgba(57,255,20,0.3)); }
+        }
+
+        /* Acid trip mode — tap/click the logo to toggle */
+        .logo.acid-trip {
+            animation: acidHue 0.7s linear infinite, acidWobble 0.45s ease-in-out infinite;
+        }
+
+        @keyframes acidHue {
+            0%   { filter: url(#acidWarp) hue-rotate(0deg) saturate(4.5) contrast(1.9) brightness(1.15)
+                   drop-shadow(7px 0 0 rgba(255,0,120,0.6)) drop-shadow(-7px 2px 0 rgba(0,255,255,0.6)) drop-shadow(-2px -7px 0 rgba(255,255,0,0.45)); }
+            25%  { filter: url(#acidWarp) hue-rotate(90deg) saturate(5.5) contrast(2.1) brightness(1.3)
+                   drop-shadow(-9px 3px 0 rgba(255,0,120,0.65)) drop-shadow(9px -3px 0 rgba(0,255,255,0.65)) drop-shadow(3px 9px 0 rgba(255,255,0,0.5)); }
+            50%  { filter: url(#acidWarp) hue-rotate(180deg) saturate(5) contrast(1.8) brightness(1.1)
+                   drop-shadow(6px -7px 0 rgba(255,0,120,0.6)) drop-shadow(-6px 7px 0 rgba(0,255,255,0.6)) drop-shadow(-7px -2px 0 rgba(255,255,0,0.45)); }
+            75%  { filter: url(#acidWarp) hue-rotate(270deg) saturate(6) contrast(2.2) brightness(1.35)
+                   drop-shadow(-5px -8px 0 rgba(255,0,120,0.65)) drop-shadow(5px 8px 0 rgba(0,255,255,0.65)) drop-shadow(8px -5px 0 rgba(255,255,0,0.5)); }
+            100% { filter: url(#acidWarp) hue-rotate(360deg) saturate(4.5) contrast(1.9) brightness(1.15)
+                   drop-shadow(7px 0 0 rgba(255,0,120,0.6)) drop-shadow(-7px 2px 0 rgba(0,255,255,0.6)) drop-shadow(-2px -7px 0 rgba(255,255,0,0.45)); }
+        }
+
+        @keyframes acidWobble {
+            0%   { transform: translateX(-50%) scale(1, 1) skew(0deg, 0deg) rotate(0deg); }
+            20%  { transform: translateX(-50%) scale(1.1, 0.92) skew(5deg, 3deg) rotate(-4deg); }
+            40%  { transform: translateX(-50%) scale(0.91, 1.12) skew(-4deg, -5deg) rotate(5deg); }
+            60%  { transform: translateX(-50%) scale(1.08, 0.93) skew(4deg, -3deg) rotate(-3deg); }
+            80%  { transform: translateX(-50%) scale(0.93, 1.09) skew(-5deg, 4deg) rotate(4deg); }
+            100% { transform: translateX(-50%) scale(1, 1) skew(0deg, 0deg) rotate(0deg); }
         }
 
         .site-title {
@@ -802,6 +845,7 @@
         @media (max-width: 768px) {
             .header { padding: 1.5rem 1rem 2.5rem; }
             .logo { width: 65vw; }
+            .logo-click-target { width: 65vw; }
             .site-title { display: none; }
 
             .social-top-row { padding: 0.5rem 0.75rem 0; }
@@ -961,6 +1005,18 @@
 </head>
 <body>
 
+<!-- Acid-trip warp filter for the logo, always animating (cheap while unused) -->
+<svg width="0" height="0" style="position:absolute">
+    <filter id="acidWarp" x="-60%" y="-60%" width="220%" height="220%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.01 0.03" numOctaves="3" seed="7" result="turb">
+            <animate attributeName="baseFrequency" values="0.01 0.03;0.05 0.09;0.015 0.05;0.06 0.02;0.01 0.03" dur="2.2s" repeatCount="indefinite" />
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="turb" scale="0" xChannelSelector="R" yChannelSelector="G">
+            <animate attributeName="scale" values="0;70;15;85;30;60;0" dur="2.2s" repeatCount="indefinite" />
+        </feDisplacementMap>
+    </filter>
+</svg>
+
 <canvas id="psychCanvas"></canvas>
 <div class="scanlines"></div>
 
@@ -1001,6 +1057,13 @@
     <img src="Dope Science no background.png" alt="Dope Science" class="logo">
 
 </header>
+
+<!-- Invisible click target over the logo — the image itself sits at
+     z-index:-1 for visual layering, which makes it unreachable by
+     hit-testing (body's own box always wins over negative z-index
+     descendants), so a same-shaped overlay at normal stacking level
+     captures the tap instead. -->
+<div class="logo-click-target" id="logoClickTarget" aria-hidden="true"></div>
 
 <div class="divider"></div>
 
@@ -1204,6 +1267,17 @@
 </footer>
 
 <script>
+    // Acid trip mode — tap/click the logo to toggle wild distortion, tap again to undo.
+    // The logo itself sits at z-index:-1 for visual layering, so clicks are captured
+    // by an invisible same-shaped overlay (.logo-click-target) instead.
+    const acidLogo = document.querySelector('.logo');
+    const acidClickTarget = document.getElementById('logoClickTarget');
+    if (acidLogo && acidClickTarget) {
+        acidClickTarget.addEventListener('click', () => {
+            acidLogo.classList.toggle('acid-trip');
+        });
+    }
+
     // Marquee keywords, shuffled into a random order per bar
     const marqueeKeywords = [
         'Suomisaundi', 'Dope Science', 'Psytrance', 'Kirna', 'Sonic Bandits',
