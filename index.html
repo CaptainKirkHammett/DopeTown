@@ -174,6 +174,13 @@
         .logo.acid-trip,
         .logo-echo-1.acid-trip,
         .logo-echo-2.acid-trip {
+            /* The base .logo rule's logoPulse animation keeps running
+               otherwise, and a CSS animation always wins over an inline
+               style for the same property — so its plain (non-hue-shifted)
+               filter keyframes were silently overriding the JS-computed
+               acid filter every frame. Turning it off here lets our inline
+               style take effect. */
+            animation: none;
             will-change: filter, transform;
         }
         .logo-echo-1.acid-trip,
