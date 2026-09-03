@@ -908,7 +908,7 @@
             text-transform: uppercase;
         }
 
-        .marquee span {
+        .marquee > span {
             margin: 0 1.5rem;
         }
 
@@ -917,6 +917,15 @@
         .marquee .blue { color: var(--neon-blue); }
         .marquee .orange { color: var(--neon-orange); }
         .marquee .yellow { color: var(--neon-yellow); }
+
+        /* Acid-trip mode: individual marquee characters randomly mirrored
+           horizontally or vertically (see acidMirrorMarquee in the main
+           script, which picks ~35% of characters each time it's toggled). */
+        .marquee .mchar {
+            display: inline-block;
+        }
+        .marquee .mchar.mirror-h { transform: scaleX(-1); }
+        .marquee .mchar.mirror-v { transform: scaleY(-1); }
 
         @keyframes marqueeScroll {
             0% { transform: translateX(0); }
@@ -1436,6 +1445,8 @@
             // background animation system further down for how this is used.
             acidBackgroundActive = nowActive;
             document.body.classList.toggle('acid-bg', nowActive);
+            acidMirrorMarquee('marqueeTop', nowActive);
+            acidMirrorMarquee('marqueeBottom', nowActive);
         });
     }
 
@@ -1468,10 +1479,38 @@
         ).join('');
         // Duplicated once for a seamless CSS scroll loop
         el.innerHTML = spansHtml + spansHtml;
+        // Stash the plain word text so acidMirrorMarquee can rebuild or
+        // revert the per-character spans without losing it.
+        Array.from(el.children).forEach(word => { word.dataset.orig = word.textContent; });
     }
 
     populateMarquee('marqueeTop');
     populateMarquee('marqueeBottom');
+
+    // Acid-trip mode: break each marquee word into per-character spans and
+    // randomly mirror ~35% of them horizontally or vertically. Reverting
+    // just restores the plain word text saved above.
+    function acidMirrorMarquee(id, active) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        Array.from(el.children).forEach(word => {
+            if (!active) {
+                word.textContent = word.dataset.orig;
+                return;
+            }
+            const text = word.dataset.orig;
+            word.innerHTML = '';
+            for (const ch of text) {
+                const charSpan = document.createElement('span');
+                charSpan.className = 'mchar';
+                if (Math.random() < 0.35) {
+                    charSpan.classList.add(Math.random() < 0.5 ? 'mirror-h' : 'mirror-v');
+                }
+                charSpan.textContent = ch;
+                word.appendChild(charSpan);
+            }
+        });
+    }
 
     // Generate floating particles
     const particlesContainer = document.getElementById('particles');
