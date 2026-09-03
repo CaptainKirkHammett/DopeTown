@@ -164,63 +164,21 @@
         .logo-echo-1.acid-trip { opacity: 0.4; --echoBlur: 3px; }
         .logo-echo-2.acid-trip { opacity: 0.22; --echoBlur: 6px; }
 
-        /* Acid trip mode — tap/click the logo to toggle. will-change hints the
-           browser to hand this off to its own compositor layer, so the effect
-           stays smooth even while other page resources (SoundCloud/Bandcamp/
-           YouTube embeds) are still loading in the background. */
-        .logo.acid-trip {
-            animation: acidHue 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
+        /* Acid trip mode — tap/click the logo to toggle. The actual filter/
+           transform values are computed per-frame in JS (see
+           updateAcidLogoStyles in the main script) from layered sine waves
+           with mismatched frequencies plus a per-activation random seed, so
+           the motion drifts organically and never visibly repeats on a
+           short loop the way a fixed @keyframes animation would. will-change
+           hints the browser to hand this off to its own compositor layer. */
+        .logo.acid-trip,
+        .logo-echo-1.acid-trip,
+        .logo-echo-2.acid-trip {
             will-change: filter, transform;
         }
-        .logo-echo-1.acid-trip {
-            animation: acidHue 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
-            animation-delay: -0.3s, -0.22s;
-            will-change: filter, transform, opacity;
-        }
+        .logo-echo-1.acid-trip,
         .logo-echo-2.acid-trip {
-            animation: acidHue 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
-            animation-delay: -0.6s, -0.44s;
             will-change: filter, transform, opacity;
-        }
-
-        @keyframes acidHue {
-            0%   { filter: url(#acidWarp) hue-rotate(0deg) saturate(4.5) contrast(1.9) brightness(1.15) blur(var(--echoBlur, 0px))
-                   drop-shadow(7px 0 0 rgba(255,0,120,0.6)) drop-shadow(-7px 2px 0 rgba(0,255,255,0.6)) drop-shadow(-2px -7px 0 rgba(255,255,0,0.45)); }
-            25%  { filter: url(#acidWarp) hue-rotate(90deg) saturate(5.5) contrast(2.1) brightness(1.3) blur(var(--echoBlur, 0px))
-                   drop-shadow(-9px 3px 0 rgba(255,0,120,0.65)) drop-shadow(9px -3px 0 rgba(0,255,255,0.65)) drop-shadow(3px 9px 0 rgba(255,255,0,0.5)); }
-            50%  { filter: url(#acidWarp) hue-rotate(180deg) saturate(5) contrast(1.8) brightness(1.1) blur(var(--echoBlur, 0px))
-                   drop-shadow(6px -7px 0 rgba(255,0,120,0.6)) drop-shadow(-6px 7px 0 rgba(0,255,255,0.6)) drop-shadow(-7px -2px 0 rgba(255,255,0,0.45)); }
-            75%  { filter: url(#acidWarp) hue-rotate(270deg) saturate(6) contrast(2.2) brightness(1.35) blur(var(--echoBlur, 0px))
-                   drop-shadow(-5px -8px 0 rgba(255,0,120,0.65)) drop-shadow(5px 8px 0 rgba(0,255,255,0.65)) drop-shadow(8px -5px 0 rgba(255,255,0,0.5)); }
-            100% { filter: url(#acidWarp) hue-rotate(360deg) saturate(4.5) contrast(1.9) brightness(1.15) blur(var(--echoBlur, 0px))
-                   drop-shadow(7px 0 0 rgba(255,0,120,0.6)) drop-shadow(-7px 2px 0 rgba(0,255,255,0.6)) drop-shadow(-2px -7px 0 rgba(255,255,0,0.45)); }
-        }
-
-        @keyframes acidWobble {
-            0%   { transform: translateX(-50%) scale(1, 1) skew(0deg, 0deg) rotate(0deg); }
-            20%  { transform: translateX(-50%) scale(1.1, 0.92) skew(5deg, 3deg) rotate(-4deg); }
-            40%  { transform: translateX(-50%) scale(0.91, 1.12) skew(-4deg, -5deg) rotate(5deg); }
-            60%  { transform: translateX(-50%) scale(1.08, 0.93) skew(4deg, -3deg) rotate(-3deg); }
-            80%  { transform: translateX(-50%) scale(0.93, 1.09) skew(-5deg, 4deg) rotate(4deg); }
-            100% { transform: translateX(-50%) scale(1, 1) skew(0deg, 0deg) rotate(0deg); }
-        }
-
-        /* Lighter acid-trip variant for mobile: drops the feTurbulence/
-           feDisplacementMap warp (procedural noise generation is by far the
-           most expensive part of this effect) and one drop-shadow layer.
-           Keeps the hue-cycling, RGB-split ghosting and wobble, which are
-           cheap per-pixel filter ops that composite fine on a phone GPU. */
-        @keyframes acidHueLight {
-            0%   { filter: hue-rotate(0deg) saturate(4) contrast(1.7) brightness(1.15) blur(var(--echoBlur, 0px))
-                   drop-shadow(5px 0 0 rgba(255,0,120,0.5)) drop-shadow(-5px 2px 0 rgba(0,255,255,0.5)); }
-            25%  { filter: hue-rotate(90deg) saturate(5) contrast(1.9) brightness(1.25) blur(var(--echoBlur, 0px))
-                   drop-shadow(-6px 2px 0 rgba(255,0,120,0.55)) drop-shadow(6px -2px 0 rgba(0,255,255,0.55)); }
-            50%  { filter: hue-rotate(180deg) saturate(4.5) contrast(1.6) brightness(1.1) blur(var(--echoBlur, 0px))
-                   drop-shadow(4px -5px 0 rgba(255,0,120,0.5)) drop-shadow(-4px 5px 0 rgba(0,255,255,0.5)); }
-            75%  { filter: hue-rotate(270deg) saturate(5.5) contrast(2) brightness(1.3) blur(var(--echoBlur, 0px))
-                   drop-shadow(-4px -6px 0 rgba(255,0,120,0.55)) drop-shadow(4px 6px 0 rgba(0,255,255,0.55)); }
-            100% { filter: hue-rotate(360deg) saturate(4) contrast(1.7) brightness(1.15) blur(var(--echoBlur, 0px))
-                   drop-shadow(5px 0 0 rgba(255,0,120,0.5)) drop-shadow(-5px 2px 0 rgba(0,255,255,0.5)); }
         }
 
         .site-title {
@@ -914,15 +872,11 @@
             .logo-click-target { width: 65vw; }
             .site-title { display: none; }
 
-            /* Lighter acid-trip mode on phones — see acidHueLight above */
+            /* Lighter acid-trip mode on phones: drop the second echo layer
+               and skip the feTurbulence/feDisplacementMap warp (the most
+               expensive part) — updateAcidLogoStyles() checks screen width
+               each frame and omits url(#acidWarp) below this breakpoint. */
             .logo-echo-2 { display: none; }
-            .logo.acid-trip {
-                animation: acidHueLight 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
-            }
-            .logo-echo-1.acid-trip {
-                animation: acidHueLight 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
-                animation-delay: -0.3s, -0.22s;
-            }
 
             .social-top-row { padding: 0.5rem 0.75rem 0; }
             .social-left, .social-right { gap: 0.4rem; }
@@ -1351,10 +1305,20 @@
     const acidLogo = document.getElementById('logoMain');
     const acidLayers = document.querySelectorAll('.logo');
     const acidClickTarget = document.getElementById('logoClickTarget');
+    let acidSeed = 0;
     if (acidLogo && acidClickTarget) {
         acidClickTarget.addEventListener('click', () => {
             const nowActive = !acidLogo.classList.contains('acid-trip');
             acidLayers.forEach(el => el.classList.toggle('acid-trip', nowActive));
+            if (nowActive) {
+                // Fresh random offset into the noise field each time it's
+                // switched on, so no two activations look the same.
+                acidSeed = Math.random() * 1000;
+            } else {
+                // Clear inline styles so the calm base .logo rules (drop-
+                // shadow glow, logoPulse) take back over cleanly.
+                acidLayers.forEach(el => { el.style.filter = ''; el.style.transform = ''; });
+            }
             // Also crank up the psychedelic canvas background — see the
             // background animation system further down for how this is used.
             acidBackgroundActive = nowActive;
@@ -2263,6 +2227,58 @@
         mushrooms: drawMushrooms, neural: drawNeural, crystal: drawCrystal
     };
 
+    // Organic, non-repeating motion for acid-trip mode: sum a few sine
+    // waves whose frequencies share no small common period, so the
+    // combined signal only ever approximately repeats after a very long
+    // time (unlike a short fixed-length @keyframes loop). "seed" shifts
+    // each call into a different, unrelated part of that signal so many
+    // properties driven off the same clock don't move in lockstep.
+    function acidWave(t, seed) {
+        return Math.sin(t * 0.53 + seed) * 0.45
+             + Math.sin(t * 1.21 + seed * 1.9 + 1.7) * 0.30
+             + Math.sin(t * 2.77 + seed * 2.7 + 3.1) * 0.15
+             + Math.sin(t * 4.13 + seed * 3.3 + 4.9) * 0.10;
+    }
+
+    function updateAcidLogoStyles(t) {
+        if (!acidLogo.classList.contains('acid-trip')) return;
+        const isMobile = window.innerWidth <= 768;
+        const layers = [{ el: acidLogo, lag: 0 }];
+        const echo1 = document.querySelector('.logo-echo-1');
+        if (echo1) layers.push({ el: echo1, lag: 0.7 });
+        if (!isMobile) {
+            const echo2 = document.querySelector('.logo-echo-2');
+            if (echo2) layers.push({ el: echo2, lag: 1.4 });
+        }
+        const warpPrefix = isMobile ? '' : 'url(#acidWarp) ';
+        const shadowCount = isMobile ? 2 : 3;
+
+        layers.forEach(({ el, lag }) => {
+            const lt = t - lag + acidSeed;
+            const hue = 180 + acidWave(lt, 1) * 200;
+            const sat = isMobile ? 4.6 + acidWave(lt, 11) * 1.2 : 5 + acidWave(lt, 11) * 1.4;
+            const con = isMobile ? 1.75 + acidWave(lt, 21) * 0.35 : 1.9 + acidWave(lt, 21) * 0.45;
+            const bri = 1.2 + acidWave(lt, 31) * 0.18;
+            const shadows = [];
+            for (let s = 0; s < shadowCount; s++) {
+                const dx = acidWave(lt, 41 + s * 10) * 9;
+                const dy = acidWave(lt, 46 + s * 10) * 9;
+                const colors = ['255,0,120', '0,255,255', '255,255,0'];
+                shadows.push(`drop-shadow(${dx.toFixed(1)}px ${dy.toFixed(1)}px 0 rgba(${colors[s]},0.6))`);
+            }
+            el.style.filter = `${warpPrefix}hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(2)}) `
+                + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)}) blur(var(--echoBlur, 0px)) ${shadows.join(' ')}`;
+
+            const scaleX = 1 + acidWave(lt, 61) * 0.14;
+            const scaleY = 1 + acidWave(lt, 71) * 0.14;
+            const skewX = acidWave(lt, 81) * 6;
+            const skewY = acidWave(lt, 91) * 6;
+            const rotate = acidWave(lt, 101) * 5;
+            el.style.transform = `translateX(-50%) scale(${scaleX.toFixed(3)}, ${scaleY.toFixed(3)}) `
+                + `skew(${skewX.toFixed(2)}deg, ${skewY.toFixed(2)}deg) rotate(${rotate.toFixed(2)}deg)`;
+        });
+    }
+
     function animate() {
         // Poll the real scroll position fresh every frame — see
         // updateScrollFactor() above for why this replaced a 'scroll'
@@ -2273,6 +2289,7 @@
         // the scrollFactor scaling each draw function already has — no
         // extra rendering cost, just wilder numbers fed into it.
         time += acidBackgroundActive ? 0.022 : 0.008;
+        updateAcidLogoStyles(time);
         // Ease scrollFactor toward its target instead of snapping to it.
         // Several draw functions do Math.floor(scrollFactor * N) to pick
         // ring/branch/side counts, so a big scroll delta (momentum/fling
