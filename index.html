@@ -44,18 +44,12 @@
         }
 
         /* Extra background wildness while acid-trip mode is engaged — a
-           cheap hue-rotate/saturate cycle on top of the already-boosted
-           canvas drawing (see animate() in the script). No blur/turbulence
-           here, this runs over the full viewport so it has to stay light. */
-        body.acid-bg #psychCanvas {
-            animation: acidBgHue 1s linear infinite;
-        }
-
-        @keyframes acidBgHue {
-            0%   { filter: hue-rotate(0deg) saturate(3.2) contrast(1.3) brightness(1.35); }
-            50%  { filter: hue-rotate(180deg) saturate(3.8) contrast(1.45) brightness(1.55); }
-            100% { filter: hue-rotate(360deg) saturate(3.2) contrast(1.3) brightness(1.35); }
-        }
+           hue-rotate/saturate cycle on top of the already-boosted canvas
+           drawing. Driven from JS (see updateAcidBackgroundFilter in the
+           main script) with layered noise instead of a fixed @keyframes
+           sweep, so the hue wanders unpredictably through the whole wheel
+           (oranges, teals, limes, purples...) rather than looping cleanly
+           between two primary-looking colors. */
 
         /* Scrolling grid overlay */
         body::after {
@@ -1342,6 +1336,7 @@
                 // Clear inline styles so the calm base .logo rules (drop-
                 // shadow glow, logoPulse) take back over cleanly.
                 acidLayers.forEach(el => { el.style.filter = ''; el.style.transform = ''; });
+                canvas.style.filter = '';
             }
             // Also crank up the psychedelic canvas background — see the
             // background animation system further down for how this is used.
@@ -1426,6 +1421,7 @@
     let rawScrollFactor = 0;
     let acidBackgroundActive = false;
     let acidClock = 0;
+    let bgHueClock = 0;
     const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal'];
     let bgModeIndex = Math.floor(Math.random() * bgModes.length);
     let bgMode = bgModes[bgModeIndex];
@@ -2311,6 +2307,21 @@
         });
     }
 
+    function updateAcidBackgroundFilter(t) {
+        if (!acidBackgroundActive) return;
+        // Steady hue drift (guarantees a slow full sweep through the color
+        // wheel rather than a short loop) plus two unrelated-frequency
+        // wobbles layered on top, so the path is unpredictable and lands
+        // on non-primary hues (oranges, teals, limes, purples) instead of
+        // oscillating cleanly between red and blue.
+        const hue = t * 47 + acidWave(t, 601) * 130 + acidWave(t * 0.23, 611) * 70;
+        const sat = 3.5 + acidWave(t * 0.6, 621) * 1.3;
+        const con = 1.35 + acidWave(t * 0.5, 631) * 0.25;
+        const bri = 1.4 + acidWave(t * 0.4, 641) * 0.3;
+        canvas.style.filter = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(2)}) `
+            + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+    }
+
     function animate() {
         // Poll the real scroll position fresh every frame — see
         // updateScrollFactor() above for why this replaced a 'scroll'
@@ -2329,6 +2340,8 @@
         const acidSpeed = Math.max(0.15, 1.15 + acidWave(time * 0.3, 500) * 0.95);
         acidClock += 0.022 * acidSpeed;
         updateAcidLogoStyles(acidClock);
+        bgHueClock += acidBackgroundActive ? 0.06 : 0;
+        updateAcidBackgroundFilter(bgHueClock);
         // Ease scrollFactor toward its target instead of snapping to it.
         // Several draw functions do Math.floor(scrollFactor * N) to pick
         // ring/branch/side counts, so a big scroll delta (momentum/fling
