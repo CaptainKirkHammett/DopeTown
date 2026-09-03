@@ -150,17 +150,23 @@
         .logo-echo-1.acid-trip { opacity: 0.4; --echoBlur: 3px; }
         .logo-echo-2.acid-trip { opacity: 0.22; --echoBlur: 6px; }
 
-        /* Acid trip mode — tap/click the logo to toggle */
+        /* Acid trip mode — tap/click the logo to toggle. will-change hints the
+           browser to hand this off to its own compositor layer, so the effect
+           stays smooth even while other page resources (SoundCloud/Bandcamp/
+           YouTube embeds) are still loading in the background. */
         .logo.acid-trip {
             animation: acidHue 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
+            will-change: filter, transform;
         }
         .logo-echo-1.acid-trip {
             animation: acidHue 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
             animation-delay: -0.3s, -0.22s;
+            will-change: filter, transform, opacity;
         }
         .logo-echo-2.acid-trip {
             animation: acidHue 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
             animation-delay: -0.6s, -0.44s;
+            will-change: filter, transform, opacity;
         }
 
         @keyframes acidHue {
@@ -183,6 +189,24 @@
             60%  { transform: translateX(-50%) scale(1.08, 0.93) skew(4deg, -3deg) rotate(-3deg); }
             80%  { transform: translateX(-50%) scale(0.93, 1.09) skew(-5deg, 4deg) rotate(4deg); }
             100% { transform: translateX(-50%) scale(1, 1) skew(0deg, 0deg) rotate(0deg); }
+        }
+
+        /* Lighter acid-trip variant for mobile: drops the feTurbulence/
+           feDisplacementMap warp (procedural noise generation is by far the
+           most expensive part of this effect) and one drop-shadow layer.
+           Keeps the hue-cycling, RGB-split ghosting and wobble, which are
+           cheap per-pixel filter ops that composite fine on a phone GPU. */
+        @keyframes acidHueLight {
+            0%   { filter: hue-rotate(0deg) saturate(4) contrast(1.7) brightness(1.15) blur(var(--echoBlur, 0px))
+                   drop-shadow(5px 0 0 rgba(255,0,120,0.5)) drop-shadow(-5px 2px 0 rgba(0,255,255,0.5)); }
+            25%  { filter: hue-rotate(90deg) saturate(5) contrast(1.9) brightness(1.25) blur(var(--echoBlur, 0px))
+                   drop-shadow(-6px 2px 0 rgba(255,0,120,0.55)) drop-shadow(6px -2px 0 rgba(0,255,255,0.55)); }
+            50%  { filter: hue-rotate(180deg) saturate(4.5) contrast(1.6) brightness(1.1) blur(var(--echoBlur, 0px))
+                   drop-shadow(4px -5px 0 rgba(255,0,120,0.5)) drop-shadow(-4px 5px 0 rgba(0,255,255,0.5)); }
+            75%  { filter: hue-rotate(270deg) saturate(5.5) contrast(2) brightness(1.3) blur(var(--echoBlur, 0px))
+                   drop-shadow(-4px -6px 0 rgba(255,0,120,0.55)) drop-shadow(4px 6px 0 rgba(0,255,255,0.55)); }
+            100% { filter: hue-rotate(360deg) saturate(4) contrast(1.7) brightness(1.15) blur(var(--echoBlur, 0px))
+                   drop-shadow(5px 0 0 rgba(255,0,120,0.5)) drop-shadow(-5px 2px 0 rgba(0,255,255,0.5)); }
         }
 
         .site-title {
@@ -876,6 +900,16 @@
             .logo-click-target { width: 65vw; }
             .site-title { display: none; }
 
+            /* Lighter acid-trip mode on phones — see acidHueLight above */
+            .logo-echo-2 { display: none; }
+            .logo.acid-trip {
+                animation: acidHueLight 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
+            }
+            .logo-echo-1.acid-trip {
+                animation: acidHueLight 2.4s linear infinite, acidWobble 1.6s ease-in-out infinite;
+                animation-delay: -0.3s, -0.22s;
+            }
+
             .social-top-row { padding: 0.5rem 0.75rem 0; }
             .social-left, .social-right { gap: 0.4rem; }
 
@@ -1082,9 +1116,9 @@
 
 <!-- Header -->
 <header class="header">
-    <img src="Dope Science no background.png" alt="" class="logo logo-echo logo-echo-2" aria-hidden="true">
-    <img src="Dope Science no background.png" alt="" class="logo logo-echo logo-echo-1" aria-hidden="true">
-    <img src="Dope Science no background.png" alt="Dope Science" class="logo" id="logoMain">
+    <img src="Dope Science no background.png" alt="" class="logo logo-echo logo-echo-2" aria-hidden="true" fetchpriority="high">
+    <img src="Dope Science no background.png" alt="" class="logo logo-echo logo-echo-1" aria-hidden="true" fetchpriority="high">
+    <img src="Dope Science no background.png" alt="Dope Science" class="logo" id="logoMain" fetchpriority="high">
 
 </header>
 
@@ -1105,31 +1139,31 @@
             <a href="https://dopescience.bandcamp.com/" target="_blank" class="section-title-link pink tooltip-wrap"><span class="tooltip">Open Dope Science on Bandcamp</span><span>Dope Science Bandcamp</span></a>
             <div class="bandcamp-scroll">
                 <div class="embed-card">
-                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=859961740/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <iframe loading="lazy" style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=859961740/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
                     <div class="embed-label">Newest Sonic Bandits release</div>
                 </div>
                 <div class="embed-card">
-                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=821773663/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <iframe loading="lazy" style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=821773663/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
                     <div class="embed-label">Newest Kirna release</div>
                 </div>
                 <div class="embed-card">
-                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=828630973/size=large/bgcol=1a0033/linkcol=ff00ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <iframe loading="lazy" style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=828630973/size=large/bgcol=1a0033/linkcol=ff00ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
                     <div class="embed-label">Newest Kyril &amp; Eskobar release</div>
                 </div>
                 <div class="embed-card">
-                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2867781422/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <iframe loading="lazy" style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2867781422/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
                     <div class="embed-label">Hallucination Machine - Sonic Bandits</div>
                 </div>
                 <div class="embed-card">
-                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2639064853/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <iframe loading="lazy" style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=2639064853/size=large/bgcol=1a0033/linkcol=39ff14/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
                     <div class="embed-label">Spaceman - Kirna</div>
                 </div>
                 <div class="embed-card">
-                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=4056131575/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <iframe loading="lazy" style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=4056131575/size=large/bgcol=1a0033/linkcol=00f0ff/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
                     <div class="embed-label">Flow Fusion - Kirna</div>
                 </div>
                 <div class="embed-card">
-                    <iframe style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=1402992685/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
+                    <iframe loading="lazy" style="height:120px;" src="https://bandcamp.com/EmbeddedPlayer/track=1402992685/size=large/bgcol=1a0033/linkcol=ff6600/tracklist=false/artwork=small/transparent=true/" seamless></iframe>
                     <div class="embed-label">Night Freaks - Sonic Bandits</div>
                 </div>
             </div>
@@ -1152,11 +1186,11 @@
     <a href="https://www.youtube.com/playlist?list=PLVbC7883e3Zw" target="_blank" class="section-title-link blue tooltip-wrap"><span class="tooltip">Open playlist on YouTube</span><span>YouTube Playlist</span></a>
     <div class="embed-grid two-col">
         <div class="embed-card">
-            <iframe width="100%" height="350" src="https://www.youtube.com/embed/JMJkHQIgqCY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
+            <iframe loading="lazy" width="100%" height="350" src="https://www.youtube.com/embed/JMJkHQIgqCY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
             <div class="embed-label">Dentamental</div>
         </div>
         <div class="embed-card">
-            <iframe width="100%" height="350" src="https://www.youtube.com/embed/rxashm7zbjo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
+            <iframe loading="lazy" width="100%" height="350" src="https://www.youtube.com/embed/rxashm7zbjo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
             <div class="embed-label">Spongy Company</div>
         </div>
     </div>
@@ -1172,34 +1206,34 @@
             <a href="https://soundcloud.com/kirna" target="_blank" class="artist-title-link pink tooltip-wrap"><span class="tooltip">Open Kirna on SoundCloud</span>Kirna</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/glitter2000&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/glitter2000&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/i-want-2-ride&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/i-want-2-ride&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/algoriddim&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/algoriddim&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/with-james-reipas-flow-fusion&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/with-james-reipas-flow-fusion&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/spongy-company&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/spongy-company&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/spaceman&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/spaceman&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/live2022&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/live2022&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/sadan-vuoden-basso&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/sadan-vuoden-basso&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/apolloninen&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/apolloninen&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/nu-pogodi&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kirna/nu-pogodi&color=%23ff00ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
             </div>
         </div>
@@ -1209,25 +1243,25 @@
             <a href="https://soundcloud.com/sonic-bandits" target="_blank" class="artist-title-link green tooltip-wrap"><span class="tooltip">Open Sonic Bandits on SoundCloud</span>Sonic Bandits</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/flying_anomaly&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/flying_anomaly&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/frewbells-bollocks&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/frewbells-bollocks&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-hongos-longos-stretching-waves-official-release&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-hongos-longos-stretching-waves-official-release&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/night-freaks&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/night-freaks&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/kvass&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/kvass&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-extracelestial&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-extracelestial&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-kummitusjuna&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sonic-bandits/sonic-bandits-kummitusjuna&color=%2339ff14&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
             </div>
         </div>
@@ -1237,28 +1271,28 @@
             <a href="https://soundcloud.com/kyril-eskobar" target="_blank" class="artist-title-link blue tooltip-wrap"><span class="tooltip">Open Kyril &amp; Eskobar on SoundCloud</span>Kyril &amp; Eskobar</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/bonuskortti&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/bonuskortti&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/neanderilainen-laulu-official&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/neanderilainen-laulu-official&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/ralli-ralli&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/ralli-ralli&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/presto&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/presto&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/kyril-eskobar-oinen-samba-full-track&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/kyril-eskobar-oinen-samba-full-track&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/tositarkoituksella&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/tositarkoituksella&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/pole-position&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/pole-position&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
                 <div class="embed-card">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/unicorn-fields&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
+                    <iframe loading="lazy" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kyril-eskobar/unicorn-fields&color=%2300f0ff&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"></iframe>
                 </div>
             </div>
         </div>
