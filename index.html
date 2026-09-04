@@ -3225,7 +3225,7 @@
         // same trick as acid mode, just a smaller nudge, and the two
         // stack (capped at 1) if both are on at once.
         embedsHidden = document.body.classList.contains('embeds-hidden');
-        bonusIntensity += ((embedsHidden ? 1 : 0) - bonusIntensity) * 0.04;
+        bonusIntensity += ((embedsHidden ? 1 : 0) - bonusIntensity) * 0.017;
         let complexityBoost = 0;
         if (acidBackgroundActive) complexityBoost += 0.55;
         if (embedsHidden) complexityBoost += 0.4;
