@@ -1606,7 +1606,7 @@
                 // Clear inline styles so the calm base .logo rules (drop-
                 // shadow glow, logoPulse) take back over cleanly.
                 acidLayers.forEach(el => { el.style.filter = ''; el.style.transform = ''; });
-                canvas.style.filter = '';
+                canvasWrap.style.filter = '';
             }
             // Also crank up the psychedelic canvas background — see the
             // background animation system further down for how this is used.
@@ -1742,6 +1742,7 @@
 
     // Psychedelic background animation system
     const canvas = document.getElementById('psychCanvas');
+    const canvasWrap = document.getElementById('psychCanvasWrap');
     const ctx = canvas.getContext('2d');
     let time = 0;
     let scrollFactor = 0;
@@ -2718,7 +2719,15 @@
         const sat = 2.4 + acidWave(t * 0.6, 621) * 0.9;
         const con = 1.2 + acidWave(t * 0.5, 631) * 0.2;
         const bri = 1.25 + acidWave(t * 0.4, 641) * 0.2;
-        canvas.style.filter = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(2)}) `
+        // Applied to the (viewport-sized, clipped) wrap rather than the
+        // canvas itself: a filter forces the browser to rasterize the
+        // whole filtered element every time its value changes, and the
+        // canvas is intentionally oversized on mobile (see resizeCanvas)
+        // to avoid resizing during the nav-bar hide/show transition —
+        // filtering that oversized element at 60fps during a scroll was
+        // itself heavy enough to jank/jump. The wrap is only ever the
+        // real, on-screen size, so filtering it is far cheaper.
+        canvasWrap.style.filter = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(2)}) `
             + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)})`;
     }
 
