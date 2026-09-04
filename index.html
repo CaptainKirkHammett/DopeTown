@@ -117,6 +117,16 @@
             overflow: hidden;
             z-index: -2;
             pointer-events: none;
+            /* Android Chrome has a known bug where position:fixed elements
+               visibly lag/desync from the page during the address bar's
+               own hide/show animation (it's tied to the browser's own
+               compositing of that bar, not just CSS viewport units).
+               Forcing this onto its own GPU compositor layer is the
+               standard workaround — it makes Chrome track the real
+               visual viewport for this element instead of only catching
+               up once the bar's animation finishes. */
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         #psychCanvas {
@@ -148,6 +158,9 @@
             animation: gridScroll 8s linear infinite;
             z-index: -1;
             pointer-events: none;
+            /* see #psychCanvasWrap comment — Android Chrome address-bar compositing workaround */
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         @keyframes gridScroll {
@@ -164,6 +177,9 @@
             pointer-events: none;
             z-index: -1;
             overflow: hidden;
+            /* see #psychCanvasWrap comment — Android Chrome address-bar compositing workaround */
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         .particle {
@@ -1101,6 +1117,9 @@
             height: 100dvh; /* see #psychCanvas comment — avoids the same mobile-scroll jump */
             pointer-events: none;
             z-index: 9999;
+            /* see #psychCanvasWrap comment — Android Chrome address-bar compositing workaround */
+            transform: translateZ(0);
+            will-change: transform;
             background: repeating-linear-gradient(
                 0deg,
                 rgba(0,0,0,0.03) 0px,
