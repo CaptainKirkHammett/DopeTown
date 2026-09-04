@@ -236,6 +236,11 @@
             top: 1%;
             left: 50%;
             transform: translateX(-50%);
+            /* Scroll-driven shrink (see updateScrollFactor) scales from
+               this origin, so the top edge stays put and the logo shrinks
+               downward into itself instead of shrinking toward its center
+               and drifting away from the header. */
+            transform-origin: 50% 0%;
             width: 50vw;
             max-width: 600px;
             height: auto;
@@ -1792,6 +1797,7 @@
     // scrollFactor complexity boost).
     let embedsHidden = false;
     let rawScrollFactor = 0;
+    let logoScrollScale = 1;
     let acidBackgroundActive = false;
     let acidClock = 0;
     let bgHueClock = 0;
@@ -1880,8 +1886,20 @@
         const maxScroll = document.body.scrollHeight - window.innerHeight;
         rawScrollFactor = maxScroll > 0 ? scrollY / maxScroll : 0;
         const halfPage = document.body.scrollHeight / 2;
-        const logoOpacity = Math.max(0, 1 - (scrollY / halfPage));
+        const logoProgress = Math.min(1, scrollY / halfPage);
+        const logoOpacity = Math.max(0, 1 - logoProgress);
         logo.style.opacity = logoOpacity;
+        // Shrinks alongside the fade, down to 55% size by the time it's
+        // fully transparent. transform-origin: 50% 0% (see .logo) keeps
+        // the top edge anchored so it shrinks into the header instead of
+        // toward its own center. Skipped while acid-trip mode owns the
+        // transform itself (see updateAcidLogoStyles), which folds this
+        // same value into its own scale instead.
+        const minLogoScale = 0.55;
+        logoScrollScale = 1 - logoProgress * (1 - minLogoScale);
+        if (!logo.classList.contains('acid-trip')) {
+            logo.style.transform = `translateX(-50%) scale(${logoScrollScale})`;
+        }
         if (scrollTopBtn) {
             scrollTopBtn.classList.toggle('visible', scrollY > 400);
         }
@@ -3092,8 +3110,11 @@
             el.style.filter = `${warpPrefix}hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(2)}) `
                 + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)}) blur(var(--echoBlur, 0px)) ${shadows.join(' ')}`;
 
-            const scaleX = 1 + acidWave(lt, 61) * 0.14;
-            const scaleY = 1 + acidWave(lt, 71) * 0.14;
+            // Folds in the same scroll-driven shrink used outside acid-trip
+            // mode (see updateScrollFactor) so scrolling away still shrinks
+            // the logo even while its transform is otherwise owned here.
+            const scaleX = logoScrollScale * (1 + acidWave(lt, 61) * 0.14);
+            const scaleY = logoScrollScale * (1 + acidWave(lt, 71) * 0.14);
             const skewX = acidWave(lt, 81) * 6;
             const skewY = acidWave(lt, 91) * 6;
             const rotate = acidWave(lt, 101) * 5;
