@@ -1739,19 +1739,30 @@
     let bgModeIndex = Math.floor(Math.random() * bgModes.length);
     let bgMode = bgModes[bgModeIndex];
 
+    // Setting canvas.width/height ALWAYS wipes the bitmap, even to the
+    // same value — that was the real source of the mobile jump: wiring
+    // this straight to visualViewport's 'resize' event meant every
+    // incremental tick of the browser's nav-bar hide/show animation
+    // during a scroll cleared the canvas, flashing it blank over and
+    // over. The CSS box (100dvh, see #psychCanvas) already tracks the
+    // real-time viewport smoothly on its own — the browser just scales
+    // the bitmap to fit while a resize is pending — so the actual
+    // drawing-buffer resize only needs to happen once things settle.
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        // visualViewport tracks the real-time visible area (and reports
-        // its resize sooner than window's own 'resize' event on mobile),
-        // so the canvas's actual drawing buffer keeps up with the CSS
-        // box (100dvh, see #psychCanvas) as the browser's nav bar
-        // slides away instead of only catching up once it's settled.
-        canvas.height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const w = window.innerWidth;
+        const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
     }
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    let resizeSettleTimer = null;
+    function scheduleResizeCanvas() {
+        clearTimeout(resizeSettleTimer);
+        resizeSettleTimer = setTimeout(resizeCanvas, 200);
+    }
+    window.addEventListener('resize', scheduleResizeCanvas);
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', resizeCanvas);
+        window.visualViewport.addEventListener('resize', scheduleResizeCanvas);
     }
 
     // Track scroll for morphing + logo fade. Read window.scrollY fresh every
