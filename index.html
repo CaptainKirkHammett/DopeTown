@@ -97,34 +97,29 @@
 
         /* Psychedelic canvas background.
            On mobile, the browser's own nav/address bar slides away as you
-           scroll. A canvas's own width/height attributes are its actual
-           pixel buffer — changing either one ALWAYS wipes it, even to an
-           unchanged value — so resizing the canvas itself in step with
-           that transition flashes it blank repeatedly. Instead, the wrap
-           is a clipping window sized to the real, current viewport
-           (100dvh — tracks the transition smoothly on its own, no JS
-           needed for this part), while the canvas inside it keeps a
-           fixed, overscanned pixel size (see resizeCanvas()) and simply
-           gets revealed or clipped as the window resizes. Its own CSS
-           height is locked in JS to match its buffer 1:1, so growing the
-           window shows more of an already-drawn canvas instead of
-           scaling or resizing it. */
+           scroll. Tried tracking that transition with 100dvh, but the
+           dark gap persisted — turns out a dvh-sized box still needs a
+           real layout recalculation to grow, and Chrome throttles/batches
+           layout during a fast scroll rather than updating it every
+           frame, so the box lags the actual visible area regardless of
+           GPU compositing. So instead this doesn't track the transition
+           at all: --bg-height (set once in JS from screen.height, the
+           largest the viewport could ever be) sizes the wrap generously
+           up front, covering the address-bar-hidden case from the start.
+           No resize ever needs to happen for an ordinary toolbar
+           show/hide, so there's nothing to lag behind. */
         #psychCanvasWrap {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            height: 100dvh;
+            height: var(--bg-height, 100vh);
             overflow: hidden;
             z-index: -2;
             pointer-events: none;
-            /* Android Chrome has a known bug where position:fixed elements
-               visibly lag/desync from the page during the address bar's
-               own hide/show animation (it's tied to the browser's own
-               compositing of that bar, not just CSS viewport units).
-               Forcing this onto its own GPU compositor layer is the
-               standard workaround — it makes Chrome track the real
-               visual viewport for this element instead of only catching
-               up once the bar's animation finishes. */
+            /* Also forces its own GPU compositor layer, which helps
+               Android Chrome track the real visual viewport for this
+               element rather than only reconciling position once the
+               address bar's own animation settles. */
             transform: translateZ(0);
             will-change: transform;
         }
@@ -150,7 +145,7 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            height: 100dvh; /* see #psychCanvas comment — avoids the same mobile-scroll jump */
+            height: var(--bg-height, 100vh); /* see #psychCanvasWrap comment — static, doesn't track the toolbar transition at all */
             background-image:
                 linear-gradient(rgba(255,0,255,0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(57,255,20,0.03) 1px, transparent 1px);
@@ -173,7 +168,7 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            height: 100dvh; /* see #psychCanvas comment — avoids the same mobile-scroll jump */
+            height: var(--bg-height, 100vh); /* see #psychCanvasWrap comment — static, doesn't track the toolbar transition at all */
             pointer-events: none;
             z-index: -1;
             overflow: hidden;
@@ -190,13 +185,14 @@
         }
 
         @keyframes floatParticle {
-            /* dvh here too — plain vh would let each particle's start/end
-               point shift when the mobile browser chrome hides/shows
-               mid-animation, same jump as the fixed overlays. */
-            0% { transform: translateY(100dvh) rotate(0deg); opacity: 0; }
+            /* Same --bg-height variable as the fixed overlays (see
+               #psychCanvasWrap) — a static, generous value instead of a
+               dvh/vh unit, so a particle's start/end point can't shift
+               mid-animation when the mobile browser chrome hides/shows. */
+            0% { transform: translateY(var(--bg-height, 100vh)) rotate(0deg); opacity: 0; }
             10% { opacity: 0.6; }
             90% { opacity: 0.6; }
-            100% { transform: translateY(-10dvh) rotate(720deg); opacity: 0; }
+            100% { transform: translateY(calc(-1 * var(--bg-height, 100vh) * 0.1)) rotate(720deg); opacity: 0; }
         }
 
         /* Header */
@@ -1114,7 +1110,7 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            height: 100dvh; /* see #psychCanvas comment — avoids the same mobile-scroll jump */
+            height: var(--bg-height, 100vh); /* see #psychCanvasWrap comment — static, doesn't track the toolbar transition at all */
             pointer-events: none;
             z-index: 9999;
             /* see #psychCanvasWrap comment — Android Chrome address-bar compositing workaround */
@@ -1774,41 +1770,51 @@
     let bgModeIndex = Math.floor(Math.random() * bgModes.length);
     let bgMode = bgModes[bgModeIndex];
 
-    // Setting canvas.width/height ALWAYS wipes the bitmap, even to the
-    // same value — that was the real source of the mobile jump: wiring
-    // this straight to visualViewport's 'resize' event meant every
-    // incremental tick of the browser's nav-bar hide/show animation
-    // during a scroll cleared the canvas, flashing it blank over and
-    // over. Debouncing the resize wasn't enough on its own — some mobile
+    // Mobile browsers slide their own nav/address bar away as you scroll,
+    // shrinking and growing the visible viewport through that gesture.
+    // Chased this three ways before landing here: 100dvh CSS still lagged
+    // (Chrome throttles the layout recalc a dvh-sized box needs during a
+    // fast scroll, so the box grows late regardless of GPU compositing);
+    // debouncing the canvas's own resize wasn't enough either, since some
     // browsers keep reporting small height changes throughout the whole
-    // hide/show animation, re-triggering the debounce continuously so it
-    // never actually settles until the animation is fully done, which is
-    // itself often right as the user releases the scroll (i.e. still a
-    // clear-and-redraw "jump" at that moment).
+    // hide/show animation, continuously pushing the debounce back so it
+    // never actually resolves until right as the user releases the
+    // scroll — a resize (and, worse, a canvas clear — setting
+    // canvas.width/height always wipes the bitmap, even to an unchanged
+    // value) at exactly that moment.
     //
-    // So instead: on touch devices (where a mobile browser's nav bar can
-    // do this), give the buffer a fixed overscan margin taller than any
-    // realistic toolbar (160px), sized once up front, and let #psychCanvas
-    // render taller than its wrap's clip window (see CSS) instead of
-    // matching it exactly. The wrap (100dvh) keeps tracking the real,
-    // current viewport exactly — as the toolbar hides, it's just clipping
-    // less off an already-drawn canvas, instead of needing the buffer
-    // itself to resize (and clear) to keep up. The buffer now only needs
-    // to change on a real resize (rotating the phone, resizing an actual
-    // browser window), which 'resize' + the debounce still handle. Desktop
-    // has no such toolbar, so it gets no overscan and stays pixel-exact.
-    const mobileOverscan = window.matchMedia('(pointer: coarse)').matches ? 160 : 0;
+    // So: don't track the transition at all. --bg-height (used by the
+    // fixed overlays too, see #psychCanvasWrap) and the canvas buffer
+    // below are both sized once, up front, to window.screen.height — the
+    // largest the viewport could ever be on this device, address bar
+    // included or not. That's big enough to cover every state the toolbar
+    // animation passes through, so nothing needs to resize (or clear) for
+    // an ordinary scroll — only a real resize (rotating the phone, an
+    // actual browser window resize) needs to recompute it, which
+    // 'resize' + the debounce below still handle. Desktop has no such
+    // toolbar and screen.height ≈ innerHeight there anyway, so it stays
+    // effectively pixel-exact.
+    function safeBgHeight() {
+        return Math.max(window.innerHeight, (window.screen && window.screen.height) || 0);
+    }
+    function updateBgHeightVar() {
+        document.documentElement.style.setProperty('--bg-height', safeBgHeight() + 'px');
+    }
     function resizeCanvas() {
         const w = window.innerWidth;
-        const h = window.innerHeight + mobileOverscan;
+        const h = safeBgHeight();
         if (canvas.width !== w) canvas.width = w;
         if (canvas.height !== h) canvas.height = h;
     }
+    updateBgHeightVar();
     resizeCanvas();
     let resizeSettleTimer = null;
     function scheduleResizeCanvas() {
         clearTimeout(resizeSettleTimer);
-        resizeSettleTimer = setTimeout(resizeCanvas, 400);
+        resizeSettleTimer = setTimeout(() => {
+            updateBgHeightVar();
+            resizeCanvas();
+        }, 400);
     }
     window.addEventListener('resize', scheduleResizeCanvas);
 
@@ -2738,14 +2744,13 @@
         const sat = 2.4 + acidWave(t * 0.6, 621) * 0.9;
         const con = 1.2 + acidWave(t * 0.5, 631) * 0.2;
         const bri = 1.25 + acidWave(t * 0.4, 641) * 0.2;
-        // Applied to the (viewport-sized, clipped) wrap rather than the
-        // canvas itself: a filter forces the browser to rasterize the
-        // whole filtered element every time its value changes, and the
-        // canvas is intentionally oversized on mobile (see resizeCanvas)
-        // to avoid resizing during the nav-bar hide/show transition —
-        // filtering that oversized element at 60fps during a scroll was
-        // itself heavy enough to jank/jump. The wrap is only ever the
-        // real, on-screen size, so filtering it is far cheaper.
+        // Applied to the wrap (the clipped, overflow:hidden container)
+        // rather than the canvas itself, so it's set on the same element
+        // that owns the GPU compositor layer (see #psychCanvasWrap) —
+        // keeps the acid-mode color cycling on that same, already-cheap
+        // layer instead of forcing the browser to rasterize the canvas
+        // directly on every value change (a filter does that every frame
+        // it's animated, i.e. constantly while acid mode is on).
         canvasWrap.style.filter = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(2)}) `
             + `contrast(${con.toFixed(2)}) brightness(${bri.toFixed(2)})`;
     }
