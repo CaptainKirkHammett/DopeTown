@@ -195,6 +195,14 @@
             position: absolute;
             border-radius: 50%;
             animation: floatParticle linear infinite;
+            /* Without this, a particle sits at its un-animated default
+               position (effectively pinned to the top of the container)
+               for its whole animation-delay before the animation actually
+               starts — up to 10s of every bubble visibly parked in a row
+               at the top of the screen right when the page loads. Backwards
+               fill-mode applies the 0% keyframe (off-screen, invisible)
+               during that delay instead. */
+            animation-fill-mode: backwards;
             opacity: 0.4;
         }
 
@@ -1743,27 +1751,26 @@
     for (let i = 0; i < 40; i++) {
         const p = document.createElement('div');
         p.classList.add('particle');
-        // Wider size range (3-16px) so the bubbles read as genuinely
-        // different sizes drifting past, not a uniform dust of dots.
-        const size = Math.random() * 13 + 3;
+        // Wider size range (6-32px, 2x the original 3-16px) so the bubbles
+        // read as genuinely different sizes drifting past, not a uniform
+        // dust of dots.
+        const size = Math.random() * 26 + 6;
         const color = colors[Math.floor(Math.random() * colors.length)];
         // A flat vector bubble instead of a photorealistic glass sphere:
         // a thin neon ring, a faint flat tint, and a small dot for the
         // highlight — matching the flat outlined ring/crescent bubbles
         // already drawn at the flask's neck in the logo, and the
-        // neon-vector look of the canvas background animations. Softened
-        // with a blur and lower alpha across the board so they read as
-        // ambient background haze rather than popping out over content.
+        // neon-vector look of the canvas background animations. Kept
+        // sharp (no blur) but low-alpha throughout so they read as
+        // translucent rather than popping out over content.
         const borderW = Math.max(1, size * 0.1).toFixed(2);
         const dot = Math.max(1, size * 0.22).toFixed(2);
-        const blur = Math.max(0.6, size * 0.09).toFixed(2);
         p.style.cssText = `
             width: ${size}px;
             height: ${size}px;
             background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.5) 0, rgba(255,255,255,0.5) ${dot}px, transparent ${dot}px), ${color}14;
             border: ${borderW}px solid ${color}80;
             box-shadow: 0 0 ${size * 0.35}px ${color}33;
-            filter: blur(${blur}px);
             left: ${Math.random() * 100}%;
             animation-duration: ${Math.random() * 15 + 10}s;
             animation-delay: ${Math.random() * 10}s;
