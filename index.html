@@ -2760,8 +2760,9 @@
 
     // One backbone of a drawLaboratoryDNA() helix: a chain of short segments
     // whose width/brightness track each point's "depth" (front vs back of
-    // the spin), plus a node dot at each joint.
-    function drawDNAStrand(points, hue) {
+    // the spin), plus a node dot at each joint. scale keeps line/node
+    // thickness proportional for the bigger (up to 3x) helices.
+    function drawDNAStrand(points, hue, scale = 1) {
         for (let i = 0; i < points.length - 1; i++) {
             const a = points[i], b = points[i + 1];
             const depth = (a.depth + b.depth) / 2;
@@ -2769,43 +2770,65 @@
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
             ctx.strokeStyle = `hsla(${hue}, 75%, ${55 + depth * 20}%, ${0.1 + depth * 0.2})`;
-            ctx.lineWidth = 2 + depth * 1.5;
+            ctx.lineWidth = (2 + depth * 1.5) * scale;
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(a.x, a.y, 1.5 + depth * 1.5, 0, Math.PI * 2);
+            ctx.arc(a.x, a.y, (1.5 + depth * 1.5) * scale, 0, Math.PI * 2);
             ctx.fillStyle = `hsla(${hue}, 80%, 70%, ${0.15 + depth * 0.2})`;
             ctx.fill();
         }
     }
 
-    // Bonus layer: spinning DNA double helices in the corners, each strand
-    // a sine-wave backbone 180deg out of phase with the other, with rungs
-    // (base pairs) connecting them. "depth" (front/back of the spin, from
-    // where each point sits in its rotation) drives opacity/width/lightness
-    // instead of true 3D, so the helix reads as rotating in place.
+    // Bonus layer: spinning DNA double helices drifting around the whole
+    // canvas (like the base layer's molecules), each strand a sine-wave
+    // backbone 180deg out of phase with the other, with rungs (base pairs)
+    // connecting them. "depth" (front/back of the spin, from where each
+    // point sits in its rotation) drives opacity/width/lightness instead
+    // of true 3D, so the helix reads as rotating in place. The backbone's
+    // own central axis is bent by a couple of mismatched sine waves (own
+    // frequency/phase per strand) instead of running straight, so each
+    // strand curves organically rather than looking like a rigid rod.
     function drawLaboratoryDNA() {
-        const dnaSpots = [
-            { x: 0.1, y: 0.88 }, { x: 0.9, y: 0.85 }, { x: 0.15, y: 0.15 }, { x: 0.88, y: 0.18 }
-        ];
-        dnaSpots.forEach((spot, f) => {
-            const fx = spot.x * canvas.width;
-            const fy = spot.y * canvas.height;
-            const hue = (150 + f * 60 + time * 15) % 360;
-            const height = 78;
-            const radius = 14 + labRand(f * 4.4) * 5;
+        const count = 7;
+        for (let f = 0; f < count; f++) {
+            // 1x-3x size range per strand, fixed per index via labRand.
+            const scale = 1 + labRand(f * 3.3) * 2;
+            const height = 78 * scale;
+            const radius = (14 + labRand(f * 4.4) * 5) * scale;
             const segments = 22;
             const turns = 2;
             const spinSpeed = 1.1 + labRand(f * 5.5) * 0.6;
+
+            // Drifts around the canvas the same way the base layer's
+            // molecules do, each strand on its own slow, looping path.
+            const driftSpeedX = 0.05 + labRand(f * 6.6) * 0.1;
+            const driftSpeedY = 0.04 + labRand(f * 8.8) * 0.09;
+            const ampX = canvas.width * (0.32 + labRand(f * 2.2) * 0.34);
+            const ampY = canvas.height * (0.32 + labRand(f * 7.7) * 0.34);
+            const driftPhase = labRand(f * 9.9) * Math.PI * 2;
+            const fx = canvas.width * 0.5 + Math.sin(time * driftSpeedX + driftPhase) * ampX;
+            const fy = canvas.height * 0.5 + Math.cos(time * driftSpeedY + driftPhase * 1.3) * ampY;
+
+            // Random bend of the central axis, own frequency/amplitude/phase.
+            const bendFreq1 = 1.3 + labRand(f * 11.1) * 1.3;
+            const bendFreq2 = 2.6 + labRand(f * 13.3) * 1.7;
+            const bendAmp = radius * (1.3 + labRand(f * 15.5) * 1.3);
+            const bendPhase = labRand(f * 17.7) * Math.PI * 2;
+
+            const hue = (150 + f * 47 + time * 15) % 360;
             const points1 = [];
             const points2 = [];
             for (let i = 0; i <= segments; i++) {
                 const t = i / segments;
-                const py = fy - height * 0.5 + t * height;
+                const bend = Math.sin(t * bendFreq1 * Math.PI + bendPhase) * bendAmp
+                    + Math.sin(t * bendFreq2 * Math.PI + bendPhase * 1.7) * bendAmp * 0.4;
+                const axisX = fx + bend;
+                const axisY = fy + (t - 0.5) * height;
                 const angle = t * Math.PI * 2 * turns + time * spinSpeed + f * 2.1;
                 const offset = Math.cos(angle) * radius;
                 const depth = (Math.sin(angle) + 1) / 2; // 0 = back of spin, 1 = front
-                points1.push({ x: fx + offset, y: py, depth });
-                points2.push({ x: fx - offset, y: py, depth: 1 - depth });
+                points1.push({ x: axisX + offset, y: axisY, depth });
+                points2.push({ x: axisX - offset, y: axisY, depth: 1 - depth });
             }
             // Rungs (base pairs) drawn first so both strands render on top
             for (let i = 0; i < points1.length; i += 3) {
@@ -2815,12 +2838,12 @@
                 ctx.moveTo(p1.x, p1.y);
                 ctx.lineTo(p2.x, p2.y);
                 ctx.strokeStyle = `hsla(${(hue + 40) % 360}, 70%, 65%, ${0.06 + rungDepth * 0.1})`;
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 1.5 * scale;
                 ctx.stroke();
             }
-            drawDNAStrand(points1, hue);
-            drawDNAStrand(points2, (hue + 100) % 360);
-        });
+            drawDNAStrand(points1, hue, scale);
+            drawDNAStrand(points2, (hue + 100) % 360, scale);
+        }
     }
 
     // === MODE 10: Mushrooms ===
