@@ -2797,7 +2797,12 @@
             const radius = (14 + labRand(f * 4.4) * 5) * scale;
             const segments = 22;
             const turns = 2;
-            const spinSpeed = 1.1 + labRand(f * 5.5) * 0.6;
+            // Flips bend direction and spin direction together for about
+            // half the strands — without this they all curved and spun
+            // the same way (bendAmp and spinSpeed were always positive),
+            // which read as repetitive rather than random.
+            const mirror = labRand(f * 21.3) < 0.5 ? -1 : 1;
+            const spinSpeed = (1.1 + labRand(f * 5.5) * 0.6) * mirror;
 
             // Drifts around the canvas the same way the base layer's
             // molecules do, each strand on its own slow, looping path.
@@ -2812,7 +2817,7 @@
             // Random bend of the central axis, own frequency/amplitude/phase.
             const bendFreq1 = 1.3 + labRand(f * 11.1) * 1.3;
             const bendFreq2 = 2.6 + labRand(f * 13.3) * 1.7;
-            const bendAmp = radius * (1.3 + labRand(f * 15.5) * 1.3);
+            const bendAmp = radius * (1.3 + labRand(f * 15.5) * 1.3) * mirror;
             const bendPhase = labRand(f * 17.7) * Math.PI * 2;
 
             const hue = (150 + f * 47 + time * 15) % 360;
