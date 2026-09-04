@@ -351,6 +351,9 @@
             padding: 2rem 1rem;
             max-width: 1400px;
             margin: 0 auto;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0s linear 0s;
         }
 
         .section-title {
@@ -850,6 +853,8 @@
             background-size: 200% 100%;
             animation: dividerMove 4s linear infinite;
             opacity: 0.6;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0s linear 0s;
         }
 
         @keyframes dividerMove {
@@ -1015,10 +1020,18 @@
         /* The "!" button hides the Bandcamp/Spotify/YouTube/SoundCloud
            embed sections (and their titles) along with the dividers
            between them, leaving the logo, marquees, social links,
-           Instagram section and footer untouched. */
+           Instagram section and footer untouched. Fades out instead of
+           snapping: opacity animates to 0 while visibility is delayed
+           until the fade finishes, so the (still technically "visible")
+           fading-out content can't be interacted with in the meantime,
+           and it un-hides instantly then fades back in on toggle-off —
+           see the base .section/.divider rules for the reverse transition. */
         body.embeds-hidden .section,
         body.embeds-hidden .divider:not(#headerDivider) {
+            opacity: 0;
             visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.5s ease, visibility 0s linear 0.5s;
         }
 
         /* Back-to-top button — fixed bottom-right, only shown once the
