@@ -2799,7 +2799,15 @@
         // scrolling can fire very few scroll events) used to make those
         // counts jump by whole integers instantly. Interpolating here
         // spreads that change smoothly across frames instead.
-        const targetScrollFactor = acidBackgroundActive ? Math.min(1, rawScrollFactor + 0.55) : rawScrollFactor;
+        // Hiding the embeds (the "!" button) clears most of the page for
+        // the background, so every mode's complexity gets boosted too —
+        // same trick as acid mode, just a smaller nudge, and the two
+        // stack (capped at 1) if both are on at once.
+        const embedsHidden = document.body.classList.contains('embeds-hidden');
+        let complexityBoost = 0;
+        if (acidBackgroundActive) complexityBoost += 0.55;
+        if (embedsHidden) complexityBoost += 0.4;
+        const targetScrollFactor = complexityBoost > 0 ? Math.min(1, rawScrollFactor + complexityBoost) : rawScrollFactor;
         scrollFactor += (targetScrollFactor - scrollFactor) * 0.05;
         const clearAlpha = bgMode === 'laboratory' ? 0.6 : 0.15;
         ctx.fillStyle = `rgba(26, 0, 51, ${clearAlpha})`;
