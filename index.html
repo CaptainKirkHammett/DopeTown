@@ -2755,52 +2755,71 @@
             }
         }
 
-        drawBonusLayer(() => drawLaboratoryFlasks());
+        drawBonusLayer(() => drawLaboratoryDNA());
     }
 
-    // Bonus layer: bubbling beakers in the corners, liquid rising and popping
-    function drawLaboratoryFlasks() {
-        const flaskSpots = [
+    // One backbone of a drawLaboratoryDNA() helix: a chain of short segments
+    // whose width/brightness track each point's "depth" (front vs back of
+    // the spin), plus a node dot at each joint.
+    function drawDNAStrand(points, hue) {
+        for (let i = 0; i < points.length - 1; i++) {
+            const a = points[i], b = points[i + 1];
+            const depth = (a.depth + b.depth) / 2;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `hsla(${hue}, 75%, ${55 + depth * 20}%, ${0.1 + depth * 0.2})`;
+            ctx.lineWidth = 2 + depth * 1.5;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, 1.5 + depth * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, 80%, 70%, ${0.15 + depth * 0.2})`;
+            ctx.fill();
+        }
+    }
+
+    // Bonus layer: spinning DNA double helices in the corners, each strand
+    // a sine-wave backbone 180deg out of phase with the other, with rungs
+    // (base pairs) connecting them. "depth" (front/back of the spin, from
+    // where each point sits in its rotation) drives opacity/width/lightness
+    // instead of true 3D, so the helix reads as rotating in place.
+    function drawLaboratoryDNA() {
+        const dnaSpots = [
             { x: 0.1, y: 0.88 }, { x: 0.9, y: 0.85 }, { x: 0.15, y: 0.15 }, { x: 0.88, y: 0.18 }
         ];
-        flaskSpots.forEach((spot, f) => {
+        dnaSpots.forEach((spot, f) => {
             const fx = spot.x * canvas.width;
             const fy = spot.y * canvas.height;
             const hue = (150 + f * 60 + time * 15) % 360;
-            const w = 26, h = 34;
-            // Beaker outline
-            ctx.beginPath();
-            ctx.moveTo(fx - w * 0.5, fy - h);
-            ctx.lineTo(fx - w * 0.6, fy + h * 0.3);
-            ctx.quadraticCurveTo(fx - w * 0.6, fy + h * 0.5, fx - w * 0.3, fy + h * 0.5);
-            ctx.lineTo(fx + w * 0.3, fy + h * 0.5);
-            ctx.quadraticCurveTo(fx + w * 0.6, fy + h * 0.5, fx + w * 0.6, fy + h * 0.3);
-            ctx.lineTo(fx + w * 0.5, fy - h);
-            ctx.strokeStyle = `hsla(${hue}, 40%, 75%, 0.15)`;
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-            // Liquid fill
-            const liquidTop = fy + h * (0.05 + Math.sin(time * 1.5 + f) * 0.05);
-            ctx.beginPath();
-            ctx.moveTo(fx - w * 0.55, liquidTop);
-            ctx.lineTo(fx - w * 0.6, fy + h * 0.3);
-            ctx.quadraticCurveTo(fx - w * 0.6, fy + h * 0.5, fx - w * 0.3, fy + h * 0.5);
-            ctx.lineTo(fx + w * 0.3, fy + h * 0.5);
-            ctx.quadraticCurveTo(fx + w * 0.6, fy + h * 0.5, fx + w * 0.6, fy + h * 0.3);
-            ctx.lineTo(fx + w * 0.55, liquidTop);
-            ctx.closePath();
-            ctx.fillStyle = `hsla(${hue}, 80%, 55%, 0.12)`;
-            ctx.fill();
-            // Rising bubbles
-            for (let b = 0; b < 5; b++) {
-                const bProgress = ((time * (0.6 + labRand(f * 3 + b) * 0.5)) + labRand(f * 7 + b)) % 1;
-                const bx = fx + Math.sin(b * 3.3 + f) * w * 0.25;
-                const by = fy + h * 0.45 - bProgress * (fy + h * 0.45 - liquidTop);
-                ctx.beginPath();
-                ctx.arc(bx, by, 1.5 + labRand(f * 9 + b) * 1.5, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${hue}, 70%, 85%, ${0.15 * (1 - bProgress)})`;
-                ctx.fill();
+            const height = 78;
+            const radius = 14 + labRand(f * 4.4) * 5;
+            const segments = 22;
+            const turns = 2;
+            const spinSpeed = 1.1 + labRand(f * 5.5) * 0.6;
+            const points1 = [];
+            const points2 = [];
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const py = fy - height * 0.5 + t * height;
+                const angle = t * Math.PI * 2 * turns + time * spinSpeed + f * 2.1;
+                const offset = Math.cos(angle) * radius;
+                const depth = (Math.sin(angle) + 1) / 2; // 0 = back of spin, 1 = front
+                points1.push({ x: fx + offset, y: py, depth });
+                points2.push({ x: fx - offset, y: py, depth: 1 - depth });
             }
+            // Rungs (base pairs) drawn first so both strands render on top
+            for (let i = 0; i < points1.length; i += 3) {
+                const p1 = points1[i], p2 = points2[i];
+                const rungDepth = (p1.depth + p2.depth) / 2;
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = `hsla(${(hue + 40) % 360}, 70%, 65%, ${0.06 + rungDepth * 0.1})`;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            drawDNAStrand(points1, hue);
+            drawDNAStrand(points2, (hue + 100) % 360);
         });
     }
 
