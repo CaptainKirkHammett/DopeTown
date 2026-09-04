@@ -95,22 +95,35 @@
             border: 0;
         }
 
-        /* Psychedelic canvas background */
-        #psychCanvas {
+        /* Psychedelic canvas background.
+           On mobile, the browser's own nav/address bar slides away as you
+           scroll. A canvas's own width/height attributes are its actual
+           pixel buffer — changing either one ALWAYS wipes it, even to an
+           unchanged value — so resizing the canvas itself in step with
+           that transition flashes it blank repeatedly. Instead, the wrap
+           is a clipping window sized to the real, current viewport
+           (100dvh — tracks the transition smoothly on its own, no JS
+           needed for this part), while the canvas inside it keeps a
+           fixed, overscanned pixel size (see resizeCanvas()) and simply
+           gets revealed or clipped as the window resizes. Its own CSS
+           height is locked in JS to match its buffer 1:1, so growing the
+           window shows more of an already-drawn canvas instead of
+           scaling or resizing it. */
+        #psychCanvasWrap {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            /* On mobile, the browser's own nav/address bar slides away as
-               you scroll, and plain 100%/100vh keeps sizing against the
-               viewport as it was *before* that transition — so the fixed
-               canvas visibly lags a beat behind (a gap at the bottom while
-               scrolling, then a snap to fill once the bar finishes hiding).
-               100dvh tracks the real-time visual viewport through that
-               transition instead, so it resizes smoothly with no jump.
-               Kept 100% above as a fallback for browsers without dvh. */
             height: 100dvh;
+            overflow: hidden;
             z-index: -2;
             pointer-events: none;
+        }
+
+        #psychCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            display: block;
         }
 
         /* Extra background wildness while acid-trip mode is engaged — a
@@ -1285,7 +1298,9 @@
     </filter>
 </svg>
 
-<canvas id="psychCanvas"></canvas>
+<div id="psychCanvasWrap">
+    <canvas id="psychCanvas"></canvas>
+</div>
 <div class="scanlines"></div>
 
 <!-- Floating particles -->
@@ -1744,13 +1759,28 @@
     // this straight to visualViewport's 'resize' event meant every
     // incremental tick of the browser's nav-bar hide/show animation
     // during a scroll cleared the canvas, flashing it blank over and
-    // over. The CSS box (100dvh, see #psychCanvas) already tracks the
-    // real-time viewport smoothly on its own — the browser just scales
-    // the bitmap to fit while a resize is pending — so the actual
-    // drawing-buffer resize only needs to happen once things settle.
+    // over. Debouncing the resize wasn't enough on its own — some mobile
+    // browsers keep reporting small height changes throughout the whole
+    // hide/show animation, re-triggering the debounce continuously so it
+    // never actually settles until the animation is fully done, which is
+    // itself often right as the user releases the scroll (i.e. still a
+    // clear-and-redraw "jump" at that moment).
+    //
+    // So instead: on touch devices (where a mobile browser's nav bar can
+    // do this), give the buffer a fixed overscan margin taller than any
+    // realistic toolbar (160px), sized once up front, and let #psychCanvas
+    // render taller than its wrap's clip window (see CSS) instead of
+    // matching it exactly. The wrap (100dvh) keeps tracking the real,
+    // current viewport exactly — as the toolbar hides, it's just clipping
+    // less off an already-drawn canvas, instead of needing the buffer
+    // itself to resize (and clear) to keep up. The buffer now only needs
+    // to change on a real resize (rotating the phone, resizing an actual
+    // browser window), which 'resize' + the debounce still handle. Desktop
+    // has no such toolbar, so it gets no overscan and stays pixel-exact.
+    const mobileOverscan = window.matchMedia('(pointer: coarse)').matches ? 160 : 0;
     function resizeCanvas() {
         const w = window.innerWidth;
-        const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const h = window.innerHeight + mobileOverscan;
         if (canvas.width !== w) canvas.width = w;
         if (canvas.height !== h) canvas.height = h;
     }
@@ -1758,12 +1788,9 @@
     let resizeSettleTimer = null;
     function scheduleResizeCanvas() {
         clearTimeout(resizeSettleTimer);
-        resizeSettleTimer = setTimeout(resizeCanvas, 200);
+        resizeSettleTimer = setTimeout(resizeCanvas, 400);
     }
     window.addEventListener('resize', scheduleResizeCanvas);
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', scheduleResizeCanvas);
-    }
 
     // Track scroll for morphing + logo fade. Read window.scrollY fresh every
     // animation frame (in animate(), below) instead of relying on the
