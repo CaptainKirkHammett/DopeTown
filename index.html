@@ -1761,6 +1761,12 @@
     const ctx = canvas.getContext('2d');
     let time = 0;
     let scrollFactor = 0;
+    // Updated once per frame in animate() — read by each drawX() below to
+    // add its own extra, thematically-fitting bonus layer while the "!"
+    // button has the embed sections hidden (more screen for the
+    // background, so it earns some extra detail on top of the existing
+    // scrollFactor complexity boost).
+    let embedsHidden = false;
     let rawScrollFactor = 0;
     let acidBackgroundActive = false;
     let acidClock = 0;
@@ -1947,6 +1953,31 @@
             ctx.lineWidth = 1;
             ctx.stroke();
         }
+
+        if (embedsHidden) drawGeometricKaleidoscope(cx, cy);
+    }
+
+    // Bonus layer: mirrored kaleidoscope shards radiating from center
+    function drawGeometricKaleidoscope(cx, cy) {
+        const segments = 10;
+        const maxR = Math.max(canvas.width, canvas.height) * 0.6;
+        for (let seg = 0; seg < segments; seg++) {
+            const baseAngle = (seg / segments) * Math.PI * 2 + time * 0.15;
+            const hue = (seg * 36 + time * 60) % 360;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            for (let i = 0; i <= 12; i++) {
+                const t = i / 12;
+                const wobble = Math.sin(t * 5 + time * 2 + seg) * 0.15;
+                const angle = baseAngle + (t - 0.5) * (Math.PI / segments) * 1.6 + wobble * 0.1;
+                const r = t * maxR * (0.7 + Math.sin(time * 1.3 + seg + t * 4) * 0.3);
+                ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = `hsla(${hue}, 100%, 65%, 0.05)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
     }
 
     // === MODE 2: Organic tentacles ===
@@ -2038,6 +2069,28 @@
             ctx.fillStyle = grad;
             ctx.fill();
         }
+
+        if (embedsHidden) drawTentaclesInkClouds(cx, cy);
+    }
+
+    // Bonus layer: drifting ink clouds, like a startled cephalopod
+    function drawTentaclesInkClouds(cx, cy) {
+        for (let i = 0; i < 5; i++) {
+            const puffSpeed = 0.25 + labRand(i * 4.4) * 0.4;
+            const angle = i * 1.9 + time * puffSpeed;
+            const dist = 200 + labRand(i * 6.6) * 300 + Math.sin(time * 0.5 + i) * 60;
+            const ix = cx + Math.cos(angle) * dist;
+            const iy = cy + Math.sin(angle) * dist * 0.7;
+            const pulse = Math.sin(time * 0.8 + i * 2) * 0.5 + 0.5;
+            const r = (40 + labRand(i * 8.1) * 50) * (0.6 + pulse * 0.6);
+            const grad = ctx.createRadialGradient(ix, iy, 0, ix, iy, r);
+            grad.addColorStop(0, `hsla(270, 40%, 20%, ${0.1 * pulse})`);
+            grad.addColorStop(1, `hsla(270, 40%, 20%, 0)`);
+            ctx.beginPath();
+            ctx.arc(ix, iy, r, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
     }
 
     // === MODE 3: Space ===
@@ -2100,6 +2153,32 @@
             ctx.fillStyle = grad;
             ctx.fill();
         }
+
+        if (embedsHidden) drawSpaceComets();
+    }
+
+    // Bonus layer: comets streaking across with a fading trail
+    function drawSpaceComets() {
+        const cometCount = 4;
+        for (let c = 0; c < cometCount; c++) {
+            const cycle = 4 + labRand(c * 5.5) * 3;
+            const progress = ((time / cycle) + labRand(c * 3.3)) % 1;
+            const startX = -0.1 * canvas.width + labRand(c * 7.7) * canvas.width * 0.3;
+            const startY = labRand(c * 9.9) * canvas.height * 0.5;
+            const cx2 = startX + progress * canvas.width * 1.3;
+            const cy2 = startY + progress * canvas.height * 0.9;
+            const hue = (c * 70 + time * 20) % 360;
+            const fade = Math.sin(progress * Math.PI);
+            for (let tr = 0; tr < 10; tr++) {
+                const trailProgress = Math.max(0, progress - tr * 0.015);
+                const tx = startX + trailProgress * canvas.width * 1.3;
+                const ty = startY + trailProgress * canvas.height * 0.9;
+                ctx.beginPath();
+                ctx.arc(tx, ty, (3 - tr * 0.25) * (0.5 + fade * 0.5), 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 90%, 80%, ${(0.15 - tr * 0.014) * fade})`;
+                ctx.fill();
+            }
+        }
     }
 
     // === MODE 4: Vegetation ===
@@ -2143,6 +2222,35 @@
             ctx.beginPath();
             ctx.arc(px, py, 2 + Math.sin(time + p) * 1, 0, Math.PI * 2);
             ctx.fillStyle = `hsla(60, 80%, 70%, ${0.1 + Math.sin(time * 2 + p) * 0.05})`;
+            ctx.fill();
+        }
+
+        if (embedsHidden) drawVegetationBlooms(cx, cy);
+    }
+
+    // Bonus layer: flowers blooming open and closed at vine height
+    function drawVegetationBlooms(baseCx, cy) {
+        const bloomCount = 7;
+        for (let b = 0; b < bloomCount; b++) {
+            const bx = (b / (bloomCount - 1)) * canvas.width + Math.sin(time * 0.3 + b) * 30;
+            const heightFrac = 0.2 + labRand(b * 5.1) * 0.55;
+            const by = cy - heightFrac * canvas.height;
+            const breathe = Math.sin(time * (0.6 + labRand(b * 3.3) * 0.5) + b) * 0.5 + 0.5;
+            const petals = 6;
+            const petalLen = (10 + labRand(b * 7.7) * 8) * (0.4 + breathe * 0.6);
+            const hue = (330 + b * 12) % 360;
+            for (let p = 0; p < petals; p++) {
+                const angle = (p / petals) * Math.PI * 2 + time * 0.2;
+                const px = bx + Math.cos(angle) * petalLen;
+                const py = by + Math.sin(angle) * petalLen * 0.7;
+                ctx.beginPath();
+                ctx.ellipse(px, py, petalLen * 0.6, petalLen * 0.3, angle, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 75%, 65%, ${0.08 * breathe})`;
+                ctx.fill();
+            }
+            ctx.beginPath();
+            ctx.arc(bx, by, 3 + breathe * 2, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(50, 85%, 70%, ${0.1 * breathe})`;
             ctx.fill();
         }
     }
@@ -2200,6 +2308,31 @@
                 ctx.stroke();
             }
         }
+
+        if (embedsHidden) drawPCBDataPulses(gridSize);
+    }
+
+    // Bonus layer: data packets traveling along the grid like signal pulses
+    function drawPCBDataPulses(gridSize) {
+        const pulseCount = 14;
+        for (let p = 0; p < pulseCount; p++) {
+            const laneVertical = p % 2 === 0;
+            const laneIndex = labRand(p * 3.3) * (laneVertical ? Math.ceil(canvas.width / gridSize) : Math.ceil(canvas.height / gridSize));
+            const lanePos = Math.round(laneIndex) * gridSize;
+            const speed = 0.3 + labRand(p * 5.5) * 0.6;
+            const progress = (time * speed + labRand(p * 7.7)) % 1;
+            const hue = (120 + p * 25 + time * 30) % 360;
+            const px = laneVertical ? lanePos : progress * canvas.width;
+            const py = laneVertical ? progress * canvas.height : lanePos;
+            ctx.beginPath();
+            ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, 95%, 70%, 0.35)`;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, 95%, 70%, 0.1)`;
+            ctx.fill();
+        }
     }
 
     // === MODE 6: Machinery / Gears ===
@@ -2254,6 +2387,37 @@
             ctx.lineCap = 'round';
             ctx.stroke();
         }
+
+        if (embedsHidden) drawMachinerySteam(cx, cy);
+    }
+
+    // Bonus layer: steam/spark bursts puffing off the machinery
+    function drawMachinerySteam(cx, cy) {
+        const ventCount = 5;
+        for (let v = 0; v < ventCount; v++) {
+            const vx = cx + Math.sin(v * 2.7) * canvas.width * 0.35;
+            const vy = cy + Math.cos(v * 3.1) * canvas.height * 0.35;
+            const isSpark = v % 2 === 0;
+            for (let p = 0; p < 6; p++) {
+                const puffSpeed = 0.5 + labRand(v * 4.4 + p) * 0.8;
+                const progress = (time * puffSpeed + labRand(v * 6.6 + p)) % 1;
+                const drift = Math.sin(v + p) * 20;
+                const px = vx + drift * progress;
+                const py = vy - progress * (50 + labRand(v * 8.8 + p) * 40);
+                const alpha = (1 - progress) * 0.1;
+                if (isSpark) {
+                    ctx.beginPath();
+                    ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(40, 90%, 65%, ${alpha * 2})`;
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(px, py, 4 + progress * 10, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(0, 0%, 70%, ${alpha})`;
+                    ctx.fill();
+                }
+            }
+        }
     }
 
     // === MODE 7: Forest ===
@@ -2305,6 +2469,30 @@
             ctx.beginPath();
             ctx.ellipse(lx, ly, leafSize, leafSize * 0.5, rot, 0, Math.PI * 2);
             ctx.fillStyle = `hsla(${80 + l * 10}, 70%, 45%, 0.08)`;
+            ctx.fill();
+        }
+
+        if (embedsHidden) drawForestFireflies();
+    }
+
+    // Bonus layer: fireflies drifting and pulsing among the trees
+    function drawForestFireflies() {
+        const count = 18;
+        for (let f = 0; f < count; f++) {
+            const wanderSpeed = 0.15 + labRand(f * 5.1) * 0.3;
+            const fx = (Math.sin(f * 41.3 + time * wanderSpeed) * 0.4 + 0.5) * canvas.width
+                + Math.sin(time * 0.7 + f * 2) * 25;
+            const fy = canvas.height * (0.2 + labRand(f * 7.3) * 0.7)
+                + Math.cos(time * 0.5 + f * 1.5) * 20;
+            const glow = Math.sin(time * (1.5 + labRand(f * 9.9) * 2) + f * 3) * 0.5 + 0.5;
+            if (glow < 0.3) continue;
+            ctx.beginPath();
+            ctx.arc(fx, fy, 1.5 + glow, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(55, 95%, 75%, ${glow * 0.5})`;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(fx, fy, 5 + glow * 3, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(55, 95%, 75%, ${glow * 0.1})`;
             ctx.fill();
         }
     }
@@ -2375,6 +2563,46 @@
             ctx.closePath();
             ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.06)`;
             ctx.fill();
+        }
+
+        if (embedsHidden) drawUnderwaterJellyfish();
+    }
+
+    // Bonus layer: jellyfish drifting past with trailing tentacles
+    function drawUnderwaterJellyfish() {
+        const count = 3;
+        for (let j = 0; j < count; j++) {
+            const driftSpeed = 0.04 + labRand(j * 6.6) * 0.03;
+            const jx = ((time * driftSpeed + labRand(j * 4.4)) % 1.3 - 0.15) * canvas.width;
+            const jy = canvas.height * (0.15 + j * 0.25) + Math.sin(time * 0.6 + j * 2) * 25;
+            const pulse = Math.sin(time * 1.8 + j) * 0.5 + 0.5;
+            const bellW = (22 + j * 4) * (0.85 + pulse * 0.3);
+            const bellH = bellW * 0.7;
+            const hue = (280 + j * 25 + time * 8) % 360;
+            ctx.beginPath();
+            ctx.ellipse(jx, jy, bellW, bellH, 0, Math.PI, 0);
+            ctx.fillStyle = `hsla(${hue}, 70%, 65%, 0.09)`;
+            ctx.fill();
+            ctx.strokeStyle = `hsla(${hue}, 80%, 75%, 0.12)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            const tentacleCount = 6;
+            for (let t = 0; t < tentacleCount; t++) {
+                const tBaseX = jx + (t / (tentacleCount - 1) - 0.5) * bellW * 1.6;
+                ctx.beginPath();
+                ctx.moveTo(tBaseX, jy);
+                let ty = jy;
+                let tx = tBaseX;
+                for (let seg = 1; seg <= 10; seg++) {
+                    const sp = seg / 10;
+                    tx = tBaseX + Math.sin(time * 2 + t + sp * 3) * 8 * sp;
+                    ty = jy + sp * (30 + labRand(j * 3 + t) * 15);
+                    ctx.lineTo(tx, ty);
+                }
+                ctx.strokeStyle = `hsla(${hue}, 70%, 70%, 0.06)`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
         }
     }
 
@@ -2448,6 +2676,54 @@
                 ctx.fill();
             }
         }
+
+        if (embedsHidden) drawLaboratoryFlasks();
+    }
+
+    // Bonus layer: bubbling beakers in the corners, liquid rising and popping
+    function drawLaboratoryFlasks() {
+        const flaskSpots = [
+            { x: 0.1, y: 0.88 }, { x: 0.9, y: 0.85 }, { x: 0.15, y: 0.15 }, { x: 0.88, y: 0.18 }
+        ];
+        flaskSpots.forEach((spot, f) => {
+            const fx = spot.x * canvas.width;
+            const fy = spot.y * canvas.height;
+            const hue = (150 + f * 60 + time * 15) % 360;
+            const w = 26, h = 34;
+            // Beaker outline
+            ctx.beginPath();
+            ctx.moveTo(fx - w * 0.5, fy - h);
+            ctx.lineTo(fx - w * 0.6, fy + h * 0.3);
+            ctx.quadraticCurveTo(fx - w * 0.6, fy + h * 0.5, fx - w * 0.3, fy + h * 0.5);
+            ctx.lineTo(fx + w * 0.3, fy + h * 0.5);
+            ctx.quadraticCurveTo(fx + w * 0.6, fy + h * 0.5, fx + w * 0.6, fy + h * 0.3);
+            ctx.lineTo(fx + w * 0.5, fy - h);
+            ctx.strokeStyle = `hsla(${hue}, 40%, 75%, 0.15)`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            // Liquid fill
+            const liquidTop = fy + h * (0.05 + Math.sin(time * 1.5 + f) * 0.05);
+            ctx.beginPath();
+            ctx.moveTo(fx - w * 0.55, liquidTop);
+            ctx.lineTo(fx - w * 0.6, fy + h * 0.3);
+            ctx.quadraticCurveTo(fx - w * 0.6, fy + h * 0.5, fx - w * 0.3, fy + h * 0.5);
+            ctx.lineTo(fx + w * 0.3, fy + h * 0.5);
+            ctx.quadraticCurveTo(fx + w * 0.6, fy + h * 0.5, fx + w * 0.6, fy + h * 0.3);
+            ctx.lineTo(fx + w * 0.55, liquidTop);
+            ctx.closePath();
+            ctx.fillStyle = `hsla(${hue}, 80%, 55%, 0.12)`;
+            ctx.fill();
+            // Rising bubbles
+            for (let b = 0; b < 5; b++) {
+                const bProgress = ((time * (0.6 + labRand(f * 3 + b) * 0.5)) + labRand(f * 7 + b)) % 1;
+                const bx = fx + Math.sin(b * 3.3 + f) * w * 0.25;
+                const by = fy + h * 0.45 - bProgress * (fy + h * 0.45 - liquidTop);
+                ctx.beginPath();
+                ctx.arc(bx, by, 1.5 + labRand(f * 9 + b) * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 70%, 85%, ${0.15 * (1 - bProgress)})`;
+                ctx.fill();
+            }
+        });
     }
 
     // === MODE 10: Mushrooms ===
@@ -2534,6 +2810,25 @@
                 ctx.fillStyle = `hsla(50, 70%, 85%, 0.09)`;
                 ctx.fill();
             }
+
+            if (embedsHidden) drawMushroomSpores(mx, my, capW, hue, m);
+        }
+    }
+
+    // Bonus layer: spore clouds puffing up off a cap
+    function drawMushroomSpores(mx, my, capW, hue, m) {
+        const sporeCount = 6;
+        for (let s = 0; s < sporeCount; s++) {
+            const riseSpeed = 0.15 + labRand(m * 3 + s) * 0.2;
+            const progress = ((time * riseSpeed) + labRand(m * 5 + s)) % 1;
+            const drift = Math.sin(time * 0.5 + m + s) * capW * 0.4;
+            const sx = mx + drift * progress;
+            const sy = my - progress * (40 + labRand(m * 7 + s) * 30);
+            const alpha = Math.sin(progress * Math.PI) * 0.08;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 1.5 + progress * 2, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${(hue + 30) % 360}, 60%, 80%, ${alpha})`;
+            ctx.fill();
         }
     }
 
@@ -2590,6 +2885,27 @@
             ctx.fill();
             ctx.strokeStyle = `hsla(${n.hue}, 95%, 78%, 0.4)`;
             ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        if (embedsHidden) drawNeuralThoughtBursts(neurons);
+    }
+
+    // Bonus layer: occasional radial "thought" pulses bursting from a neuron
+    function drawNeuralThoughtBursts(neurons) {
+        const burstCount = 5;
+        for (let b = 0; b < burstCount; b++) {
+            const cycle = 2.5 + labRand(b * 4.4) * 2;
+            const progress = ((time / cycle) + labRand(b * 6.6)) % 1;
+            if (progress > 0.6) continue;
+            const n = neurons[Math.floor(labRand(b * 8.8) * neurons.length)];
+            if (!n) continue;
+            const r = progress * 90;
+            const alpha = (1 - progress / 0.6) * 0.15;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+            ctx.strokeStyle = `hsla(${n.hue}, 90%, 75%, ${alpha})`;
+            ctx.lineWidth = 2;
             ctx.stroke();
         }
     }
@@ -2660,6 +2976,30 @@
                 ctx.fillStyle = `rgba(255,255,255,${flash})`;
                 ctx.fill();
             }
+        }
+
+        if (embedsHidden) drawCrystalLightRays(cx, cy);
+    }
+
+    // Bonus layer: refracted light beams sweeping out from the crystal cluster
+    function drawCrystalLightRays(cx, cy) {
+        const rayCount = 8;
+        for (let r = 0; r < rayCount; r++) {
+            const angle = (r / rayCount) * Math.PI * 2 + time * 0.1;
+            const sweep = Math.sin(time * 0.4 + r) * 0.3;
+            const len = Math.max(canvas.width, canvas.height) * 0.7;
+            const hue = (r * 45 + time * 20) % 360;
+            const grad = ctx.createLinearGradient(cx, cy, cx + Math.cos(angle + sweep) * len, cy + Math.sin(angle + sweep) * len);
+            grad.addColorStop(0, `hsla(${hue}, 80%, 70%, 0.06)`);
+            grad.addColorStop(1, `hsla(${hue}, 80%, 70%, 0)`);
+            const spread = 0.06;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(angle + sweep - spread) * len, cy + Math.sin(angle + sweep - spread) * len);
+            ctx.lineTo(cx + Math.cos(angle + sweep + spread) * len, cy + Math.sin(angle + sweep + spread) * len);
+            ctx.closePath();
+            ctx.fillStyle = grad;
+            ctx.fill();
         }
     }
 
@@ -2803,7 +3143,7 @@
         // the background, so every mode's complexity gets boosted too —
         // same trick as acid mode, just a smaller nudge, and the two
         // stack (capped at 1) if both are on at once.
-        const embedsHidden = document.body.classList.contains('embeds-hidden');
+        embedsHidden = document.body.classList.contains('embeds-hidden');
         let complexityBoost = 0;
         if (acidBackgroundActive) complexityBoost += 0.55;
         if (embedsHidden) complexityBoost += 0.4;
