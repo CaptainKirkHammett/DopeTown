@@ -1803,6 +1803,21 @@
     // background, so it earns some extra detail on top of the existing
     // scrollFactor complexity boost).
     let embedsHidden = false;
+    // Eased 0-1 toward embedsHidden each frame (see animate()) instead of
+    // snapping straight to the boolean, so the bonus layers below fade in
+    // gradually when "!" is toggled on instead of popping in at full
+    // strength immediately.
+    let bonusIntensity = 0;
+    // Every drawXBonus() call is routed through here so it fades with
+    // bonusIntensity uniformly, without each of the 12 bonus functions
+    // needing its own alpha bookkeeping. Skipped once fully faded out.
+    function drawBonusLayer(fn) {
+        if (bonusIntensity < 0.01) return;
+        ctx.save();
+        ctx.globalAlpha *= bonusIntensity;
+        fn();
+        ctx.restore();
+    }
     let rawScrollFactor = 0;
     let logoScrollScale = 1;
     let acidBackgroundActive = false;
@@ -2017,7 +2032,7 @@
             ctx.stroke();
         }
 
-        if (embedsHidden) drawGeometricKaleidoscope(cx, cy);
+        drawBonusLayer(() => drawGeometricKaleidoscope(cx, cy));
     }
 
     // Bonus layer: mirrored kaleidoscope shards radiating from center
@@ -2133,7 +2148,7 @@
             ctx.fill();
         }
 
-        if (embedsHidden) drawTentaclesInkClouds(cx, cy);
+        drawBonusLayer(() => drawTentaclesInkClouds(cx, cy));
     }
 
     // Bonus layer: drifting ink clouds, like a startled cephalopod
@@ -2217,7 +2232,7 @@
             ctx.fill();
         }
 
-        if (embedsHidden) drawSpaceComets();
+        drawBonusLayer(() => drawSpaceComets());
     }
 
     // Bonus layer: comets streaking across with a fading trail
@@ -2288,7 +2303,7 @@
             ctx.fill();
         }
 
-        if (embedsHidden) drawVegetationBlooms(cx, cy);
+        drawBonusLayer(() => drawVegetationBlooms(cx, cy));
     }
 
     // Bonus layer: flowers blooming open and closed at vine height
@@ -2372,7 +2387,7 @@
             }
         }
 
-        if (embedsHidden) drawPCBDataPulses(gridSize);
+        drawBonusLayer(() => drawPCBDataPulses(gridSize));
     }
 
     // Bonus layer: data packets traveling along the grid like signal pulses
@@ -2451,7 +2466,7 @@
             ctx.stroke();
         }
 
-        if (embedsHidden) drawMachinerySteam(cx, cy);
+        drawBonusLayer(() => drawMachinerySteam(cx, cy));
     }
 
     // Bonus layer: steam/spark bursts puffing off the machinery
@@ -2535,7 +2550,7 @@
             ctx.fill();
         }
 
-        if (embedsHidden) drawForestFireflies();
+        drawBonusLayer(() => drawForestFireflies());
     }
 
     // Bonus layer: fireflies drifting and pulsing among the trees
@@ -2628,7 +2643,7 @@
             ctx.fill();
         }
 
-        if (embedsHidden) drawUnderwaterJellyfish();
+        drawBonusLayer(() => drawUnderwaterJellyfish());
     }
 
     // Bonus layer: jellyfish drifting past with trailing tentacles
@@ -2740,7 +2755,7 @@
             }
         }
 
-        if (embedsHidden) drawLaboratoryFlasks();
+        drawBonusLayer(() => drawLaboratoryFlasks());
     }
 
     // Bonus layer: bubbling beakers in the corners, liquid rising and popping
@@ -2874,7 +2889,7 @@
                 ctx.fill();
             }
 
-            if (embedsHidden) drawMushroomSpores(mx, my, capW, hue, m);
+            drawBonusLayer(() => drawMushroomSpores(mx, my, capW, hue, m));
         }
     }
 
@@ -2951,7 +2966,7 @@
             ctx.stroke();
         }
 
-        if (embedsHidden) drawNeuralThoughtBursts(neurons);
+        drawBonusLayer(() => drawNeuralThoughtBursts(neurons));
     }
 
     // Bonus layer: occasional radial "thought" pulses bursting from a neuron
@@ -3041,7 +3056,7 @@
             }
         }
 
-        if (embedsHidden) drawCrystalLightRays(cx, cy);
+        drawBonusLayer(() => drawCrystalLightRays(cx, cy));
     }
 
     // Bonus layer: refracted light beams sweeping out from the crystal cluster
@@ -3210,6 +3225,7 @@
         // same trick as acid mode, just a smaller nudge, and the two
         // stack (capped at 1) if both are on at once.
         embedsHidden = document.body.classList.contains('embeds-hidden');
+        bonusIntensity += ((embedsHidden ? 1 : 0) - bonusIntensity) * 0.04;
         let complexityBoost = 0;
         if (acidBackgroundActive) complexityBoost += 0.55;
         if (embedsHidden) complexityBoost += 0.4;
