@@ -4190,6 +4190,39 @@
         return buffer;
     }
 
+    // Picks a loop-start point close to a zero-crossing so looping a
+    // short one-shot sample (used to keep a tied bass note ringing past
+    // its own natural length — see smPlaySound) doesn't click audibly at
+    // every wrap. A raw one-shot is essentially never authored to loop
+    // seamlessly from sample 0; the bass kit's samples in particular are
+    // well under half a second, so a held tie wraps repeatedly. Looping
+    // back to a point near zero — matching the buffer's own natural
+    // silent tail at loopEnd — makes the seam inaudible without needing
+    // to touch the sample data itself. Cached per-buffer since it's the
+    // same answer every time and buffers are reused across triggers.
+    const smLoopPointCache = new WeakMap();
+    function smFindLoopPoint(buffer) {
+        if (smLoopPointCache.has(buffer)) return smLoopPointCache.get(buffer);
+        const data = buffer.getChannelData(0);
+        // Skip the first/last 10% so the pick can't land inside the
+        // attack transient or the buffer's own trailing silence.
+        const searchStart = Math.floor(data.length * 0.1);
+        const searchEnd = Math.floor(data.length * 0.9);
+        let bestIndex = searchStart;
+        let bestAbs = Infinity;
+        for (let i = searchStart; i < searchEnd; i++) {
+            const abs = Math.abs(data[i]);
+            if (abs < bestAbs) {
+                bestAbs = abs;
+                bestIndex = i;
+                if (abs === 0) break;
+            }
+        }
+        const loopStart = bestIndex / buffer.sampleRate;
+        smLoopPointCache.set(buffer, loopStart);
+        return loopStart;
+    }
+
     // Each step cycles through 4 states on click: off -> normal (a full
     // hit) -> short (gated to half the step) -> flam (a soft grace hit
     // plus the main hit) -> back to off. State lives entirely as classes
@@ -4692,7 +4725,14 @@
         // Every track's hits are shaped by its own decay envelope (via a
         // per-note gain node) rather than always ringing out unshaped.
         const envGain = smAudioCtx.createGain();
-        envGain.gain.setValueAtTime(velocity, time);
+        // A very short linear fade-in — imperceptible as a "fade" but
+        // enough to smooth over the fact that most one-shot samples
+        // don't start exactly on a zero crossing, which otherwise ticks
+        // audibly right at the attack (most noticeable on bass-range
+        // samples, where that initial jump carries more energy).
+        const attackTime = 0.003;
+        envGain.gain.setValueAtTime(0, time);
+        envGain.gain.linearRampToValueAtTime(velocity, time + attackTime);
         // A "short" step (see smCycleStepState) forces an earlier cutoff
         // than the decay knob would otherwise give it, capped to
         // whichever is shorter — a short step never rings longer than a
@@ -4710,8 +4750,14 @@
             // This step ties into the next one — keep it ringing (looped)
             // instead of letting the short one-shot sample decay/end on
             // its own, so there's still something to glide from when the
-            // tied step after it arrives.
-            if (smBassTies[stepIndex]) source.loop = true;
+            // tied step after it arrives. Loops from a near-zero point
+            // (not sample 0) so the wrap doesn't click — see
+            // smFindLoopPoint.
+            if (smBassTies[stepIndex]) {
+                source.loop = true;
+                source.loopStart = smFindLoopPoint(buffer);
+                source.loopEnd = buffer.duration;
+            }
             // Max 1 voice: release (fade out) whatever bass note is still
             // ringing instead of cutting it off with an instant stop(),
             // which clicks — the release knob controls how long that
@@ -4720,8 +4766,19 @@
             if (smBassActiveSource) {
                 try {
                     const releaseEnd = time + smBassReleaseDuration();
-                    smBassActiveGain.gain.cancelScheduledValues(time);
-                    smBassActiveGain.gain.setValueAtTime(smBassActiveGain.gain.value, time);
+                    if (typeof smBassActiveGain.gain.cancelAndHoldAtTime === 'function') {
+                        // Correctly holds the envelope's own curve value
+                        // AT `time` (which is scheduled ahead of real
+                        // time) instead of reading .value, which only
+                        // ever reflects "right now" — using that stale
+                        // "now" value here would jump the gain away from
+                        // wherever the in-progress decay ramp actually is
+                        // at `time`, clicking exactly at every retrigger.
+                        smBassActiveGain.gain.cancelAndHoldAtTime(time);
+                    } else {
+                        smBassActiveGain.gain.cancelScheduledValues(time);
+                        smBassActiveGain.gain.setValueAtTime(smBassActiveGain.gain.value, time);
+                    }
                     smBassActiveGain.gain.linearRampToValueAtTime(0.0001, releaseEnd);
                     smBassActiveSource.stop(releaseEnd + 0.02);
                 } catch (e) { /* already stopped */ }
