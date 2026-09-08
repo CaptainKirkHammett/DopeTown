@@ -1132,24 +1132,24 @@
             z-index: 5;
         }
         .sm-dope-badge {
-            width: 150px;
+            width: 300px;
             height: auto;
             transform: rotate(8deg);
             filter: drop-shadow(0 3px 0 #000) drop-shadow(0 0 10px rgba(255, 0, 255, 0.6));
         }
         .sm-dope-badge-text {
             font-family: 'Barrio', cursive;
-            font-size: 1.7rem;
+            font-size: 3.4rem;
             color: var(--neon-blue);
             -webkit-text-stroke: 1px rgba(0, 0, 0, 0.6);
             text-shadow: 2px 2px 0 #000, 0 0 10px var(--neon-blue);
-            transform: rotate(-4deg) translateY(-16px);
+            transform: rotate(-4deg) translateY(-22px);
         }
 
         .soundi-maker-header {
             display: flex;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: flex-start;
             gap: 1rem;
             flex-wrap: wrap;
             margin-bottom: 1.25rem;
@@ -1649,9 +1649,13 @@
                 background: #1c1450;
                 z-index: 1;
             }
-            .sm-dope-badge-wrap { top: -14px; right: -6px; }
-            .sm-dope-badge { width: 100px; }
-            .sm-dope-badge-text { font-size: 1.1rem; transform: rotate(-4deg) translateY(-10px); }
+            /* Pushed well above the panel (not just poking over its edge
+               like before) — at 2x size the badge+text stack is tall
+               enough to otherwise land right on top of the transport
+               row underneath it. */
+            .sm-dope-badge-wrap { top: -70px; right: -6px; }
+            .sm-dope-badge { width: 200px; }
+            .sm-dope-badge-text { font-size: 2.2rem; transform: rotate(-4deg) translateY(-14px); }
             .sm-pianoroll-header .sm-knob input[type="range"] { width: 34px; }
             .sm-transpose-btn { min-width: 22px; font-size: 0.55rem; }
         }
