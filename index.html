@@ -968,12 +968,22 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            /* Lifted above the Soundi Maker overlay (z-index 10000) so the
+               background-switch button ("?") stays usable while that mode
+               is open — but pointer-events is off here and on .social-left/
+               .social-right below, re-enabled only on the actual buttons,
+               so this row's own (mostly empty) bounding box doesn't block
+               clicks meant for the Soundi Maker panel underneath it. */
+            position: relative;
+            z-index: 10001;
+            pointer-events: none;
         }
 
         .social-left, .social-right {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            pointer-events: none;
         }
 
         .social-fab {
@@ -984,6 +994,7 @@
             height: 40px;
             border-radius: 4px;
             transition: opacity 0.2s ease;
+            pointer-events: auto;
         }
 
         .social-fab svg {
@@ -1011,6 +1022,7 @@
             font-size: 1.2rem;
             cursor: pointer;
             transition: opacity 0.2s ease;
+            pointer-events: auto;
         }
 
         .bg-toggle:hover {
@@ -1029,8 +1041,10 @@
             align-items: center;
             justify-content: center;
             padding: 1rem;
-            background: rgba(10, 0, 20, 0.85);
-            backdrop-filter: blur(4px);
+            /* No blur and only a light dim — the psychedelic background is
+               part of the fun, it should stay visible around the panel,
+               not be obscured. */
+            background: rgba(10, 0, 20, 0.35);
         }
         .soundi-maker-overlay.active {
             display: flex;
@@ -1223,11 +1237,125 @@
             outline-offset: 1px;
         }
 
+        /* Bass track name doubles as the button that opens the piano
+           roll — styled the same as a plain label but with an obvious
+           clickable affordance. */
+        .sm-track-name-btn {
+            font-family: 'Barrio', cursive;
+            font-size: 0.95rem;
+            width: 62px;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            text-shadow: 1.5px 1.5px 0 #000;
+            background: none;
+            border: none;
+            color: inherit;
+            text-align: left;
+            padding: 0;
+            cursor: pointer;
+            text-decoration: underline dotted;
+            text-underline-offset: 3px;
+        }
+        .sm-track-name-btn:hover { transform: scale(1.06); }
+
+        /* Piano roll — opened by clicking the Bass track's name, for
+           dialing in exact note pitches per step instead of just on/off. */
+        .sm-pianoroll-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10002;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(10, 0, 20, 0.55);
+        }
+        .sm-pianoroll-overlay.active {
+            display: flex;
+        }
+
+        .sm-pianoroll-panel {
+            width: 100%;
+            max-width: 640px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #0a1a3d, #1c1450 45%, #2b0a4e);
+            border: 5px solid #000;
+            border-radius: 34px 46px 36px 50px / 50px 34px 46px 30px;
+            box-shadow: 0 0 0 3px var(--neon-blue), 0 0 40px rgba(0, 240, 255, 0.5);
+            padding: 1.25rem;
+        }
+
+        .sm-pianoroll-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .sm-pianoroll-title {
+            font-family: 'Barrio', cursive;
+            font-size: 1.3rem;
+            color: var(--neon-blue);
+            text-shadow: 2px 2px 0 #000;
+            margin: 0;
+            transform: rotate(-1.5deg);
+        }
+
+        .sm-pianoroll-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sm-pianoroll-row {
+            display: grid;
+            grid-template-columns: 40px repeat(16, 1fr);
+            gap: 3px;
+            align-items: center;
+        }
+
+        .sm-pianoroll-key {
+            font-size: 0.65rem;
+            font-family: 'Space Mono', monospace;
+            color: #fff;
+            text-align: right;
+            padding-right: 4px;
+        }
+        .sm-pianoroll-row.sharp .sm-pianoroll-key {
+            color: #999;
+        }
+
+        .sm-pianoroll-cell {
+            aspect-ratio: 1;
+            border: 2px solid #000;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.1s ease;
+        }
+        .sm-pianoroll-row.sharp .sm-pianoroll-cell {
+            background: rgba(0, 0, 0, 0.35);
+        }
+        .sm-pianoroll-row.root .sm-pianoroll-cell {
+            box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.4);
+        }
+        .sm-pianoroll-cell:nth-child(4n + 2):not(:nth-child(2)) {
+            margin-left: 5px;
+        }
+        .sm-pianoroll-cell:hover { transform: scale(1.15); }
+        .sm-pianoroll-cell.active {
+            background: var(--neon-blue);
+            box-shadow: 0 0 8px var(--neon-blue);
+        }
+
         @media (max-width: 600px) {
             .soundi-maker-panel { padding: 1rem 0.75rem 1.25rem; border-width: 4px; }
             .sm-track { padding: 0.4rem 0.5rem; }
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
+            .sm-pianoroll-row { grid-template-columns: 28px repeat(16, 1fr); }
+            .sm-pianoroll-key { font-size: 0.55rem; }
         }
 
         /* The "!" button hides the Bandcamp/Spotify/YouTube/SoundCloud
@@ -1846,6 +1974,17 @@
             <div class="soundi-maker-loading" id="soundiMakerLoading">loading samples...</div>
             <div class="soundi-maker-tracks" id="soundiMakerTracks" style="display:none;"></div>
         </div>
+    </div>
+</div>
+
+<!-- Bass piano roll — opened by clicking the Bass track's name in Soundi Maker -->
+<div class="sm-pianoroll-overlay" id="smPianoRollOverlay">
+    <div class="sm-pianoroll-panel">
+        <div class="sm-pianoroll-header">
+            <h3 class="sm-pianoroll-title">BASSLINE</h3>
+            <button class="sm-close-btn" id="smPianoRollClose" aria-label="Close piano roll">&#10005;</button>
+        </div>
+        <div class="sm-pianoroll-grid" id="smPianoRollGrid"></div>
     </div>
 </div>
 
@@ -3585,6 +3724,17 @@
         oh: [],
     };
 
+    // Bass piano roll: each active step also carries a semitone offset
+    // (0 = the sample's own pitch) applied via playbackRate at trigger
+    // time, instead of just on/off like the other tracks. null = inactive.
+    let smBassNoteOffsets = new Array(SM_STEPS).fill(null);
+    const SM_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const SM_PIANOROLL_BASE_MIDI = 36; // C2 — bottom row, offset 0
+    const SM_PIANOROLL_RANGE = 13; // one octave inclusive (C2..C3)
+    function smMidiName(midi) {
+        return SM_NOTE_NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
+    }
+
     const soundiMakerToggle = document.getElementById('soundiMakerToggle');
     const soundiMakerOverlay = document.getElementById('soundiMakerOverlay');
     const soundiMakerLoading = document.getElementById('soundiMakerLoading');
@@ -3626,8 +3776,18 @@
         const controls = document.createElement('div');
         controls.className = 'sm-track-controls';
 
-        const name = document.createElement('span');
-        name.className = 'sm-track-name';
+        let name;
+        if (key === 'bass') {
+            // Bass gets exact notes instead of plain on/off — its name
+            // doubles as the button that opens the piano roll editor.
+            name = document.createElement('button');
+            name.className = 'sm-track-name-btn';
+            name.title = 'Open piano roll for exact notes';
+            name.addEventListener('click', () => smOpenPianoRoll());
+        } else {
+            name = document.createElement('span');
+            name.className = 'sm-track-name';
+        }
         name.textContent = meta.label;
         controls.appendChild(name);
 
@@ -3659,10 +3819,22 @@
         for (let i = 0; i < SM_STEPS; i++) {
             const step = document.createElement('div');
             step.className = 'sm-step';
-            if (activeSteps.has(i)) step.classList.add('active');
-            step.addEventListener('click', () => {
-                step.classList.toggle('active');
-            });
+            if (activeSteps.has(i)) {
+                step.classList.add('active');
+                if (key === 'bass') smBassNoteOffsets[i] = 0; // root note by default
+            }
+            if (key === 'bass') {
+                // Quick on/off at the root note from the main grid; exact
+                // pitch per step is set via the piano roll (track name).
+                step.addEventListener('click', () => {
+                    smBassNoteOffsets[i] = smBassNoteOffsets[i] === null ? 0 : null;
+                    step.classList.toggle('active', smBassNoteOffsets[i] !== null);
+                });
+            } else {
+                step.addEventListener('click', () => {
+                    step.classList.toggle('active');
+                });
+            }
             stepsWrap.appendChild(step);
             stepEls.push(step);
         }
@@ -3700,7 +3872,62 @@
         soundiMakerTracksEl.style.display = 'flex';
     }
 
-    function smPlaySound(key, time) {
+    const smPianoRollOverlay = document.getElementById('smPianoRollOverlay');
+    const smPianoRollGrid = document.getElementById('smPianoRollGrid');
+    const smPianoRollClose = document.getElementById('smPianoRollClose');
+
+    function smRenderPianoRoll() {
+        smPianoRollGrid.innerHTML = '';
+        // High notes at top, like a real piano roll.
+        for (let offset = SM_PIANOROLL_RANGE - 1; offset >= 0; offset--) {
+            const midi = SM_PIANOROLL_BASE_MIDI + offset;
+            const name = smMidiName(midi);
+            const row = document.createElement('div');
+            row.className = 'sm-pianoroll-row';
+            if (name.includes('#')) row.classList.add('sharp');
+            if (offset === 0) row.classList.add('root');
+
+            const keyLabel = document.createElement('span');
+            keyLabel.className = 'sm-pianoroll-key';
+            keyLabel.textContent = name;
+            row.appendChild(keyLabel);
+
+            for (let step = 0; step < SM_STEPS; step++) {
+                const cell = document.createElement('div');
+                cell.className = 'sm-pianoroll-cell';
+                if (smBassNoteOffsets[step] === offset) cell.classList.add('active');
+                cell.addEventListener('click', () => {
+                    const isActive = smBassNoteOffsets[step] === offset;
+                    smBassNoteOffsets[step] = isActive ? null : offset;
+                    smRenderPianoRoll();
+                    smSyncBassStepVisuals();
+                });
+                row.appendChild(cell);
+            }
+            smPianoRollGrid.appendChild(row);
+        }
+    }
+
+    // Keeps the main Bass row's step highlighting in sync with whatever
+    // was just edited in the piano roll.
+    function smSyncBassStepVisuals() {
+        const bassTrack = smTracks.bass;
+        if (!bassTrack) return;
+        bassTrack.stepEls.forEach((step, i) => {
+            step.classList.toggle('active', smBassNoteOffsets[i] !== null);
+        });
+    }
+
+    function smOpenPianoRoll() {
+        if (!smInitialized) return; // tracks not built yet
+        smRenderPianoRoll();
+        smPianoRollOverlay.classList.add('active');
+    }
+    smPianoRollClose.addEventListener('click', () => {
+        smPianoRollOverlay.classList.remove('active');
+    });
+
+    function smPlaySound(key, time, stepIndex) {
         const track = smTracks[key];
         const select = track.select;
         const url = track.sampleUrls[parseInt(select.value, 10)];
@@ -3708,6 +3935,10 @@
         if (!buffer) return;
         const source = smAudioCtx.createBufferSource();
         source.buffer = buffer;
+        if (key === 'bass') {
+            const semitones = smBassNoteOffsets[stepIndex] || 0;
+            source.playbackRate.value = Math.pow(2, semitones / 12);
+        }
         source.connect(track.gainNode);
         source.start(time);
     }
@@ -3715,7 +3946,7 @@
     function smScheduleStep(stepIndex, time) {
         SM_TRACK_ORDER.forEach(key => {
             if (smTracks[key].stepEls[stepIndex].classList.contains('active')) {
-                smPlaySound(key, time);
+                smPlaySound(key, time, stepIndex);
             }
         });
         const delayMs = Math.max(0, (time - smAudioCtx.currentTime) * 1000);
