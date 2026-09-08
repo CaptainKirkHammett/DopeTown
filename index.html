@@ -1445,7 +1445,8 @@
             width: 38px;
         }
         .sm-track-knob label {
-            width: 8px;
+            width: 24px;
+            flex-shrink: 0;
         }
 
         @media (max-width: 600px) {
@@ -3933,40 +3934,46 @@
         // track's own accent color) identifies the row instead. Bass
         // still needs a click target to open the piano roll for exact
         // notes, so it gets a compact icon button in the title's old spot.
-        if (key === 'bass') {
-            const pianoBtn = document.createElement('button');
-            pianoBtn.className = 'sm-track-piano-btn';
-            pianoBtn.title = 'Open piano roll for exact notes';
-            pianoBtn.textContent = '🎹';
-            pianoBtn.addEventListener('click', () => smOpenPianoRoll());
-            controls.appendChild(pianoBtn);
-        }
+        // Sample select is the left-most control (it's the row's
+        // identifier now that the plain text title is gone), followed by
+        // volume, then the pitch ("note") and decay ("dcy") knobs.
+        const select = document.createElement('select');
+        select.className = 'sm-sample-select';
+        meta.samples.forEach((path, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = path.split('/').pop().replace(/\.\w+$/i, '').toUpperCase();
+            select.appendChild(opt);
+        });
+        controls.appendChild(select);
 
-        // Per-track decay (how long each hit rings before fading — low
-        // values clip it short and punchy, high values let the sample
-        // ring its full natural length) and pitch (semitone tune, ±12).
-        // Both apply to every track, bass included, where they layer on
-        // top of its per-step piano-roll notes and release knob rather
-        // than replacing them.
-        const decayWrap = document.createElement('div');
-        decayWrap.className = 'sm-knob sm-track-knob';
-        const decayLabel = document.createElement('label');
-        decayLabel.textContent = 'D';
-        decayLabel.title = 'Decay';
-        const decayInput = document.createElement('input');
-        decayInput.type = 'range';
-        decayInput.min = '0';
-        decayInput.max = '100';
-        decayInput.value = '70';
-        decayInput.title = 'Decay';
-        decayWrap.appendChild(decayLabel);
-        decayWrap.appendChild(decayInput);
-        controls.appendChild(decayWrap);
+        const volumeWrap = document.createElement('div');
+        volumeWrap.className = 'sm-knob sm-track-knob';
+        const volumeLabel = document.createElement('label');
+        volumeLabel.textContent = 'VOL';
+        volumeLabel.title = 'Volume';
+        const volume = document.createElement('input');
+        volume.type = 'range';
+        volume.className = 'sm-volume';
+        volume.min = '0';
+        volume.max = '1';
+        volume.step = '0.01';
+        volume.value = String(meta.volume);
+        volume.title = 'Volume';
+        volumeWrap.appendChild(volumeLabel);
+        volumeWrap.appendChild(volume);
+        controls.appendChild(volumeWrap);
 
+        // Per-track pitch (semitone tune, ±12) and decay (how long each
+        // hit rings before fading — low values clip it short and punchy,
+        // high values let the sample ring its full natural length). Both
+        // apply to every track, bass included, where they layer on top of
+        // its per-step piano-roll notes and release knob rather than
+        // replacing them.
         const pitchWrap = document.createElement('div');
         pitchWrap.className = 'sm-knob sm-track-knob';
         const pitchLabel = document.createElement('label');
-        pitchLabel.textContent = 'P';
+        pitchLabel.textContent = 'NOTE';
         pitchLabel.title = 'Pitch';
         const pitchInput = document.createElement('input');
         pitchInput.type = 'range';
@@ -3978,24 +3985,29 @@
         pitchWrap.appendChild(pitchInput);
         controls.appendChild(pitchWrap);
 
-        const select = document.createElement('select');
-        select.className = 'sm-sample-select';
-        meta.samples.forEach((path, i) => {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = path.split('/').pop().replace(/\.\w+$/i, '').toUpperCase();
-            select.appendChild(opt);
-        });
-        controls.appendChild(select);
+        const decayWrap = document.createElement('div');
+        decayWrap.className = 'sm-knob sm-track-knob';
+        const decayLabel = document.createElement('label');
+        decayLabel.textContent = 'DCY';
+        decayLabel.title = 'Decay';
+        const decayInput = document.createElement('input');
+        decayInput.type = 'range';
+        decayInput.min = '0';
+        decayInput.max = '100';
+        decayInput.value = '70';
+        decayInput.title = 'Decay';
+        decayWrap.appendChild(decayLabel);
+        decayWrap.appendChild(decayInput);
+        controls.appendChild(decayWrap);
 
-        const volume = document.createElement('input');
-        volume.type = 'range';
-        volume.className = 'sm-volume';
-        volume.min = '0';
-        volume.max = '1';
-        volume.step = '0.01';
-        volume.value = String(meta.volume);
-        controls.appendChild(volume);
+        if (key === 'bass') {
+            const pianoBtn = document.createElement('button');
+            pianoBtn.className = 'sm-track-piano-btn';
+            pianoBtn.title = 'Open piano roll for exact notes';
+            pianoBtn.textContent = '🎹';
+            pianoBtn.addEventListener('click', () => smOpenPianoRoll());
+            controls.appendChild(pianoBtn);
+        }
 
         row.appendChild(controls);
 
