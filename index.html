@@ -1599,6 +1599,14 @@
             margin-top: 8px;
             padding-top: 8px;
             border-top: 2px dashed rgba(255, 255, 255, 0.25);
+            /* Pinned to the bottom of the scrolling grid so it stays
+               visible no matter which octave you've scrolled to, instead
+               of only showing up once you scroll all the way down past
+               every note row. */
+            position: sticky;
+            bottom: 0;
+            z-index: 2;
+            background: #1c1450;
         }
         .sm-pianoroll-tie-row .sm-pianoroll-key {
             color: var(--neon-orange);
