@@ -1499,6 +1499,24 @@
             transform: none !important;
         }
 
+        .sm-clear-btn {
+            flex-shrink: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 3px solid #000;
+            background: var(--neon-orange);
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #000;
+            transition: transform 0.15s ease;
+        }
+        .sm-clear-btn:hover { transform: scale(1.1) rotate(8deg); }
+        .sm-clear-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
+
         .sm-pianoroll-grid {
             display: flex;
             flex-direction: column;
@@ -1634,9 +1652,10 @@
             /* Room for the shuffle slider on the same row without
                wrapping to a second line: tighter gaps and narrower
                sliders than the roomier desktop layout needs. */
-            .soundi-maker-transport { gap: 0.4rem; }
-            .sm-tempo { gap: 0.3rem; font-size: 0.8rem; }
-            .sm-tempo input[type="range"] { width: 32px; }
+            .soundi-maker-transport { gap: 0.25rem; }
+            .sm-tempo { gap: 0.25rem; font-size: 0.75rem; }
+            .sm-tempo input[type="range"] { width: 26px; }
+            .sm-transport-undo-btn, .sm-clear-btn { width: 26px; height: 26px; }
             .sm-track { padding: 0.4rem 0.5rem; }
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
@@ -2299,6 +2318,12 @@
                     <input type="range" id="smShuffle" min="0" max="100" value="0">
                     <span id="smShuffleVal">0%</span>
                 </div>
+                <button class="sm-undo-btn sm-transport-undo-btn" id="smTransportUndoBtn" aria-label="Undo last edit" title="Undo last edit" disabled>&#8634;</button>
+                <button class="sm-clear-btn" id="smClearBtn" aria-label="Clear pattern" title="Clear pattern">
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+                        <path d="M5 7 H19 M9 7 V4.5 A1 1 0 0 1 10 3.5 H14 A1 1 0 0 1 15 4.5 V7 M7 7 L8 20 A1.5 1.5 0 0 0 9.5 21.3 H14.5 A1.5 1.5 0 0 0 16 20 L17 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
             </div>
         </div>
         <div id="soundiMakerBody">
@@ -4092,32 +4117,66 @@
     // hang classes off, so the state lives in this array instead — only
     // meaningful for a step while smBassNoteOffsets[step] isn't null.
     let smBassStepStates = new Array(SM_STEPS).fill('normal');
-    // Undo history for bass note/tie/state edits and transpose: each entry
-    // is a full snapshot of all three arrays taken right before a
+    // Undo history for the whole pattern — every plain track's per-step
+    // states plus bass's notes/ties/states and transpose — not just
+    // bass's. Each entry is a full snapshot taken right before a
     // mutation, so undo just pops and restores rather than trying to
     // invert individual edits. Capped so it can't grow unbounded over a
-    // long session.
+    // long session. Shared by both undo buttons (the transport row's and
+    // the piano roll's) so they undo through one consistent history
+    // instead of two independent ones that could drift apart.
     let smBassUndoStack = [];
     const SM_UNDO_MAX = 50;
     function smPushUndoSnapshot() {
+        const stepSnapshots = {};
+        SM_TRACK_ORDER.forEach(key => {
+            if (key === 'bass') return;
+            stepSnapshots[key] = smTracks[key].stepEls.map(smStepElState);
+        });
         smBassUndoStack.push({
             offsets: smBassNoteOffsets.slice(),
             ties: smBassTies.slice(),
             states: smBassStepStates.slice(),
+            steps: stepSnapshots,
         });
         if (smBassUndoStack.length > SM_UNDO_MAX) smBassUndoStack.shift();
         smUpdateUndoBtn();
     }
     function smUpdateUndoBtn() {
-        if (smUndoBtn) smUndoBtn.disabled = smBassUndoStack.length === 0;
+        const disabled = smBassUndoStack.length === 0;
+        if (smUndoBtn) smUndoBtn.disabled = disabled;
+        if (smTransportUndoBtn) smTransportUndoBtn.disabled = disabled;
     }
-    function smUndoBass() {
+    function smUndoPattern() {
         const snap = smBassUndoStack.pop();
         if (!snap) return;
         smBassNoteOffsets = snap.offsets;
         smBassTies = snap.ties;
         smBassStepStates = snap.states;
+        Object.keys(snap.steps).forEach(key => {
+            const track = smTracks[key];
+            if (!track) return;
+            snap.steps[key].forEach((state, i) => {
+                if (track.stepEls[i]) smSetStepElState(track.stepEls[i], state);
+            });
+        });
         smUpdateUndoBtn();
+        smRenderPianoRoll();
+        smRenderBassPreview();
+    }
+    // Wipes every track's steps and bass's notes/ties back to silent,
+    // after snapshotting the current pattern so it's a normal undo-able
+    // edit rather than a destructive dead end.
+    function smClearPattern() {
+        if (!smInitialized) return;
+        smPushUndoSnapshot();
+        SM_TRACK_ORDER.forEach(key => {
+            if (key === 'bass') return;
+            smTracks[key].stepEls.forEach(el => smSetStepElState(el, 'off'));
+        });
+        smBassNoteOffsets.fill(null);
+        smBassTies.fill(false);
+        smBassStepStates.fill('normal');
         smRenderPianoRoll();
         smRenderBassPreview();
     }
@@ -4151,6 +4210,8 @@
     const smPlayBtn = document.getElementById('smPlayBtn');
     const smBpmSlider = document.getElementById('smBpm');
     const smBpmVal = document.getElementById('smBpmVal');
+    const smTransportUndoBtn = document.getElementById('smTransportUndoBtn');
+    const smClearBtn = document.getElementById('smClearBtn');
 
     let smInitialized = false;
     let smAudioCtx = null;
@@ -4226,6 +4287,23 @@
     // on the step element itself (no separate array) — smStepState reads
     // it straight back off the DOM at playback time, same as the
     // existing .active/classList.contains pattern this replaces.
+    // Reads/writes a plain step element's off/normal/short/flam state via
+    // its classes — shared by smCycleStepState, smStepState (playback),
+    // and the pattern undo/clear machinery below so there's one place
+    // that knows how state maps to classes.
+    function smStepElState(el) {
+        if (!el.classList.contains('active')) return 'off';
+        if (el.classList.contains('sm-step-short')) return 'short';
+        if (el.classList.contains('sm-step-flam')) return 'flam';
+        return 'normal';
+    }
+    function smSetStepElState(el, state) {
+        el.classList.remove('active', 'sm-step-short', 'sm-step-flam');
+        if (state === 'normal') el.classList.add('active');
+        else if (state === 'short') el.classList.add('active', 'sm-step-short');
+        else if (state === 'flam') el.classList.add('active', 'sm-step-flam');
+    }
+
     function smCycleStepState(step) {
         if (!step.classList.contains('active')) {
             step.classList.add('active');
@@ -4247,6 +4325,7 @@
         step.className = 'sm-step';
         if (active) step.classList.add('active');
         step.addEventListener('click', () => {
+            smPushUndoSnapshot();
             smCycleStepState(step);
         });
         stepsWrap.appendChild(step);
@@ -4661,7 +4740,9 @@
         smSlideSpeed = parseInt(e.target.value, 10) / 100;
     });
 
-    smUndoBtn.addEventListener('click', smUndoBass);
+    smUndoBtn.addEventListener('click', smUndoPattern);
+    smTransportUndoBtn.addEventListener('click', smUndoPattern);
+    smClearBtn.addEventListener('click', smClearPattern);
 
     // Shifts every currently-placed bass note by a fixed number of
     // semitones, leaving inactive steps untouched. Offsets are stored as
@@ -4825,11 +4906,7 @@
             if (!smIsStepActive(key, stepIndex)) return 'off';
             return smBassStepStates[stepIndex] || 'normal';
         }
-        const el = smTracks[key].stepEls[stepIndex];
-        if (!el.classList.contains('active')) return 'off';
-        if (el.classList.contains('sm-step-short')) return 'short';
-        if (el.classList.contains('sm-step-flam')) return 'flam';
-        return 'normal';
+        return smStepElState(smTracks[key].stepEls[stepIndex]);
     }
 
     function smStepDuration() {
