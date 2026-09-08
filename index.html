@@ -1539,6 +1539,12 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
+            /* max-height is set inline by smUpdatePianoRollHeight, sized
+               to exactly one octave's worth of rows — everything beyond
+               that (the rest of the 3-octave range, or a scrolled-past
+               32-step pattern on mobile) scrolls instead of cramming
+               everything into view at once. */
+            overflow: auto;
         }
 
         .sm-pianoroll-row {
@@ -1549,7 +1555,7 @@
         }
 
         .sm-pianoroll-key {
-            font-size: 0.65rem;
+            font-size: 0.75rem;
             font-family: 'Space Mono', monospace;
             color: #fff;
             text-align: right;
@@ -1560,7 +1566,12 @@
         }
 
         .sm-pianoroll-cell {
-            aspect-ratio: 2.2 / 1;
+            /* Taller than the old 2.2/1 now that the grid only shows one
+               octave's worth of rows at a time (see
+               smUpdatePianoRollHeight) — there's room to make each row
+               bigger/easier to read and tap. */
+            aspect-ratio: 1.6 / 1;
+            position: relative;
             border: 2px solid #000;
             border-radius: 4px;
             /* "White key" look: natural-note rows default to a light
@@ -1580,6 +1591,29 @@
         .sm-pianoroll-cell.active {
             background: var(--neon-blue);
             box-shadow: 0 0 8px var(--neon-blue);
+        }
+        /* Same off -> normal -> short -> flam click-cycle and visual
+           language as the plain step tracks (.sm-step), just recolored
+           to the piano roll's fixed blue accent instead of currentColor. */
+        .sm-pianoroll-cell.active.sm-step-short {
+            background: linear-gradient(90deg, var(--neon-blue) 0 50%, rgba(255, 255, 255, 0.06) 50% 100%);
+            box-shadow: 0 0 4px var(--neon-blue);
+        }
+        .sm-pianoroll-cell.active.sm-step-flam {
+            animation: smFlamPulse 0.5s ease-in-out infinite;
+        }
+        .sm-pianoroll-cell.active.sm-step-flam::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 20%;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 9px 0 0 #fff;
+            transform: translateY(-50%);
+            pointer-events: none;
         }
         /* Tie row isn't a note row — keep it a neutral mid-tone rather
            than picking up the white/black key coloring. */
@@ -1660,7 +1694,7 @@
                 width: max-content;
             }
             .sm-pianoroll-key {
-                font-size: 0.55rem;
+                font-size: 0.62rem;
                 /* Pinned to the left edge of the scrolling grid so the
                    pitch label stays visible while scrolling through
                    steps horizontally. */
@@ -1668,14 +1702,6 @@
                 left: 0;
                 background: #1c1450;
                 z-index: 1;
-            }
-            /* Caps visible rows to roughly 1.5 octaves (~18 semitones)
-               and visible steps to 16 at a time — anything beyond that
-               (the fuller 3-octave range, or a 32-step pattern) scrolls
-               instead of cramming everything on screen at once. */
-            .sm-pianoroll-grid {
-                max-height: 31vh;
-                overflow: auto;
             }
             .sm-dope-badge { width: 100px; top: -14px; right: -6px; }
             .sm-pianoroll-header .sm-knob input[type="range"] { width: 34px; }
@@ -4091,14 +4117,24 @@
     // note (portamento) instead of the usual voice-stealing cutoff. See
     // smPlaySound for how this is realized on the same ringing source.
     let smBassTies = new Array(SM_STEPS).fill(false);
-    // Undo history for bass note/tie edits and transpose: each entry is a
-    // full snapshot of both arrays taken right before a mutation, so undo
-    // just pops and restores rather than trying to invert individual
-    // edits. Capped so it can't grow unbounded over a long session.
+    // Same off -> normal -> short -> flam -> off click-cycle as the plain
+    // step tracks (see smCycleStepState), but bass has no step element to
+    // hang classes off, so the state lives in this array instead — only
+    // meaningful for a step while smBassNoteOffsets[step] isn't null.
+    let smBassStepStates = new Array(SM_STEPS).fill('normal');
+    // Undo history for bass note/tie/state edits and transpose: each entry
+    // is a full snapshot of all three arrays taken right before a
+    // mutation, so undo just pops and restores rather than trying to
+    // invert individual edits. Capped so it can't grow unbounded over a
+    // long session.
     let smBassUndoStack = [];
     const SM_UNDO_MAX = 50;
     function smPushUndoSnapshot() {
-        smBassUndoStack.push({ offsets: smBassNoteOffsets.slice(), ties: smBassTies.slice() });
+        smBassUndoStack.push({
+            offsets: smBassNoteOffsets.slice(),
+            ties: smBassTies.slice(),
+            states: smBassStepStates.slice(),
+        });
         if (smBassUndoStack.length > SM_UNDO_MAX) smBassUndoStack.shift();
         smUpdateUndoBtn();
     }
@@ -4110,6 +4146,7 @@
         if (!snap) return;
         smBassNoteOffsets = snap.offsets;
         smBassTies = snap.ties;
+        smBassStepStates = snap.states;
         smUpdateUndoBtn();
         smRenderPianoRoll();
         smRenderBassPreview();
@@ -4381,10 +4418,13 @@
     }
 
     // Switches the pattern between 16 and 32 steps by growing/shrinking
-    // every track's step array in place — appending fresh (inactive)
-    // steps at the tail when extending, or dropping the tail when
-    // shrinking — rather than rebuilding the whole UI, so every existing
-    // step's state (and DOM element) is left completely untouched.
+    // every track's step array in place — dropping the tail when
+    // shrinking, rather than rebuilding the whole UI, so every existing
+    // step's state (and DOM element) is left completely untouched. When
+    // extending (16 -> 32), the new tail is a copy of the existing steps
+    // (index i copies from i - oldCount) instead of blank, so activating
+    // 32-step mode repeats the current 16-step pattern rather than
+    // silencing the second half.
     function smSetStepCount(newCount) {
         if (!smInitialized || newCount === SM_STEPS) return;
         const oldCount = SM_STEPS;
@@ -4392,19 +4432,27 @@
         document.documentElement.style.setProperty('--sm-step-count', SM_STEPS);
         if (newCount > oldCount) {
             for (let i = oldCount; i < newCount; i++) {
-                smBassNoteOffsets.push(null);
-                smBassTies.push(false);
+                const srcIdx = i - oldCount;
+                smBassNoteOffsets.push(smBassNoteOffsets[srcIdx]);
+                smBassTies.push(smBassTies[srcIdx]);
+                smBassStepStates.push(smBassStepStates[srcIdx]);
             }
             SM_TRACK_ORDER.forEach(key => {
                 if (key === 'bass') return;
                 const track = smTracks[key];
                 for (let i = oldCount; i < newCount; i++) {
-                    track.stepEls.push(smCreateStepEl(track.stepsWrap, false));
+                    const srcIdx = i - oldCount;
+                    const srcEl = track.stepEls[srcIdx];
+                    const newEl = smCreateStepEl(track.stepsWrap, srcEl.classList.contains('active'));
+                    if (srcEl.classList.contains('sm-step-short')) newEl.classList.add('sm-step-short');
+                    else if (srcEl.classList.contains('sm-step-flam')) newEl.classList.add('sm-step-flam');
+                    track.stepEls.push(newEl);
                 }
             });
         } else {
             smBassNoteOffsets.length = newCount;
             smBassTies.length = newCount;
+            smBassStepStates.length = newCount;
             SM_TRACK_ORDER.forEach(key => {
                 if (key === 'bass') return;
                 const track = smTracks[key];
@@ -4419,6 +4467,7 @@
         // undo could restore.
         smBassUndoStack.length = 0;
         smUpdateUndoBtn();
+        smRenderPianoRoll();
         smRenderBassPreview();
     }
 
@@ -4469,11 +4518,34 @@
             for (let step = 0; step < SM_STEPS; step++) {
                 const cell = document.createElement('div');
                 cell.className = 'sm-pianoroll-cell';
-                if (smBassNoteOffsets[step] === semitone) cell.classList.add('active');
+                const isThisNote = smBassNoteOffsets[step] === semitone;
+                if (isThisNote) {
+                    cell.classList.add('active');
+                    if (smBassStepStates[step] === 'short') cell.classList.add('sm-step-short');
+                    else if (smBassStepStates[step] === 'flam') cell.classList.add('sm-step-flam');
+                }
                 cell.addEventListener('click', () => {
                     smPushUndoSnapshot();
-                    const isActive = smBassNoteOffsets[step] === semitone;
-                    smBassNoteOffsets[step] = isActive ? null : semitone;
+                    if (smBassNoteOffsets[step] === semitone) {
+                        // Re-clicking this step's already-active cell
+                        // cycles its state (same off -> normal -> short ->
+                        // flam -> off cycle as the plain step tracks)
+                        // instead of moving/removing the note outright.
+                        const state = smBassStepStates[step];
+                        if (state === 'normal') {
+                            smBassStepStates[step] = 'short';
+                        } else if (state === 'short') {
+                            smBassStepStates[step] = 'flam';
+                        } else {
+                            smBassNoteOffsets[step] = null;
+                            smBassStepStates[step] = 'normal';
+                        }
+                    } else {
+                        // Placing a new note, or moving this step's note to
+                        // a different pitch row, always starts fresh.
+                        smBassNoteOffsets[step] = semitone;
+                        smBassStepStates[step] = 'normal';
+                    }
                     smRenderPianoRoll();
                     smRenderBassPreview();
                 });
@@ -4503,6 +4575,25 @@
             tieRow.appendChild(cell);
         }
         smPianoRollGrid.appendChild(tieRow);
+        smUpdatePianoRollHeight();
+    }
+
+    // Caps the grid to showing one octave (13 rows) of note rows at a
+    // time — the rest of the 3-octave range scrolls — so each row can be
+    // taller/easier to read and tap than cramming all 25+ rows on screen
+    // at once. Measured off the actual rendered row height rather than a
+    // guessed vh/px value so it comes out right on both the fixed-width
+    // mobile cells and the fluid (1fr) desktop ones. Must run only while
+    // the overlay is visible (display != none), since a hidden row would
+    // measure zero height.
+    function smUpdatePianoRollHeight() {
+        const firstRow = smPianoRollGrid.querySelector('.sm-pianoroll-row:not(.sm-pianoroll-tie-row)');
+        if (!firstRow) return;
+        const rowHeight = firstRow.getBoundingClientRect().height;
+        if (!rowHeight) return; // overlay isn't visible yet — nothing to measure
+        const gap = parseFloat(getComputedStyle(smPianoRollGrid).rowGap) || 0;
+        const visibleRows = 13; // 1 octave inclusive (12 semitones + 1)
+        smPianoRollGrid.style.maxHeight = Math.round((rowHeight + gap) * visibleRows - gap) + 'px';
     }
 
     // Keeps the main Bass row's step highlighting in sync with whatever
@@ -4547,9 +4638,12 @@
 
     function smOpenPianoRoll() {
         if (!smInitialized) return; // tracks not built yet
+        // The overlay must already be visible before rendering, since
+        // smRenderPianoRoll's height measurement needs a real (non-zero)
+        // rendered row height to work from.
+        smPianoRollOverlay.classList.add('active');
         smRenderPianoRoll();
         smUpdateUndoBtn();
-        smPianoRollOverlay.classList.add('active');
     }
     smPianoRollClose.addEventListener('click', () => {
         smPianoRollOverlay.classList.remove('active');
@@ -4675,7 +4769,10 @@
     // no step buttons to read this off of; it always plays its piano-roll
     // notes at normal length.
     function smStepState(key, stepIndex) {
-        if (key === 'bass') return smIsStepActive(key, stepIndex) ? 'normal' : 'off';
+        if (key === 'bass') {
+            if (!smIsStepActive(key, stepIndex)) return 'off';
+            return smBassStepStates[stepIndex] || 'normal';
+        }
         const el = smTracks[key].stepEls[stepIndex];
         if (!el.classList.contains('active')) return 'off';
         if (el.classList.contains('sm-step-short')) return 'short';
