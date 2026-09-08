@@ -968,12 +968,12 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            /* Lifted above the Soundi Maker overlay (z-index 10000) so the
+            /* Lifted above the Dope Box overlay (z-index 10000) so the
                background-switch button ("?") stays usable while that mode
                is open — but pointer-events is off here and on .social-left/
                .social-right below, re-enabled only on the actual buttons,
                so this row's own (mostly empty) bounding box doesn't block
-               clicks meant for the Soundi Maker panel underneath it. */
+               clicks meant for the Dope Box panel underneath it. */
             position: relative;
             z-index: 10001;
             pointer-events: none;
@@ -1029,7 +1029,7 @@
             opacity: 0.8;
         }
 
-        /* Soundi Maker — a groovebox-style step sequencer mode. Forces the
+        /* Dope Box — a groovebox-style step sequencer mode. Forces the
            same embeds-hidden state as the "!" button (combined in JS via
            updateEmbedsHiddenClass) so the background gets the full screen,
            then shows this overlay on top. */
@@ -1051,7 +1051,7 @@
             background: rgba(10, 0, 20, 0.35);
             /* The dim area outside the panel used to swallow every click
                in the viewport (this div is inset:0), which silently broke
-               tapping the logo to start acid-trip mode while Soundi Maker
+               tapping the logo to start acid-trip mode while Dope Box
                was open — the logo's click target sits at a much lower
                z-index (5) so it never got the event. Turning this off and
                re-enabling it only on the panel below lets clicks fall
@@ -1092,13 +1092,18 @@
            doesn't clip it. */
         .sm-dope-badge {
             position: absolute;
-            top: -18px;
-            right: 26px;
-            width: 84px;
+            top: -22px;
+            right: -10px;
+            width: 150px;
             height: auto;
             transform: rotate(8deg);
             filter: drop-shadow(0 3px 0 #000) drop-shadow(0 0 10px rgba(255, 0, 255, 0.6));
             pointer-events: none;
+            /* Explicit stacking so it paints over the panel's own content
+               (it comes before .soundi-maker-panel in the DOM, which would
+               otherwise paint on top of it) instead of just poking out
+               above the border. */
+            z-index: 5;
         }
 
         .soundi-maker-header {
@@ -1402,7 +1407,7 @@
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
             .sm-pianoroll-row { grid-template-columns: 28px repeat(16, 1fr); }
             .sm-pianoroll-key { font-size: 0.55rem; }
-            .sm-dope-badge { width: 56px; top: -12px; right: 14px; }
+            .sm-dope-badge { width: 100px; top: -14px; right: -6px; }
         }
 
         /* The "!" button hides the Bandcamp/Spotify/YouTube/SoundCloud
@@ -1764,7 +1769,7 @@
     <div class="social-left">
         <button class="bg-toggle" id="bgToggle" title="Switch background">?</button>
         <button class="bg-toggle" id="embedsToggle" title="Show/hide embeds">!</button>
-        <button class="bg-toggle" id="soundiMakerToggle" title="Soundi Maker">♪</button>
+        <button class="bg-toggle" id="soundiMakerToggle" title="Dope Box">♪</button>
     </div>
     <div class="social-right">
     <a href="https://www.instagram.com/captainkirna/" target="_blank" class="social-fab insta-fab" aria-label="Follow on Instagram">
@@ -2011,13 +2016,13 @@
     </svg>
 </button>
 
-<!-- Soundi Maker — groovebox step sequencer overlay, built by JS below -->
+<!-- Dope Box — groovebox step sequencer overlay, built by JS below -->
 <div class="soundi-maker-overlay" id="soundiMakerOverlay">
     <div class="soundi-maker-panel-wrap">
         <img src="DOPEsmall.png" alt="Dope" class="sm-dope-badge">
         <div class="soundi-maker-panel">
         <div class="soundi-maker-header">
-            <h2 class="soundi-maker-title">SOUNDI MAKER</h2>
+            <h2 class="soundi-maker-title">DOPE BOX</h2>
             <div class="soundi-maker-transport">
                 <button class="sm-play-btn" id="smPlayBtn" aria-label="Play/stop">&#9654;</button>
                 <div class="sm-tempo">
@@ -2026,7 +2031,7 @@
                     <span id="smBpmVal">150</span>
                 </div>
             </div>
-            <button class="sm-close-btn" id="smCloseBtn" aria-label="Close Soundi Maker">&#10005;</button>
+            <button class="sm-close-btn" id="smCloseBtn" aria-label="Close Dope Box">&#10005;</button>
         </div>
         <div id="soundiMakerBody">
             <div class="soundi-maker-loading" id="soundiMakerLoading">loading samples...</div>
@@ -2036,7 +2041,7 @@
     </div>
 </div>
 
-<!-- Bass piano roll — opened by clicking the Bass track's name in Soundi Maker -->
+<!-- Bass piano roll — opened by clicking the Bass track's name in Dope Box -->
 <div class="sm-pianoroll-overlay" id="smPianoRollOverlay">
     <div class="sm-pianoroll-panel">
         <div class="sm-pianoroll-header">
@@ -2406,7 +2411,7 @@
     });
 
     // embeds-hidden is now driven by two independent switches — the "!"
-    // button and Soundi Maker mode (which forces it while active so the
+    // button and Dope Box mode (which forces it while active so the
     // sequencer gets the full screen) — combined here so neither one
     // clobbers the other's state.
     let embedsManuallyHidden = false;
@@ -3758,7 +3763,7 @@
     }
     animate();
 
-    // ==================== SOUNDI MAKER ====================
+    // ==================== DOPE BOX ====================
     // A groovebox-style 16-step sequencer. Uses the standard Web Audio
     // "lookahead scheduler" pattern (schedule a little ahead of real time,
     // re-check on a short interval) instead of triggering samples directly
@@ -3773,7 +3778,7 @@
         oh: { label: 'OH', color: 'var(--neon-orange)', samples: ['samples/oh01.wav'], volume: 0.6 },
     };
     const SM_STEPS = 16;
-    // A starter four-on-the-floor pattern so opening Soundi Maker for the
+    // A starter four-on-the-floor pattern so opening Dope Box for the
     // first time already makes a beat instead of dead silence.
     const SM_DEFAULT_PATTERN = {
         kick: [0, 4, 8, 12],
