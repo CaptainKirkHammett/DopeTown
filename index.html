@@ -4722,6 +4722,12 @@
         if (!buffer) return;
         const source = smAudioCtx.createBufferSource();
         source.buffer = buffer;
+        // Needed up front (before the envelope) to know how long the
+        // sample actually plays for at this pitch — a pitched-up hit
+        // finishes sooner than buffer.duration would suggest.
+        const rate = key === 'bass'
+            ? Math.pow(2, ((smBassNoteOffsets[stepIndex] || 0) + track.pitchSemitones) / 12)
+            : Math.pow(2, track.pitchSemitones / 12);
         // Every track's hits are shaped by its own decay envelope (via a
         // per-note gain node) rather than always ringing out unshaped.
         const envGain = smAudioCtx.createGain();
@@ -4736,15 +4742,24 @@
         // A "short" step (see smCycleStepState) forces an earlier cutoff
         // than the decay knob would otherwise give it, capped to
         // whichever is shorter — a short step never rings longer than a
-        // normal one just because the decay knob is turned way up.
+        // normal one just because the decay knob is turned way up. Also
+        // capped to the sample's own playable length (shorter still if
+        // pitched up): several of this kit's drum one-shots are well
+        // under half a second, shorter than the decay knob's own range
+        // goes up to, so without this cap a high decay setting let the
+        // sample run out and hard-stop mid-amplitude — an audible click
+        // from the implicit stop, not from our own (inaudibly-quiet-by-
+        // then) fade. Skipped for a tied bass note, which deliberately
+        // loops past the buffer's natural length to keep ringing until
+        // the next note glides from it.
         let gateDuration = smDecayDuration(track.decay);
+        const isBassTied = key === 'bass' && smBassTies[stepIndex];
+        if (!isBassTied) gateDuration = Math.min(gateDuration, buffer.duration / rate);
         if (opts.forceGateDuration != null) gateDuration = Math.min(gateDuration, opts.forceGateDuration);
         envGain.gain.linearRampToValueAtTime(0.0001, time + gateDuration);
         source.connect(envGain);
         envGain.connect(track.gainNode);
         if (key === 'bass') {
-            const semitones = (smBassNoteOffsets[stepIndex] || 0) + track.pitchSemitones;
-            const rate = Math.pow(2, semitones / 12);
             source.playbackRate.value = rate;
             smBassActiveRate = rate;
             // This step ties into the next one — keep it ringing (looped)
@@ -4786,7 +4801,7 @@
             smBassActiveSource = source;
             smBassActiveGain = envGain;
         } else {
-            source.playbackRate.value = Math.pow(2, track.pitchSemitones / 12);
+            source.playbackRate.value = rate;
         }
         source.start(time);
     }
