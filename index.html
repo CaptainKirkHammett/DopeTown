@@ -1142,7 +1142,7 @@
 
         .soundi-maker-title {
             font-family: 'Barrio', cursive;
-            font-size: clamp(2.1rem, 7vw, 3.2rem);
+            font-size: clamp(2.6rem, 9vw, 4rem);
             background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-yellow), var(--neon-pink));
             background-size: 300% 100%;
             -webkit-background-clip: text;
@@ -1151,10 +1151,14 @@
             animation: smTitleShift 6s linear infinite;
             /* A thin, half-transparent outline (was a solid 2.5px black
                stroke) keeps the letterforms readable against the panel
-               without smothering the gradient in black — colorful glow
-               layers replace the old flat black drop shadow. */
+               without smothering the gradient in black — a full-rainbow
+               stack of glow layers (matching the gradient's own palette)
+               replaces the old flat black drop shadow. */
             -webkit-text-stroke: 1px rgba(0, 0, 0, 0.5);
-            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-blue), 2px 2px 0 rgba(0, 0, 0, 0.5);
+            text-shadow:
+                0 0 8px var(--neon-pink), 0 0 16px var(--neon-blue),
+                0 0 26px var(--neon-green), 0 0 36px var(--neon-yellow),
+                2px 2px 0 rgba(0, 0, 0, 0.5);
             margin: 0;
             transform: rotate(-1deg);
         }
@@ -1202,6 +1206,26 @@
             align-items: center;
             gap: 1rem;
             flex-wrap: wrap;
+        }
+
+        .sm-step-count-btn {
+            flex-shrink: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #000;
+            background: var(--neon-blue);
+            color: #000;
+            font-family: 'Barrio', cursive;
+            font-size: 0.7rem;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #000;
+            transition: transform 0.15s ease;
+        }
+        .sm-step-count-btn:hover { transform: scale(1.1); }
+        .sm-step-count-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
+        .sm-step-count-btn.active-32 {
+            background: var(--neon-orange);
         }
 
         .sm-play-btn {
@@ -1295,7 +1319,7 @@
 
         .sm-steps {
             display: grid;
-            grid-template-columns: repeat(16, 1fr);
+            grid-template-columns: repeat(var(--sm-step-count, 16), 1fr);
             gap: 4px;
             flex: 1;
             min-width: 260px;
@@ -1427,7 +1451,7 @@
 
         .sm-pianoroll-row {
             display: grid;
-            grid-template-columns: 40px repeat(16, 1fr);
+            grid-template-columns: 40px repeat(var(--sm-step-count, 16), 1fr);
             gap: 3px;
             align-items: center;
         }
@@ -1511,7 +1535,7 @@
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
             .sm-bass-preview { flex-basis: 100%; min-width: 100%; }
-            .sm-pianoroll-row { grid-template-columns: 28px repeat(16, 1fr); }
+            .sm-pianoroll-row { grid-template-columns: 28px repeat(var(--sm-step-count, 16), 1fr); }
             .sm-pianoroll-key { font-size: 0.55rem; }
             .sm-dope-badge { width: 100px; top: -14px; right: -6px; }
         }
@@ -2130,6 +2154,7 @@
         <div class="soundi-maker-header">
             <h2 class="soundi-maker-title">DOPE BOX</h2>
             <div class="soundi-maker-transport">
+                <button class="sm-step-count-btn" id="smStepCountBtn" aria-label="Toggle 16/32 step pattern" title="Toggle 16/32 step pattern">16</button>
                 <button class="sm-play-btn" id="smPlayBtn" aria-label="Play/stop">&#9654;</button>
                 <div class="sm-tempo">
                     <label for="smBpm">BPM</label>
@@ -3891,7 +3916,7 @@
         chh: { label: 'CHH', color: 'var(--neon-yellow)', samples: ['samples/chh01.wav'], volume: 0.6 },
         oh: { label: 'OH', color: 'var(--neon-orange)', samples: ['samples/oh01.wav'], volume: 0.6 },
     };
-    const SM_STEPS = 16;
+    let SM_STEPS = 16;
     // A starter four-on-the-floor pattern so opening Dope Box for the
     // first time already makes a beat instead of dead silence.
     const SM_DEFAULT_PATTERN = {
@@ -3977,6 +4002,20 @@
         return buffer;
     }
 
+    // Shared by the initial track build and smSetStepCount() (which
+    // appends more of these when extending 16 -> 32 steps) so both paths
+    // get the exact same element/click-handler wiring.
+    function smCreateStepEl(stepsWrap, active) {
+        const step = document.createElement('div');
+        step.className = 'sm-step';
+        if (active) step.classList.add('active');
+        step.addEventListener('click', () => {
+            step.classList.toggle('active');
+        });
+        stepsWrap.appendChild(step);
+        return step;
+    }
+
     function smBuildTrackRow(key) {
         const meta = SM_TRACK_META[key];
         const row = document.createElement('div');
@@ -4059,6 +4098,7 @@
         row.appendChild(controls);
 
         let stepEls = null;
+        let stepsWrap = null;
         let bassPreview = null;
         let bassPreviewPlayhead = null;
         if (key === 'bass') {
@@ -4076,19 +4116,12 @@
             activeSteps.forEach(i => { smBassNoteOffsets[i] = 0; }); // root note by default
             row.appendChild(bassPreview);
         } else {
-            const stepsWrap = document.createElement('div');
+            stepsWrap = document.createElement('div');
             stepsWrap.className = 'sm-steps';
             stepEls = [];
             const activeSteps = new Set(SM_DEFAULT_PATTERN[key] || []);
             for (let i = 0; i < SM_STEPS; i++) {
-                const step = document.createElement('div');
-                step.className = 'sm-step';
-                if (activeSteps.has(i)) step.classList.add('active');
-                step.addEventListener('click', () => {
-                    step.classList.toggle('active');
-                });
-                stepsWrap.appendChild(step);
-                stepEls.push(step);
+                stepEls.push(smCreateStepEl(stepsWrap, activeSteps.has(i)));
             }
             row.appendChild(stepsWrap);
         }
@@ -4109,7 +4142,7 @@
         });
 
         smTracks[key] = {
-            stepEls, select, gainNode, sampleUrls: meta.samples,
+            stepEls, stepsWrap, select, gainNode, sampleUrls: meta.samples,
             decay: parseInt(decayInput.value, 10) / 100,
             pitchSemitones: 0,
             bassPreview, bassPreviewPlayhead,
@@ -4145,6 +4178,43 @@
         selects.forEach(sel => { sel.style.width = width + 'px'; });
     }
 
+    // Switches the pattern between 16 and 32 steps by growing/shrinking
+    // every track's step array in place — appending fresh (inactive)
+    // steps at the tail when extending, or dropping the tail when
+    // shrinking — rather than rebuilding the whole UI, so every existing
+    // step's state (and DOM element) is left completely untouched.
+    function smSetStepCount(newCount) {
+        if (!smInitialized || newCount === SM_STEPS) return;
+        const oldCount = SM_STEPS;
+        SM_STEPS = newCount;
+        document.documentElement.style.setProperty('--sm-step-count', SM_STEPS);
+        if (newCount > oldCount) {
+            for (let i = oldCount; i < newCount; i++) {
+                smBassNoteOffsets.push(null);
+                smBassTies.push(false);
+            }
+            SM_TRACK_ORDER.forEach(key => {
+                if (key === 'bass') return;
+                const track = smTracks[key];
+                for (let i = oldCount; i < newCount; i++) {
+                    track.stepEls.push(smCreateStepEl(track.stepsWrap, false));
+                }
+            });
+        } else {
+            smBassNoteOffsets.length = newCount;
+            smBassTies.length = newCount;
+            SM_TRACK_ORDER.forEach(key => {
+                if (key === 'bass') return;
+                const track = smTracks[key];
+                while (track.stepEls.length > newCount) {
+                    track.stepEls.pop().remove();
+                }
+            });
+        }
+        if (smCurrentStep >= newCount) smCurrentStep = 0;
+        smRenderBassPreview();
+    }
+
     async function initSoundiMaker() {
         if (smInitialized) return;
         smInitialized = true;
@@ -4152,6 +4222,7 @@
         smMasterGain = smAudioCtx.createGain();
         smMasterGain.connect(smAudioCtx.destination);
 
+        document.documentElement.style.setProperty('--sm-step-count', SM_STEPS);
         SM_TRACK_ORDER.forEach(smBuildTrackRow);
         smApplyUniformSelectWidth();
 
@@ -4455,6 +4526,13 @@
     smBpmSlider.addEventListener('input', () => {
         smBpm = parseInt(smBpmSlider.value, 10);
         smBpmVal.textContent = smBpm;
+    });
+    const smStepCountBtn = document.getElementById('smStepCountBtn');
+    smStepCountBtn.addEventListener('click', () => {
+        const next = SM_STEPS === 16 ? 32 : 16;
+        smSetStepCount(next);
+        smStepCountBtn.textContent = next;
+        smStepCountBtn.classList.toggle('active-32', next === 32);
     });
 </script>
 
