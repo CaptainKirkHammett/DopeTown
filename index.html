@@ -1112,17 +1112,18 @@
         }
 
         /* Small cartoon-sticker badge overlapping the panel's top-right
-           corner, matching the flask logo's own "DOPE" wordmark. Sits on
-           the wrap (not the panel) so the panel's overflow-y: auto
+           corner: the flask logo's own "DOPE" wordmark (image) with a
+           "BOX" text sticker stacked right below it, together reading
+           "DOPE BOX" now that the panel's own title text is gone. Sits
+           on the wrap (not the panel) so the panel's overflow-y: auto
            doesn't clip it. */
-        .sm-dope-badge {
+        .sm-dope-badge-wrap {
             position: absolute;
             top: -22px;
             right: -10px;
-            width: 150px;
-            height: auto;
-            transform: rotate(8deg);
-            filter: drop-shadow(0 3px 0 #000) drop-shadow(0 0 10px rgba(255, 0, 255, 0.6));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             pointer-events: none;
             /* Explicit stacking so it paints over the panel's own content
                (it comes before .soundi-maker-panel in the DOM, which would
@@ -1130,60 +1131,28 @@
                above the border. */
             z-index: 5;
         }
+        .sm-dope-badge {
+            width: 150px;
+            height: auto;
+            transform: rotate(8deg);
+            filter: drop-shadow(0 3px 0 #000) drop-shadow(0 0 10px rgba(255, 0, 255, 0.6));
+        }
+        .sm-dope-badge-text {
+            font-family: 'Barrio', cursive;
+            font-size: 1.7rem;
+            color: var(--neon-blue);
+            -webkit-text-stroke: 1px rgba(0, 0, 0, 0.6);
+            text-shadow: 2px 2px 0 #000, 0 0 10px var(--neon-blue);
+            transform: rotate(-4deg) translateY(-16px);
+        }
 
         .soundi-maker-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             gap: 1rem;
             flex-wrap: wrap;
             margin-bottom: 1.25rem;
-        }
-
-        .soundi-maker-title {
-            font-family: 'Barrio', cursive;
-            font-size: clamp(2.6rem, 9vw, 4rem);
-            background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-yellow), var(--neon-pink));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            /* Loops through the color wheel via a hue-rotate filter
-               instead of scrolling the gradient's position — a
-               continuous, smoother color cycle than the old scroll. */
-            animation: smTitleHue 5s linear infinite;
-            /* A thin, half-transparent outline (was a solid 2.5px black
-               stroke) keeps the letterforms readable against the panel
-               without smothering the gradient in black — a full-rainbow
-               stack of glow layers (matching the gradient's own palette)
-               replaces the old flat black drop shadow. */
-            -webkit-text-stroke: 1px rgba(0, 0, 0, 0.5);
-            text-shadow:
-                0 0 8px var(--neon-pink), 0 0 16px var(--neon-blue),
-                0 0 26px var(--neon-green), 0 0 36px var(--neon-yellow),
-                2px 2px 0 rgba(0, 0, 0, 0.5);
-            margin: -0.6rem 0 0.6rem;
-            transform: rotate(-1deg);
-        }
-
-        @keyframes smTitleHue {
-            0% { filter: hue-rotate(0deg); }
-            100% { filter: hue-rotate(360deg); }
-        }
-
-        /* Adds a fast jitter on top of the title's existing base rotation
-           and hue-cycle while acid-trip mode is on — both animations
-           have to be re-declared together here since the "animation"
-           shorthand replaces the base rule's value rather than adding
-           to it. */
-        body.acid-bg .soundi-maker-title {
-            animation: smTitleHue 5s linear infinite, smTitleShake 0.15s linear infinite;
-        }
-
-        @keyframes smTitleShake {
-            0%, 100% { transform: translate(0, 0) rotate(-1deg); }
-            25% { transform: translate(-2px, 1px) rotate(-2.5deg); }
-            50% { transform: translate(2px, -1px) rotate(0.5deg); }
-            75% { transform: translate(-1px, -2px) rotate(-1.5deg); }
         }
 
         .sm-close-btn {
@@ -1680,7 +1649,9 @@
                 background: #1c1450;
                 z-index: 1;
             }
-            .sm-dope-badge { width: 100px; top: -14px; right: -6px; }
+            .sm-dope-badge-wrap { top: -14px; right: -6px; }
+            .sm-dope-badge { width: 100px; }
+            .sm-dope-badge-text { font-size: 1.1rem; transform: rotate(-4deg) translateY(-10px); }
             .sm-pianoroll-header .sm-knob input[type="range"] { width: 34px; }
             .sm-transpose-btn { min-width: 22px; font-size: 0.55rem; }
         }
@@ -2294,10 +2265,12 @@
 <!-- Dope Box — groovebox step sequencer overlay, built by JS below -->
 <div class="soundi-maker-overlay" id="soundiMakerOverlay">
     <div class="soundi-maker-panel-wrap">
-        <img src="DOPEsmall.png" alt="Dope" class="sm-dope-badge">
+        <div class="sm-dope-badge-wrap">
+            <img src="DOPEsmall.png" alt="Dope" class="sm-dope-badge">
+            <span class="sm-dope-badge-text">BOX</span>
+        </div>
         <div class="soundi-maker-panel">
         <div class="soundi-maker-header">
-            <h2 class="soundi-maker-title">DOPE BOX</h2>
             <div class="soundi-maker-transport">
                 <button class="sm-step-count-btn" id="smStepCountBtn" aria-label="Toggle 16/32 step pattern" title="Toggle 16/32 step pattern">16</button>
                 <button class="sm-play-btn" id="smPlayBtn" aria-label="Play/stop">&#9654;</button>
