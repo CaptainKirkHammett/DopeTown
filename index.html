@@ -1144,11 +1144,13 @@
             font-family: 'Barrio', cursive;
             font-size: clamp(2.6rem, 9vw, 4rem);
             background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-yellow), var(--neon-pink));
-            background-size: 300% 100%;
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            animation: smTitleShift 6s linear infinite;
+            /* Loops through the color wheel via a hue-rotate filter
+               instead of scrolling the gradient's position — a
+               continuous, smoother color cycle than the old scroll. */
+            animation: smTitleHue 5s linear infinite;
             /* A thin, half-transparent outline (was a solid 2.5px black
                stroke) keeps the letterforms readable against the panel
                without smothering the gradient in black — a full-rainbow
@@ -1159,22 +1161,22 @@
                 0 0 8px var(--neon-pink), 0 0 16px var(--neon-blue),
                 0 0 26px var(--neon-green), 0 0 36px var(--neon-yellow),
                 2px 2px 0 rgba(0, 0, 0, 0.5);
-            margin: 0;
+            margin: -0.6rem 0 0.6rem;
             transform: rotate(-1deg);
         }
 
-        @keyframes smTitleShift {
-            0% { background-position: 0% 0; }
-            100% { background-position: 300% 0; }
+        @keyframes smTitleHue {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
         }
 
         /* Adds a fast jitter on top of the title's existing base rotation
-           and color-shift while acid-trip mode is on — both animations
+           and hue-cycle while acid-trip mode is on — both animations
            have to be re-declared together here since the "animation"
            shorthand replaces the base rule's value rather than adding
            to it. */
         body.acid-bg .soundi-maker-title {
-            animation: smTitleShift 6s linear infinite, smTitleShake 0.15s linear infinite;
+            animation: smTitleHue 5s linear infinite, smTitleShake 0.15s linear infinite;
         }
 
         @keyframes smTitleShake {
@@ -1210,14 +1212,15 @@
 
         .sm-step-count-btn {
             flex-shrink: 0;
-            width: 30px;
-            height: 30px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             border: 3px solid #000;
             background: var(--neon-blue);
             color: #000;
             font-family: 'Barrio', cursive;
-            font-size: 0.7rem;
+            font-size: 1rem;
+            font-weight: 900;
             cursor: pointer;
             box-shadow: 0 3px 0 #000;
             transition: transform 0.15s ease;
@@ -1263,7 +1266,7 @@
         }
         .sm-tempo input[type="range"] {
             accent-color: var(--neon-yellow);
-            width: 70px;
+            width: 46px;
         }
 
         .soundi-maker-loading {
@@ -1418,7 +1421,7 @@
             pointer-events: auto;
             width: 100%;
             max-width: 640px;
-            max-height: 90vh;
+            max-height: 97vh;
             overflow-y: auto;
             background: linear-gradient(135deg, #0a1a3d, #1c1450 45%, #2b0a4e);
             border: 5px solid #000;
@@ -1431,6 +1434,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
             margin-bottom: 1rem;
         }
 
@@ -1441,6 +1446,59 @@
             text-shadow: 2px 2px 0 #000;
             margin: 0;
             transform: rotate(-1.5deg);
+        }
+
+        .sm-pianoroll-controls {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .sm-transpose-group {
+            display: flex;
+            gap: 2px;
+        }
+
+        .sm-transpose-btn {
+            flex-shrink: 0;
+            min-width: 26px;
+            height: 24px;
+            padding: 0 4px;
+            border-radius: 6px;
+            border: 2px solid #000;
+            background: var(--neon-green);
+            color: #000;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #000;
+            transition: transform 0.15s ease;
+        }
+        .sm-transpose-btn:hover { transform: scale(1.1); }
+        .sm-transpose-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
+
+        .sm-undo-btn {
+            flex-shrink: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #000;
+            background: var(--neon-yellow);
+            color: #000;
+            font-size: 1rem;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #000;
+            transition: transform 0.15s ease;
+        }
+        .sm-undo-btn:hover { transform: scale(1.1) rotate(-15deg); }
+        .sm-undo-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
+        .sm-undo-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
+            transform: none !important;
         }
 
         .sm-pianoroll-grid {
@@ -1471,14 +1529,28 @@
             aspect-ratio: 2.2 / 1;
             border: 2px solid #000;
             border-radius: 4px;
-            background: rgba(255, 255, 255, 0.06);
+            /* "White key" look: natural-note rows default to a light
+               cell, sharp ("black key") rows darken it below via
+               :not(.active) so an active cell's own background can never
+               be outranked by this — no specificity race like the
+               earlier bug where a plain .sharp/.root ancestor selector
+               (higher specificity than .active alone) silently won. */
+            background: rgba(255, 255, 255, 0.55);
             cursor: pointer;
             transition: transform 0.1s ease, background 0.1s ease;
+        }
+        .sm-pianoroll-row.sharp .sm-pianoroll-cell:not(.active) {
+            background: rgba(10, 5, 25, 0.55);
         }
         .sm-pianoroll-cell:hover { transform: scale(1.15); }
         .sm-pianoroll-cell.active {
             background: var(--neon-blue);
             box-shadow: 0 0 8px var(--neon-blue);
+        }
+        /* Tie row isn't a note row — keep it a neutral mid-tone rather
+           than picking up the white/black key coloring. */
+        .sm-tie-cell {
+            background: rgba(255, 255, 255, 0.12);
         }
 
         /* Tie/slide row — set apart from the note rows with a gap and its
@@ -1517,6 +1589,9 @@
         .sm-pianoroll-header .sm-knob {
             color: var(--neon-orange);
         }
+        .sm-pianoroll-header .sm-knob input[type="range"] {
+            width: 42px;
+        }
         .sm-track-knob {
             font-size: 0.65rem;
         }
@@ -1526,6 +1601,9 @@
         .sm-track-knob label {
             width: 24px;
             flex-shrink: 0;
+        }
+        .sm-track-knob label svg {
+            display: block;
         }
 
         @media (max-width: 600px) {
@@ -1538,6 +1616,8 @@
             .sm-pianoroll-row { grid-template-columns: 28px repeat(var(--sm-step-count, 16), 1fr); }
             .sm-pianoroll-key { font-size: 0.55rem; }
             .sm-dope-badge { width: 100px; top: -14px; right: -6px; }
+            .sm-pianoroll-header .sm-knob input[type="range"] { width: 34px; }
+            .sm-transpose-btn { min-width: 22px; font-size: 0.55rem; }
         }
 
         /* The "!" button hides the Bandcamp/Spotify/YouTube/SoundCloud
@@ -2176,15 +2256,24 @@
     <div class="sm-pianoroll-panel">
         <div class="sm-pianoroll-header">
             <h3 class="sm-pianoroll-title">BASSLINE</h3>
-            <div class="sm-knob">
-                <label for="smBassRelease">REL</label>
-                <input type="range" id="smBassRelease" min="0" max="100" value="15">
+            <div class="sm-pianoroll-controls">
+                <div class="sm-knob">
+                    <label for="smBassRelease">REL</label>
+                    <input type="range" id="smBassRelease" min="0" max="100" value="15">
+                </div>
+                <div class="sm-knob">
+                    <label for="smSlideSpeed">SLIDE</label>
+                    <input type="range" id="smSlideSpeed" min="0" max="100" value="30">
+                </div>
+                <div class="sm-transpose-group">
+                    <button class="sm-transpose-btn" id="smTransposeOctDown" aria-label="Transpose down an octave" title="Transpose -1 octave">-12</button>
+                    <button class="sm-transpose-btn" id="smTransposeDown" aria-label="Transpose down a semitone" title="Transpose -1 semitone">-1</button>
+                    <button class="sm-transpose-btn" id="smTransposeUp" aria-label="Transpose up a semitone" title="Transpose +1 semitone">+1</button>
+                    <button class="sm-transpose-btn" id="smTransposeOctUp" aria-label="Transpose up an octave" title="Transpose +1 octave">+12</button>
+                </div>
+                <button class="sm-undo-btn" id="smUndoBtn" aria-label="Undo last edit" title="Undo last edit" disabled>&#8634;</button>
+                <button class="sm-close-btn" id="smPianoRollClose" aria-label="Close piano roll">&#10005;</button>
             </div>
-            <div class="sm-knob">
-                <label for="smSlideSpeed">SLIDE</label>
-                <input type="range" id="smSlideSpeed" min="0" max="100" value="30">
-            </div>
-            <button class="sm-close-btn" id="smPianoRollClose" aria-label="Close piano roll">&#10005;</button>
         </div>
         <div class="sm-pianoroll-grid" id="smPianoRollGrid"></div>
     </div>
@@ -3940,6 +4029,29 @@
     // note (portamento) instead of the usual voice-stealing cutoff. See
     // smPlaySound for how this is realized on the same ringing source.
     let smBassTies = new Array(SM_STEPS).fill(false);
+    // Undo history for bass note/tie edits and transpose: each entry is a
+    // full snapshot of both arrays taken right before a mutation, so undo
+    // just pops and restores rather than trying to invert individual
+    // edits. Capped so it can't grow unbounded over a long session.
+    let smBassUndoStack = [];
+    const SM_UNDO_MAX = 50;
+    function smPushUndoSnapshot() {
+        smBassUndoStack.push({ offsets: smBassNoteOffsets.slice(), ties: smBassTies.slice() });
+        if (smBassUndoStack.length > SM_UNDO_MAX) smBassUndoStack.shift();
+        smUpdateUndoBtn();
+    }
+    function smUpdateUndoBtn() {
+        if (smUndoBtn) smUndoBtn.disabled = smBassUndoStack.length === 0;
+    }
+    function smUndoBass() {
+        const snap = smBassUndoStack.pop();
+        if (!snap) return;
+        smBassNoteOffsets = snap.offsets;
+        smBassTies = snap.ties;
+        smUpdateUndoBtn();
+        smRenderPianoRoll();
+        smRenderBassPreview();
+    }
     // 0 (fast/snappy) - 1 (slow/dramatic), set by the slide-speed knob.
     let smSlideSpeed = 0.3;
     function smSlideDuration() {
@@ -4068,8 +4180,17 @@
         const pitchWrap = document.createElement('div');
         pitchWrap.className = 'sm-knob sm-track-knob';
         const pitchLabel = document.createElement('label');
-        pitchLabel.textContent = 'NOTE';
+        // A tuning-peg icon stands in for the old "NOTE" text label —
+        // string post + perpendicular tuning key, drawn in currentColor
+        // so it picks up the track's own accent color like everything
+        // else in the row.
+        pitchLabel.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false">' +
+            '<circle cx="7" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2.2"/>' +
+            '<line x1="11" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+            '<line x1="15.5" y1="7.5" x2="15.5" y2="16.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+            '</svg>';
         pitchLabel.title = 'Pitch';
+        pitchLabel.setAttribute('aria-label', 'Pitch');
         const pitchInput = document.createElement('input');
         pitchInput.type = 'range';
         pitchInput.min = '0';
@@ -4212,6 +4333,11 @@
             });
         }
         if (smCurrentStep >= newCount) smCurrentStep = 0;
+        // Stored snapshots are sized to the old step count — resizing
+        // invalidates them rather than leaving stale-length arrays an
+        // undo could restore.
+        smBassUndoStack.length = 0;
+        smUpdateUndoBtn();
         smRenderBassPreview();
     }
 
@@ -4241,6 +4367,7 @@
     const smPianoRollOverlay = document.getElementById('smPianoRollOverlay');
     const smPianoRollGrid = document.getElementById('smPianoRollGrid');
     const smPianoRollClose = document.getElementById('smPianoRollClose');
+    const smUndoBtn = document.getElementById('smUndoBtn');
 
     function smRenderPianoRoll() {
         smPianoRollGrid.innerHTML = '';
@@ -4263,6 +4390,7 @@
                 cell.className = 'sm-pianoroll-cell';
                 if (smBassNoteOffsets[step] === semitone) cell.classList.add('active');
                 cell.addEventListener('click', () => {
+                    smPushUndoSnapshot();
                     const isActive = smBassNoteOffsets[step] === semitone;
                     smBassNoteOffsets[step] = isActive ? null : semitone;
                     smRenderPianoRoll();
@@ -4286,6 +4414,7 @@
             cell.className = 'sm-pianoroll-cell sm-tie-cell';
             if (smBassTies[step]) cell.classList.add('active');
             cell.addEventListener('click', () => {
+                smPushUndoSnapshot();
                 smBassTies[step] = !smBassTies[step];
                 smRenderPianoRoll();
                 smRenderBassPreview();
@@ -4338,6 +4467,7 @@
     function smOpenPianoRoll() {
         if (!smInitialized) return; // tracks not built yet
         smRenderPianoRoll();
+        smUpdateUndoBtn();
         smPianoRollOverlay.classList.add('active');
     }
     smPianoRollClose.addEventListener('click', () => {
@@ -4349,6 +4479,27 @@
     document.getElementById('smSlideSpeed').addEventListener('input', (e) => {
         smSlideSpeed = parseInt(e.target.value, 10) / 100;
     });
+
+    smUndoBtn.addEventListener('click', smUndoBass);
+
+    // Shifts every currently-placed bass note by a fixed number of
+    // semitones, leaving inactive steps untouched. Offsets are stored as
+    // absolute semitones from the sample's natural pitch (not a position
+    // within the visible piano-roll window), so this is a plain add — a
+    // transposed note that lands outside the visible range just won't
+    // highlight any row, same as any other out-of-window offset.
+    function smTransposeBass(semitones) {
+        smPushUndoSnapshot();
+        for (let i = 0; i < SM_STEPS; i++) {
+            if (smBassNoteOffsets[i] !== null) smBassNoteOffsets[i] += semitones;
+        }
+        smRenderPianoRoll();
+        smRenderBassPreview();
+    }
+    document.getElementById('smTransposeDown').addEventListener('click', () => smTransposeBass(-1));
+    document.getElementById('smTransposeUp').addEventListener('click', () => smTransposeBass(1));
+    document.getElementById('smTransposeOctDown').addEventListener('click', () => smTransposeBass(-12));
+    document.getElementById('smTransposeOctUp').addEventListener('click', () => smTransposeBass(12));
 
     // Every track's decay knob (0-100) maps to how long its hits ring
     // before fading: short at the low end (punchy, artificially clipped),
