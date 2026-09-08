@@ -1037,7 +1037,7 @@
             position: fixed;
             inset: 0;
             z-index: 10000;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
             /* Extra top padding reserves the space the ?/!/♪ buttons live
@@ -1058,9 +1058,18 @@
                through to the page underneath everywhere except the panel
                itself. */
             pointer-events: none;
+            /* Fades in/out instead of snapping — always display:flex (an
+               invisible flex container costs nothing), toggling opacity
+               and delaying the visibility flip so it doesn't briefly
+               intercept hover/focus while fully transparent. */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, visibility 0s linear 0.35s;
         }
         .soundi-maker-overlay.active {
-            display: flex;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.35s ease, visibility 0s linear 0s;
         }
 
         /* Wraps the panel (without clipping) so the DOPE badge can overlap
@@ -1117,17 +1126,17 @@
 
         .soundi-maker-title {
             font-family: 'Barrio', cursive;
-            font-size: clamp(1.6rem, 5vw, 2.4rem);
+            font-size: clamp(2.1rem, 7vw, 3.2rem);
             background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-yellow), var(--neon-pink));
             background-size: 300% 100%;
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             animation: smTitleShift 6s linear infinite;
-            -webkit-text-stroke: 1.5px #000;
+            -webkit-text-stroke: 2.5px #000;
             text-shadow: 3px 3px 0 #000;
             margin: 0;
-            transform: rotate(-2deg);
+            transform: rotate(-1deg);
         }
 
         @keyframes smTitleShift {
@@ -1160,16 +1169,16 @@
         }
 
         .sm-play-btn {
-            width: 56px;
-            height: 56px;
+            width: 38px;
+            height: 38px;
             flex-shrink: 0;
             border-radius: 45% 55% 50% 50% / 55% 45% 55% 45%;
-            border: 4px solid #000;
+            border: 3px solid #000;
             background: var(--neon-green);
             color: #000;
-            font-size: 1.3rem;
+            font-size: 0.95rem;
             cursor: pointer;
-            box-shadow: 0 4px 0 #000;
+            box-shadow: 0 3px 0 #000;
             transition: transform 0.15s ease;
         }
         .sm-play-btn:hover { transform: scale(1.08) rotate(4deg); }
@@ -1194,6 +1203,7 @@
         }
         .sm-tempo input[type="range"] {
             accent-color: var(--neon-yellow);
+            width: 70px;
         }
 
         .soundi-maker-loading {
@@ -1397,6 +1407,36 @@
         .sm-pianoroll-cell.active {
             background: var(--neon-blue);
             box-shadow: 0 0 8px var(--neon-blue);
+        }
+
+        /* Tie/slide row — set apart from the note rows with a gap and its
+           own accent color so it doesn't read as just another pitch. */
+        .sm-pianoroll-tie-row {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 2px dashed rgba(255, 255, 255, 0.25);
+        }
+        .sm-pianoroll-tie-row .sm-pianoroll-key {
+            color: var(--neon-orange);
+        }
+        .sm-tie-cell.active {
+            background: var(--neon-orange);
+            box-shadow: 0 0 8px var(--neon-orange);
+        }
+
+        /* Slide-speed knob — a compact rotary-style control for how fast
+           tied bass notes glide between pitches. */
+        .sm-slide-knob {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: 'Barrio', cursive;
+            font-size: 0.75rem;
+            color: var(--neon-orange);
+        }
+        .sm-slide-knob input[type="range"] {
+            width: 70px;
+            accent-color: var(--neon-orange);
         }
 
         @media (max-width: 600px) {
@@ -2027,11 +2067,10 @@
                 <button class="sm-play-btn" id="smPlayBtn" aria-label="Play/stop">&#9654;</button>
                 <div class="sm-tempo">
                     <label for="smBpm">BPM</label>
-                    <input type="range" id="smBpm" min="60" max="180" value="150">
+                    <input type="range" id="smBpm" min="100" max="180" value="150">
                     <span id="smBpmVal">150</span>
                 </div>
             </div>
-            <button class="sm-close-btn" id="smCloseBtn" aria-label="Close Dope Box">&#10005;</button>
         </div>
         <div id="soundiMakerBody">
             <div class="soundi-maker-loading" id="soundiMakerLoading">loading samples...</div>
@@ -2046,6 +2085,10 @@
     <div class="sm-pianoroll-panel">
         <div class="sm-pianoroll-header">
             <h3 class="sm-pianoroll-title">BASSLINE</h3>
+            <div class="sm-slide-knob">
+                <label for="smSlideSpeed">SLIDE</label>
+                <input type="range" id="smSlideSpeed" min="0" max="100" value="30">
+            </div>
             <button class="sm-close-btn" id="smPianoRollClose" aria-label="Close piano roll">&#10005;</button>
         </div>
         <div class="sm-pianoroll-grid" id="smPianoRollGrid"></div>
@@ -3769,11 +3812,12 @@
     // re-check on a short interval) instead of triggering samples directly
     // off setInterval — setInterval alone drifts/jitters under normal
     // browser load, which is very audible as a wobbly beat.
-    const SM_TRACK_ORDER = ['kick', 'bass', 'sn', 'chh', 'oh'];
+    const SM_TRACK_ORDER = ['kick', 'bass', 'sn', 'sn2', 'chh', 'oh'];
     const SM_TRACK_META = {
         kick: { label: 'KICK', color: 'var(--neon-pink)', samples: ['samples/kick01.WAV', 'samples/kick02.wav'], volume: 0.9 },
         bass: { label: 'BASS', color: 'var(--neon-blue)', samples: ['samples/bass01.wav', 'samples/bass02.wav'], volume: 0.8 },
         sn: { label: 'SNARE', color: 'var(--neon-green)', samples: ['samples/sn01.wav', 'samples/sn02.wav'], volume: 0.85 },
+        sn2: { label: 'SNARE 2', color: '#ff3b3b', samples: ['samples/sn01.wav', 'samples/sn02.wav'], volume: 0.8 },
         chh: { label: 'CHH', color: 'var(--neon-yellow)', samples: ['samples/chh01.wav'], volume: 0.6 },
         oh: { label: 'OH', color: 'var(--neon-orange)', samples: ['samples/oh01.wav'], volume: 0.6 },
     };
@@ -3784,6 +3828,7 @@
         kick: [0, 4, 8, 12],
         bass: [2, 6, 10, 14],
         sn: [4, 12],
+        sn2: [],
         chh: [0, 2, 4, 6, 8, 10, 12, 14],
         oh: [],
     };
@@ -3796,6 +3841,15 @@
     // the window (SM_PIANOROLL_MIN_SEMITONE) doesn't change already-set
     // notes' pitch.
     let smBassNoteOffsets = new Array(SM_STEPS).fill(null);
+    // Tie/slide: when true, a step's note glides into the next active
+    // note (portamento) instead of the usual voice-stealing cutoff. See
+    // smPlaySound for how this is realized on the same ringing source.
+    let smBassTies = new Array(SM_STEPS).fill(false);
+    // 0 (fast/snappy) - 1 (slow/dramatic), set by the slide-speed knob.
+    let smSlideSpeed = 0.3;
+    function smSlideDuration() {
+        return 0.02 + smSlideSpeed * 0.3;
+    }
     const SM_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const SM_PIANOROLL_ROOT_MIDI = 36; // C2 — the sample's assumed natural pitch (semitone 0)
     const SM_PIANOROLL_RANGE = 13; // 13 rows shown at once (one octave inclusive)
@@ -3814,7 +3868,6 @@
     const smPlayBtn = document.getElementById('smPlayBtn');
     const smBpmSlider = document.getElementById('smBpm');
     const smBpmVal = document.getElementById('smBpmVal');
-    const smCloseBtn = document.getElementById('smCloseBtn');
 
     let smInitialized = false;
     let smAudioCtx = null;
@@ -3829,8 +3882,11 @@
     let smPlayheadCol = -1;
     // Bass is monophonic (max 1 voice): the currently-ringing bass source
     // gets cut off the instant the next bass note triggers, instead of
-    // letting overlapping steps stack multiple bass samples at once.
+    // letting overlapping steps stack multiple bass samples at once —
+    // unless the previous step has tie/slide on, in which case it glides
+    // instead (see smPlaySound).
     let smBassActiveSource = null;
+    let smBassActiveRate = 1;
     const SM_LOOKAHEAD_MS = 25;
     const SM_SCHEDULE_AHEAD = 0.1;
 
@@ -3983,6 +4039,26 @@
             }
             smPianoRollGrid.appendChild(row);
         }
+
+        // Tie/slide row — marks which active steps glide into the next
+        // note instead of retriggering. See smPlaySound for playback.
+        const tieRow = document.createElement('div');
+        tieRow.className = 'sm-pianoroll-row sm-pianoroll-tie-row';
+        const tieLabel = document.createElement('span');
+        tieLabel.className = 'sm-pianoroll-key';
+        tieLabel.textContent = 'TIE';
+        tieRow.appendChild(tieLabel);
+        for (let step = 0; step < SM_STEPS; step++) {
+            const cell = document.createElement('div');
+            cell.className = 'sm-pianoroll-cell sm-tie-cell';
+            if (smBassTies[step]) cell.classList.add('active');
+            cell.addEventListener('click', () => {
+                smBassTies[step] = !smBassTies[step];
+                smRenderPianoRoll();
+            });
+            tieRow.appendChild(cell);
+        }
+        smPianoRollGrid.appendChild(tieRow);
     }
 
     // Keeps the main Bass row's step highlighting in sync with whatever
@@ -4003,8 +4079,26 @@
     smPianoRollClose.addEventListener('click', () => {
         smPianoRollOverlay.classList.remove('active');
     });
+    document.getElementById('smSlideSpeed').addEventListener('input', (e) => {
+        smSlideSpeed = parseInt(e.target.value, 10) / 100;
+    });
 
     function smPlaySound(key, time, stepIndex) {
+        if (key === 'bass') {
+            const prevStep = (stepIndex - 1 + SM_STEPS) % SM_STEPS;
+            const hasNote = smBassNoteOffsets[stepIndex] !== null;
+            const prevHadNote = smBassNoteOffsets[prevStep] !== null;
+            if (smBassTies[prevStep] && prevHadNote && smBassActiveSource && hasNote) {
+                // The previous step ties into this one: glide the still-
+                // ringing source to the new pitch instead of cutting it
+                // off and starting a fresh one-shot.
+                const rate = Math.pow(2, smBassNoteOffsets[stepIndex] / 12);
+                smBassActiveSource.playbackRate.setValueAtTime(smBassActiveRate, time);
+                smBassActiveSource.playbackRate.linearRampToValueAtTime(rate, time + smSlideDuration());
+                smBassActiveRate = rate;
+                return;
+            }
+        }
         const track = smTracks[key];
         const select = track.select;
         const url = track.sampleUrls[parseInt(select.value, 10)];
@@ -4014,7 +4108,14 @@
         source.buffer = buffer;
         if (key === 'bass') {
             const semitones = smBassNoteOffsets[stepIndex] || 0;
-            source.playbackRate.value = Math.pow(2, semitones / 12);
+            const rate = Math.pow(2, semitones / 12);
+            source.playbackRate.value = rate;
+            smBassActiveRate = rate;
+            // This step ties into the next one — keep it ringing (looped)
+            // instead of letting the short one-shot sample decay/end on
+            // its own, so there's still something to glide from when the
+            // tied step after it arrives.
+            if (smBassTies[stepIndex]) source.loop = true;
             // Max 1 voice: cut off whatever bass note is still ringing
             // at exactly the moment this new one starts.
             if (smBassActiveSource) {
@@ -4034,6 +4135,12 @@
         });
         const delayMs = Math.max(0, (time - smAudioCtx.currentTime) * 1000);
         setTimeout(() => {
+            // Steps already scheduled up to SM_SCHEDULE_AHEAD before a
+            // stop() aren't cancelled by it (only the scheduler's own
+            // timer is) — without this guard, one of them could still
+            // land after stop and leave a stray playhead highlight stuck
+            // on a step.
+            if (!smIsPlaying) return;
             if (smPlayheadCol >= 0) {
                 SM_TRACK_ORDER.forEach(key => {
                     smTracks[key].stepEls[smPlayheadCol].classList.remove('playhead');
@@ -4089,6 +4196,11 @@
         soundiMakerActive = active;
         updateEmbedsHiddenClass();
         soundiMakerOverlay.classList.toggle('active', active);
+        // The toggle button is now the only way to close Dope Box (its
+        // own X button was removed), so it doubles as an exit affordance:
+        // shows an X while open instead of the musical note.
+        soundiMakerToggle.textContent = active ? '✕' : '♪';
+        soundiMakerToggle.title = active ? 'Close Dope Box' : 'Dope Box';
         if (active) {
             initSoundiMaker();
         } else {
@@ -4097,7 +4209,6 @@
     }
 
     soundiMakerToggle.addEventListener('click', () => setSoundiMakerActive(!soundiMakerActive));
-    smCloseBtn.addEventListener('click', () => setSoundiMakerActive(false));
     smPlayBtn.addEventListener('click', () => {
         if (smIsPlaying) stopSequencer(); else startSequencer();
     });
