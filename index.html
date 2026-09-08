@@ -4756,6 +4756,13 @@
         const isBassTied = key === 'bass' && smBassTies[stepIndex];
         if (!isBassTied) gateDuration = Math.min(gateDuration, buffer.duration / rate);
         if (opts.forceGateDuration != null) gateDuration = Math.min(gateDuration, opts.forceGateDuration);
+        // Floored to the attack time so the decay ramp's target is never
+        // scheduled before the attack ramp's — future samples aren't
+        // guaranteed to stay as long as today's kit, and a sample (or a
+        // forced short/flam gate) shorter than the 3ms attack would
+        // otherwise hand the Web Audio API two automation events out of
+        // time order.
+        gateDuration = Math.max(gateDuration, attackTime);
         envGain.gain.linearRampToValueAtTime(0.0001, time + gateDuration);
         source.connect(envGain);
         envGain.connect(track.gainNode);
