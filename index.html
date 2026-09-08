@@ -1242,6 +1242,9 @@
             accent-color: var(--neon-yellow);
             width: 46px;
         }
+        .sm-shuffle input[type="range"] {
+            accent-color: var(--neon-orange);
+        }
 
         .soundi-maker-loading {
             text-align: center;
@@ -1628,6 +1631,12 @@
         @media (max-width: 600px) {
             .soundi-maker-overlay { padding: 180px 0.75rem 0.75rem; }
             .soundi-maker-panel { padding: 1rem 0.75rem 1.25rem; border-width: 4px; }
+            /* Room for the shuffle slider on the same row without
+               wrapping to a second line: tighter gaps and narrower
+               sliders than the roomier desktop layout needs. */
+            .soundi-maker-transport { gap: 0.4rem; }
+            .sm-tempo { gap: 0.3rem; font-size: 0.8rem; }
+            .sm-tempo input[type="range"] { width: 32px; }
             .sm-track { padding: 0.4rem 0.5rem; }
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
@@ -1657,10 +1666,7 @@
             .sm-dope-badge-wrap { top: -34px; right: -6px; }
             .sm-dope-badge { width: 200px; }
             .sm-dope-badge-text { font-size: 2.2rem; transform: rotate(-4deg) translateY(-14px); }
-            /* Gives the lowered badge room to clear the transport row
-               instead of overlapping it, rather than floating the badge
-               way above the panel with dead space underneath. */
-            .soundi-maker-header { margin-top: 2.2rem; }
+            .soundi-maker-header { margin-top: 1.1rem; }
             .sm-pianoroll-header .sm-knob input[type="range"] { width: 34px; }
             .sm-transpose-btn { min-width: 22px; font-size: 0.55rem; }
         }
@@ -2287,6 +2293,11 @@
                     <label for="smBpm">BPM</label>
                     <input type="range" id="smBpm" min="100" max="180" value="150">
                     <span id="smBpmVal">150</span>
+                </div>
+                <div class="sm-tempo sm-shuffle">
+                    <label for="smShuffle">SHUF</label>
+                    <input type="range" id="smShuffle" min="0" max="100" value="0">
+                    <span id="smShuffleVal">0%</span>
                 </div>
             </div>
         </div>
@@ -4150,6 +4161,10 @@
     let smCurrentStep = 0;
     let smNextStepTime = 0;
     let smBpm = 150;
+    // 0 (straight, no swing) - 1 (max swing), set by the shuffle knob.
+    // Every other 16th note (odd step indices) is delayed by a fraction
+    // of a step for a swung groove — see smScheduleStep.
+    let smShuffleAmount = 0;
     let smSchedulerTimer = null;
     let smPlayheadCol = -1;
     // Bass is monophonic (max 1 voice): the currently-ringing bass source
@@ -4823,6 +4838,12 @@
 
     function smScheduleStep(stepIndex, time) {
         const stepDur = smStepDuration();
+        // Shuffle/swing: every other 16th note lands late instead of
+        // exactly on the grid. Only nudges this step's own actual
+        // trigger/playhead time — smNextStepTime's own steady advance in
+        // smAdvanceStepTime is untouched, so the swing doesn't drift the
+        // overall tempo over time.
+        if (stepIndex % 2 === 1) time += smShuffleAmount * stepDur * 0.66;
         SM_TRACK_ORDER.forEach(key => {
             const state = smStepState(key, stepIndex);
             if (state === 'off') return;
@@ -4929,6 +4950,13 @@
     smBpmSlider.addEventListener('input', () => {
         smBpm = parseInt(smBpmSlider.value, 10);
         smBpmVal.textContent = smBpm;
+    });
+    const smShuffleSlider = document.getElementById('smShuffle');
+    const smShuffleVal = document.getElementById('smShuffleVal');
+    smShuffleSlider.addEventListener('input', () => {
+        const pct = parseInt(smShuffleSlider.value, 10);
+        smShuffleAmount = pct / 100;
+        smShuffleVal.textContent = pct + '%';
     });
     const smStepCountBtn = document.getElementById('smStepCountBtn');
     smStepCountBtn.addEventListener('click', () => {
