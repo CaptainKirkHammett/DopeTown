@@ -1289,26 +1289,54 @@
             outline-offset: 1px;
         }
 
-        /* Bass track name doubles as the button that opens the piano
-           roll — styled the same as a plain label but with an obvious
-           clickable affordance. */
-        .sm-track-piano-btn {
-            flex-shrink: 0;
-            width: 24px;
-            height: 24px;
-            font-size: 0.9rem;
-            line-height: 1;
-            background: none;
-            border: 2px solid currentColor;
+        /* Mini piano-roll preview standing in for bass's step grid —
+           shows each active step's pitch as a dot (tied notes connected
+           by a line) and doubles as the button that opens the full piano
+           roll editor. */
+        .sm-bass-preview {
+            position: relative;
+            flex: 1;
+            min-width: 260px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #000;
             border-radius: 6px;
-            color: inherit;
             cursor: pointer;
-            padding: 0;
+            overflow: hidden;
+            transition: transform 0.1s ease;
         }
-        .sm-track-piano-btn:hover { transform: scale(1.1); }
+        .sm-bass-preview:hover { transform: scale(1.03); }
+        .sm-bass-preview-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            margin: -3px 0 0 -3px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 4px currentColor;
+            pointer-events: none;
+        }
+        .sm-bass-preview-tie {
+            position: absolute;
+            height: 2px;
+            margin-top: -1px;
+            background: currentColor;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .sm-bass-preview-playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #fff;
+            display: none;
+            pointer-events: none;
+        }
 
-        /* Piano roll — opened by clicking the Bass track's 🎹 button, for
-           dialing in exact note pitches per step instead of just on/off. */
+        /* Piano roll — opened by clicking the Bass track's mini preview,
+           for dialing in exact note pitches per step instead of just
+           on/off. */
         .sm-pianoroll-overlay {
             position: fixed;
             inset: 0;
@@ -1455,6 +1483,7 @@
             .sm-track { padding: 0.4rem 0.5rem; }
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
+            .sm-bass-preview { flex-basis: 100%; min-width: 100%; }
             .sm-pianoroll-row { grid-template-columns: 28px repeat(16, 1fr); }
             .sm-pianoroll-key { font-size: 0.55rem; }
             .sm-dope-badge { width: 100px; top: -14px; right: -6px; }
@@ -4000,44 +4029,42 @@
         decayWrap.appendChild(decayInput);
         controls.appendChild(decayWrap);
 
-        if (key === 'bass') {
-            const pianoBtn = document.createElement('button');
-            pianoBtn.className = 'sm-track-piano-btn';
-            pianoBtn.title = 'Open piano roll for exact notes';
-            pianoBtn.textContent = '🎹';
-            pianoBtn.addEventListener('click', () => smOpenPianoRoll());
-            controls.appendChild(pianoBtn);
-        }
-
         row.appendChild(controls);
 
-        const stepsWrap = document.createElement('div');
-        stepsWrap.className = 'sm-steps';
-        const stepEls = [];
-        const activeSteps = new Set(SM_DEFAULT_PATTERN[key] || []);
-        for (let i = 0; i < SM_STEPS; i++) {
-            const step = document.createElement('div');
-            step.className = 'sm-step';
-            if (activeSteps.has(i)) {
-                step.classList.add('active');
-                if (key === 'bass') smBassNoteOffsets[i] = 0; // root note by default
-            }
-            if (key === 'bass') {
-                // Quick on/off at the root note from the main grid; exact
-                // pitch per step is set via the piano roll (track name).
-                step.addEventListener('click', () => {
-                    smBassNoteOffsets[i] = smBassNoteOffsets[i] === null ? 0 : null;
-                    step.classList.toggle('active', smBassNoteOffsets[i] !== null);
-                });
-            } else {
+        let stepEls = null;
+        let bassPreview = null;
+        let bassPreviewPlayhead = null;
+        if (key === 'bass') {
+            // No plain on/off grid for bass — a miniature piano-roll
+            // preview stands in for it instead, and doubles as the
+            // button that opens the full piano roll editor.
+            bassPreview = document.createElement('div');
+            bassPreview.className = 'sm-bass-preview';
+            bassPreview.title = 'Open piano roll for exact notes';
+            bassPreviewPlayhead = document.createElement('div');
+            bassPreviewPlayhead.className = 'sm-bass-preview-playhead';
+            bassPreview.appendChild(bassPreviewPlayhead);
+            bassPreview.addEventListener('click', () => smOpenPianoRoll());
+            const activeSteps = new Set(SM_DEFAULT_PATTERN.bass || []);
+            activeSteps.forEach(i => { smBassNoteOffsets[i] = 0; }); // root note by default
+            row.appendChild(bassPreview);
+        } else {
+            const stepsWrap = document.createElement('div');
+            stepsWrap.className = 'sm-steps';
+            stepEls = [];
+            const activeSteps = new Set(SM_DEFAULT_PATTERN[key] || []);
+            for (let i = 0; i < SM_STEPS; i++) {
+                const step = document.createElement('div');
+                step.className = 'sm-step';
+                if (activeSteps.has(i)) step.classList.add('active');
                 step.addEventListener('click', () => {
                     step.classList.toggle('active');
                 });
+                stepsWrap.appendChild(step);
+                stepEls.push(step);
             }
-            stepsWrap.appendChild(step);
-            stepEls.push(step);
+            row.appendChild(stepsWrap);
         }
-        row.appendChild(stepsWrap);
 
         const gainNode = smAudioCtx.createGain();
         gainNode.gain.value = meta.volume;
@@ -4058,8 +4085,10 @@
             stepEls, select, gainNode, sampleUrls: meta.samples,
             decay: parseInt(decayInput.value, 10) / 100,
             pitchSemitones: 0,
+            bassPreview, bassPreviewPlayhead,
         };
         soundiMakerTracksEl.appendChild(row);
+        if (key === 'bass') smRenderBassPreview();
     }
 
     // The track title is gone (the sample select identifies the row now),
@@ -4140,7 +4169,7 @@
                     const isActive = smBassNoteOffsets[step] === semitone;
                     smBassNoteOffsets[step] = isActive ? null : semitone;
                     smRenderPianoRoll();
-                    smSyncBassStepVisuals();
+                    smRenderBassPreview();
                 });
                 row.appendChild(cell);
             }
@@ -4162,6 +4191,7 @@
             cell.addEventListener('click', () => {
                 smBassTies[step] = !smBassTies[step];
                 smRenderPianoRoll();
+                smRenderBassPreview();
             });
             tieRow.appendChild(cell);
         }
@@ -4170,12 +4200,42 @@
 
     // Keeps the main Bass row's step highlighting in sync with whatever
     // was just edited in the piano roll.
-    function smSyncBassStepVisuals() {
+    // Redraws the mini piano-roll preview standing in for bass's step
+    // grid: one dot per active step, positioned left-to-right by step and
+    // bottom-to-top by pitch (same range as the full piano roll), with a
+    // connecting line between tied notes.
+    function smRenderBassPreview() {
         const bassTrack = smTracks.bass;
-        if (!bassTrack) return;
-        bassTrack.stepEls.forEach((step, i) => {
-            step.classList.toggle('active', smBassNoteOffsets[i] !== null);
-        });
+        if (!bassTrack || !bassTrack.bassPreview) return;
+        const preview = bassTrack.bassPreview;
+        preview.querySelectorAll('.sm-bass-preview-dot, .sm-bass-preview-tie').forEach(el => el.remove());
+        const maxSemitone = SM_PIANOROLL_MIN_SEMITONE + SM_PIANOROLL_RANGE - 1;
+        const span = maxSemitone - SM_PIANOROLL_MIN_SEMITONE || 1;
+        const yFor = (semitone) => {
+            const t = (semitone - SM_PIANOROLL_MIN_SEMITONE) / span; // 0 (low) - 1 (high)
+            return (1 - t) * 80 + 10; // % from top, kept off the very edges
+        };
+        for (let i = 0; i < SM_STEPS; i++) {
+            const offset = smBassNoteOffsets[i];
+            if (offset === null) continue;
+            const x = ((i + 0.5) / SM_STEPS) * 100;
+            const y = yFor(offset);
+            if (smBassTies[i] && smBassNoteOffsets[(i + 1) % SM_STEPS] !== null) {
+                const nextX = ((i + 1.5) / SM_STEPS) * 100;
+                const nextY = yFor(smBassNoteOffsets[(i + 1) % SM_STEPS]);
+                const tie = document.createElement('div');
+                tie.className = 'sm-bass-preview-tie';
+                tie.style.left = x + '%';
+                tie.style.width = (nextX - x) + '%';
+                tie.style.top = ((y + nextY) / 2) + '%';
+                preview.appendChild(tie);
+            }
+            const dot = document.createElement('div');
+            dot.className = 'sm-bass-preview-dot';
+            dot.style.left = x + '%';
+            dot.style.top = y + '%';
+            preview.appendChild(dot);
+        }
     }
 
     function smOpenPianoRoll() {
@@ -4266,9 +4326,17 @@
         source.start(time);
     }
 
+    // Bass has no step buttons (its activity lives in smBassNoteOffsets,
+    // shown via the mini piano-roll preview instead), so "is this step
+    // active" is checked differently per track type.
+    function smIsStepActive(key, stepIndex) {
+        if (key === 'bass') return smBassNoteOffsets[stepIndex] !== null;
+        return smTracks[key].stepEls[stepIndex].classList.contains('active');
+    }
+
     function smScheduleStep(stepIndex, time) {
         SM_TRACK_ORDER.forEach(key => {
-            if (smTracks[key].stepEls[stepIndex].classList.contains('active')) {
+            if (smIsStepActive(key, stepIndex)) {
                 smPlaySound(key, time, stepIndex);
             }
         });
@@ -4280,12 +4348,15 @@
             // land after stop and leave a stray playhead highlight stuck
             // on a step.
             if (!smIsPlaying) return;
-            if (smPlayheadCol >= 0) {
-                SM_TRACK_ORDER.forEach(key => {
-                    smTracks[key].stepEls[smPlayheadCol].classList.remove('playhead');
-                });
-            }
             SM_TRACK_ORDER.forEach(key => {
+                if (key === 'bass') {
+                    smTracks.bass.bassPreviewPlayhead.style.left = ((stepIndex / SM_STEPS) * 100) + '%';
+                    smTracks.bass.bassPreviewPlayhead.style.display = 'block';
+                    return;
+                }
+                if (smPlayheadCol >= 0) {
+                    smTracks[key].stepEls[smPlayheadCol].classList.remove('playhead');
+                }
                 smTracks[key].stepEls[stepIndex].classList.add('playhead');
             });
             smPlayheadCol = stepIndex;
@@ -4323,8 +4394,12 @@
         clearTimeout(smSchedulerTimer);
         smPlayBtn.classList.remove('playing');
         smPlayBtn.innerHTML = '&#9654;';
+        if (smTracks.bass && smTracks.bass.bassPreviewPlayhead) {
+            smTracks.bass.bassPreviewPlayhead.style.display = 'none';
+        }
         if (smPlayheadCol >= 0) {
             SM_TRACK_ORDER.forEach(key => {
+                if (key === 'bass') return;
                 smTracks[key].stepEls[smPlayheadCol].classList.remove('playhead');
             });
             smPlayheadCol = -1;
