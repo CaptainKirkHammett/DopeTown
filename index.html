@@ -1613,8 +1613,36 @@
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
             .sm-bass-preview { flex-basis: 100%; min-width: 100%; }
-            .sm-pianoroll-row { grid-template-columns: 28px repeat(var(--sm-step-count, 16), 1fr); }
-            .sm-pianoroll-key { font-size: 0.55rem; }
+            /* Fixed (not fractional) step-cell width so a 32-step
+               pattern is genuinely twice as wide as a 16-step one,
+               instead of just squeezing thinner columns into the same
+               space — that's what lets .sm-pianoroll-grid's overflow-x
+               actually kick in at 32 steps while 16 steps fits with no
+               scrollbar. Rows also get flex-shrink: 0 + width: max-
+               content so they can't be squashed back down to fit. */
+            .sm-pianoroll-row {
+                grid-template-columns: 28px repeat(var(--sm-step-count, 16), 13px);
+                flex-shrink: 0;
+                width: max-content;
+            }
+            .sm-pianoroll-key {
+                font-size: 0.55rem;
+                /* Pinned to the left edge of the scrolling grid so the
+                   pitch label stays visible while scrolling through
+                   steps horizontally. */
+                position: sticky;
+                left: 0;
+                background: #1c1450;
+                z-index: 1;
+            }
+            /* Caps visible rows to roughly 1.5 octaves (~18 semitones)
+               and visible steps to 16 at a time — anything beyond that
+               (the fuller 3-octave range, or a 32-step pattern) scrolls
+               instead of cramming everything on screen at once. */
+            .sm-pianoroll-grid {
+                max-height: 31vh;
+                overflow: auto;
+            }
             .sm-dope-badge { width: 100px; top: -14px; right: -6px; }
             .sm-pianoroll-header .sm-knob input[type="range"] { width: 34px; }
             .sm-transpose-btn { min-width: 22px; font-size: 0.55rem; }
