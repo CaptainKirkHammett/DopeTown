@@ -1144,6 +1144,11 @@
             -webkit-text-stroke: 1px rgba(0, 0, 0, 0.6);
             text-shadow: 2px 2px 0 #000, 0 0 10px var(--neon-blue);
             transform: rotate(-4deg) translateY(-22px);
+            animation: smBoxHue 5s linear infinite;
+        }
+        @keyframes smBoxHue {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
         }
 
         .soundi-maker-header {
@@ -1649,13 +1654,13 @@
                 background: #1c1450;
                 z-index: 1;
             }
-            /* Pushed well above the panel (not just poking over its edge
-               like before) — at 2x size the badge+text stack is tall
-               enough to otherwise land right on top of the transport
-               row underneath it. */
-            .sm-dope-badge-wrap { top: -70px; right: -6px; }
+            .sm-dope-badge-wrap { top: -34px; right: -6px; }
             .sm-dope-badge { width: 200px; }
             .sm-dope-badge-text { font-size: 2.2rem; transform: rotate(-4deg) translateY(-14px); }
+            /* Gives the lowered badge room to clear the transport row
+               instead of overlapping it, rather than floating the badge
+               way above the panel with dead space underneath. */
+            .soundi-maker-header { margin-top: 2.2rem; }
             .sm-pianoroll-header .sm-knob input[type="range"] { width: 34px; }
             .sm-transpose-btn { min-width: 22px; font-size: 0.55rem; }
         }
