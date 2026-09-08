@@ -1597,6 +1597,29 @@
         .sm-clear-btn:hover { transform: scale(1.1) rotate(8deg); }
         .sm-clear-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
 
+        .sm-export-btn {
+            flex-shrink: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 3px solid #000;
+            background: var(--neon-green);
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #000;
+            transition: transform 0.15s ease;
+        }
+        .sm-export-btn:hover { transform: scale(1.1); }
+        .sm-export-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
+        .sm-export-btn.rendering {
+            opacity: 0.6;
+            pointer-events: none;
+            animation: smPulse 0.6s ease-in-out infinite;
+        }
+
         .sm-pianoroll-grid {
             display: flex;
             flex-direction: column;
@@ -1740,10 +1763,10 @@
             /* Room for the shuffle slider on the same row without
                wrapping to a second line: tighter gaps and narrower
                sliders than the roomier desktop layout needs. */
-            .soundi-maker-transport { gap: 0.25rem; }
+            .soundi-maker-transport { gap: 2px; }
             .sm-tempo { gap: 0.25rem; font-size: 0.75rem; }
-            .sm-tempo input[type="range"], .sm-tempo .sm-popup-trigger { width: 26px; }
-            .sm-transport-undo-btn, .sm-clear-btn { width: 26px; height: 26px; }
+            .sm-tempo input[type="range"], .sm-tempo .sm-popup-trigger { width: 22px; }
+            .sm-transport-undo-btn, .sm-clear-btn, .sm-export-btn { width: 26px; height: 26px; }
             .sm-track { padding: 0.4rem 0.5rem; }
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
@@ -2410,6 +2433,11 @@
                 <button class="sm-clear-btn" id="smClearBtn" aria-label="Clear pattern" title="Clear pattern">
                     <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
                         <path d="M5 7 H19 M9 7 V4.5 A1 1 0 0 1 10 3.5 H14 A1 1 0 0 1 15 4.5 V7 M7 7 L8 20 A1.5 1.5 0 0 0 9.5 21.3 H14.5 A1.5 1.5 0 0 0 16 20 L17 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="sm-export-btn" id="smExportBtn" aria-label="Render pattern to WAV" title="Render pattern to WAV">
+                    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+                        <path d="M12 3 V15 M7 10 L12 15 L17 10 M5 20 H19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
             </div>
@@ -5208,6 +5236,199 @@
             smPlayheadCol = stepIndex;
         }, delayMs);
     }
+
+    // Encodes a decoded AudioBuffer (from OfflineAudioContext.
+    // startRendering()) as a 16-bit PCM WAV file Blob — the Web Audio
+    // API has no built-in encoder, and this format needs nothing fancier
+    // than the standard 44-byte RIFF/WAVE header followed by raw PCM.
+    function smAudioBufferToWavBlob(buffer) {
+        const numChannels = buffer.numberOfChannels;
+        const sampleRate = buffer.sampleRate;
+        const numFrames = buffer.length;
+        const blockAlign = numChannels * 2; // 16-bit samples
+        const dataSize = numFrames * blockAlign;
+        const arrayBuffer = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(arrayBuffer);
+
+        function writeString(offset, str) {
+            for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+        }
+
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true); // PCM fmt chunk size
+        view.setUint16(20, 1, true); // format 1 = PCM
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * blockAlign, true); // byte rate
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, 16, true); // bits per sample
+        writeString(36, 'data');
+        view.setUint32(40, dataSize, true);
+
+        const channelData = [];
+        for (let ch = 0; ch < numChannels; ch++) channelData.push(buffer.getChannelData(ch));
+        let offset = 44;
+        for (let i = 0; i < numFrames; i++) {
+            for (let ch = 0; ch < numChannels; ch++) {
+                const clamped = Math.max(-1, Math.min(1, channelData[ch][i]));
+                view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
+                offset += 2;
+            }
+        }
+        return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+
+    // Renders the current pattern (every track's steps, current BPM/
+    // shuffle, the full bass piano-roll with ties/slides) to a WAV file
+    // via an OfflineAudioContext, then prompts the user to save it.
+    //
+    // This deliberately does NOT reuse the live smPlaySound — that
+    // function reads/writes the shared smBassActiveSource/Gain/Rate
+    // module state representing "the currently-ringing live bass voice",
+    // and calling it here would let an offline render corrupt that
+    // state (or vice versa if a render happens to overlap live
+    // playback): an AudioParam method call across two different
+    // AudioContexts throws, and any live voice-stealing after a render
+    // would end up pointing at a dead offline-context node. Mirroring
+    // the scheduling/envelope logic here with its own render-local
+    // "currently ringing bass voice" variables keeps live playback and
+    // offline rendering fully independent, at the cost of the two
+    // needing to be kept in sync by hand if either one changes.
+    async function smRenderPatternToWav() {
+        if (!smInitialized || !smAudioCtx) return;
+        const stepDur = smStepDuration();
+        const tailSeconds = 2.5; // let the last hit's decay/release/tie ring out
+        const totalSeconds = SM_STEPS * stepDur + tailSeconds;
+        const sampleRate = smAudioCtx.sampleRate;
+        const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
+
+        const masterGain = offlineCtx.createGain();
+        masterGain.connect(offlineCtx.destination);
+
+        const trackGains = {};
+        SM_TRACK_ORDER.forEach(key => {
+            const g = offlineCtx.createGain();
+            g.gain.value = smTracks[key].gainNode.gain.value;
+            g.connect(masterGain);
+            trackGains[key] = g;
+        });
+
+        // Render-local mirror of the live smBassActiveSource/Gain/Rate —
+        // see the function comment above for why this can't just be the
+        // live ones.
+        let bassActiveSource = null, bassActiveGain = null, bassActiveRate = 1;
+
+        function playSound(key, time, stepIndex, opts) {
+            opts = opts || {};
+            const velocity = opts.velocity != null ? opts.velocity : 1;
+            const track = smTracks[key];
+            if (key === 'bass') {
+                const prevStep = (stepIndex - 1 + SM_STEPS) % SM_STEPS;
+                const hasNote = smBassNoteOffsets[stepIndex] !== null;
+                const prevHadNote = smBassNoteOffsets[prevStep] !== null;
+                if (smBassTies[prevStep] && prevHadNote && bassActiveSource && hasNote) {
+                    const rate = Math.pow(2, (smBassNoteOffsets[stepIndex] + track.pitchSemitones) / 12);
+                    bassActiveSource.playbackRate.setValueAtTime(bassActiveRate, time);
+                    bassActiveSource.playbackRate.linearRampToValueAtTime(rate, time + smSlideDuration());
+                    bassActiveRate = rate;
+                    return;
+                }
+            }
+            const url = track.sampleUrls[parseInt(track.select.value, 10)];
+            const buffer = smBufferCache[url];
+            if (!buffer) return;
+            const source = offlineCtx.createBufferSource();
+            source.buffer = buffer;
+            const rate = key === 'bass'
+                ? Math.pow(2, ((smBassNoteOffsets[stepIndex] || 0) + track.pitchSemitones) / 12)
+                : Math.pow(2, track.pitchSemitones / 12);
+            const envGain = offlineCtx.createGain();
+            const attackTime = 0.003;
+            envGain.gain.setValueAtTime(0, time);
+            envGain.gain.linearRampToValueAtTime(velocity, time + attackTime);
+            let gateDuration = smDecayDuration(track.decay);
+            const isBassTied = key === 'bass' && smBassTies[stepIndex];
+            if (!isBassTied) gateDuration = Math.min(gateDuration, buffer.duration / rate);
+            if (opts.forceGateDuration != null) gateDuration = Math.min(gateDuration, opts.forceGateDuration);
+            gateDuration = Math.max(gateDuration, attackTime);
+            envGain.gain.linearRampToValueAtTime(0.0001, time + gateDuration);
+            source.connect(envGain);
+            envGain.connect(trackGains[key]);
+            if (key === 'bass') {
+                source.playbackRate.value = rate;
+                bassActiveRate = rate;
+                if (smBassTies[stepIndex]) {
+                    source.loop = true;
+                    source.loopStart = smFindLoopPoint(buffer);
+                    source.loopEnd = buffer.duration;
+                }
+                if (bassActiveSource) {
+                    try {
+                        const releaseEnd = time + smBassReleaseDuration();
+                        if (typeof bassActiveGain.gain.cancelAndHoldAtTime === 'function') {
+                            bassActiveGain.gain.cancelAndHoldAtTime(time);
+                        } else {
+                            bassActiveGain.gain.cancelScheduledValues(time);
+                            bassActiveGain.gain.setValueAtTime(bassActiveGain.gain.value, time);
+                        }
+                        bassActiveGain.gain.linearRampToValueAtTime(0.0001, releaseEnd);
+                        bassActiveSource.stop(releaseEnd + 0.02);
+                    } catch (e) { /* already stopped */ }
+                }
+                bassActiveSource = source;
+                bassActiveGain = envGain;
+            } else {
+                source.playbackRate.value = rate;
+            }
+            source.start(time);
+        }
+
+        for (let stepIndex = 0; stepIndex < SM_STEPS; stepIndex++) {
+            let time = stepIndex * stepDur;
+            if (stepIndex % 2 === 1) time += smShuffleAmount * stepDur * 0.66;
+            SM_TRACK_ORDER.forEach(key => {
+                const state = smStepState(key, stepIndex);
+                if (state === 'off') return;
+                if (state === 'short') {
+                    playSound(key, time, stepIndex, { forceGateDuration: stepDur * 0.5 });
+                } else if (state === 'flam') {
+                    const flamOffset = stepDur / 2;
+                    playSound(key, time, stepIndex, { velocity: 0.7, forceGateDuration: flamOffset });
+                    playSound(key, time + flamOffset, stepIndex, { velocity: 0.7, forceGateDuration: flamOffset });
+                } else {
+                    playSound(key, time, stepIndex);
+                }
+            });
+        }
+
+        const renderedBuffer = await offlineCtx.startRendering();
+        return smAudioBufferToWavBlob(renderedBuffer);
+    }
+
+    const smExportBtn = document.getElementById('smExportBtn');
+    smExportBtn.addEventListener('click', async () => {
+        if (!smInitialized) return;
+        if (!confirm('Render the current pattern to a WAV file and save it?')) return;
+        smExportBtn.classList.add('rendering');
+        try {
+            const blob = await smRenderPatternToWav();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dope-box-pattern.wav';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+        } catch (e) {
+            alert('Could not render the pattern: ' + e.message);
+        } finally {
+            smExportBtn.classList.remove('rendering');
+        }
+    });
 
     function smAdvanceStepTime() {
         const secondsPerBeat = 60.0 / smBpm;
