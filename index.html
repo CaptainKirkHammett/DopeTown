@@ -1017,6 +1017,219 @@
             opacity: 0.8;
         }
 
+        /* Soundi Maker — a groovebox-style step sequencer mode. Forces the
+           same embeds-hidden state as the "!" button (combined in JS via
+           updateEmbedsHiddenClass) so the background gets the full screen,
+           then shows this overlay on top. */
+        .soundi-maker-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(10, 0, 20, 0.85);
+            backdrop-filter: blur(4px);
+        }
+        .soundi-maker-overlay.active {
+            display: flex;
+        }
+
+        .soundi-maker-panel {
+            position: relative;
+            width: 100%;
+            max-width: 920px;
+            max-height: 92vh;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #2b0a4e, #5b0e6b 35%, #0d2b5c 70%, #0a1a3d);
+            border: 5px solid #000;
+            border-radius: 38px 52px 40px 60px / 60px 40px 55px 35px;
+            box-shadow: 0 0 0 3px var(--neon-pink), 0 0 40px rgba(255, 0, 255, 0.5), 0 0 80px rgba(0, 240, 255, 0.3);
+            padding: 1.5rem 1.5rem 2rem;
+        }
+
+        .soundi-maker-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+
+        .soundi-maker-title {
+            font-family: 'Barrio', cursive;
+            font-size: clamp(1.6rem, 5vw, 2.4rem);
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-blue), var(--neon-green), var(--neon-yellow), var(--neon-pink));
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: smTitleShift 6s linear infinite;
+            -webkit-text-stroke: 1.5px #000;
+            text-shadow: 3px 3px 0 #000;
+            margin: 0;
+            transform: rotate(-2deg);
+        }
+
+        @keyframes smTitleShift {
+            0% { background-position: 0% 0; }
+            100% { background-position: 300% 0; }
+        }
+
+        .sm-close-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid #000;
+            background: var(--neon-orange);
+            color: #000;
+            font-weight: 900;
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #000;
+            transition: transform 0.15s ease;
+        }
+        .sm-close-btn:hover { transform: scale(1.1) rotate(-8deg); }
+        .sm-close-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
+
+        .soundi-maker-transport {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .sm-play-btn {
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            border-radius: 45% 55% 50% 50% / 55% 45% 55% 45%;
+            border: 4px solid #000;
+            background: var(--neon-green);
+            color: #000;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #000;
+            transition: transform 0.15s ease;
+        }
+        .sm-play-btn:hover { transform: scale(1.08) rotate(4deg); }
+        .sm-play-btn:active { transform: scale(0.95); }
+        .sm-play-btn.playing {
+            background: var(--neon-pink);
+            animation: smPulse 0.6s ease-in-out infinite;
+        }
+
+        @keyframes smPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .sm-tempo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Barrio', cursive;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        .sm-tempo input[type="range"] {
+            accent-color: var(--neon-yellow);
+        }
+
+        .soundi-maker-loading {
+            text-align: center;
+            color: var(--neon-yellow);
+            font-family: 'Barrio', cursive;
+            padding: 2rem 1rem;
+        }
+
+        .soundi-maker-tracks {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .sm-track {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(0, 0, 0, 0.35);
+            border: 3px solid #000;
+            border-radius: 16px;
+            padding: 0.5rem 0.7rem;
+        }
+
+        .sm-track-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 150px;
+        }
+
+        .sm-track-name {
+            font-family: 'Barrio', cursive;
+            font-size: 0.95rem;
+            width: 62px;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            text-shadow: 1.5px 1.5px 0 #000;
+        }
+
+        .sm-sample-select {
+            background: #10021f;
+            color: #fff;
+            border: 2px solid #000;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            padding: 2px 4px;
+            max-width: 90px;
+        }
+
+        .sm-volume {
+            width: 60px;
+            accent-color: currentColor;
+        }
+
+        .sm-steps {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 4px;
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .sm-step {
+            aspect-ratio: 1;
+            border: 2px solid #000;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.1s ease;
+        }
+        .sm-step:nth-child(4n+1):not(:first-child) {
+            margin-left: 6px;
+        }
+        .sm-step:hover { transform: scale(1.15); }
+        .sm-step.active {
+            background: currentColor;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .sm-step.playhead {
+            outline: 2px solid #fff;
+            outline-offset: 1px;
+        }
+
+        @media (max-width: 600px) {
+            .soundi-maker-panel { padding: 1rem 0.75rem 1.25rem; border-width: 4px; }
+            .sm-track { padding: 0.4rem 0.5rem; }
+            .sm-track-controls { min-width: 100%; justify-content: space-between; }
+            .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
+        }
+
         /* The "!" button hides the Bandcamp/Spotify/YouTube/SoundCloud
            embed sections (and their titles) along with the dividers
            between them, leaving the logo, marquees, social links,
@@ -1367,6 +1580,7 @@
     <div class="social-left">
         <button class="bg-toggle" id="bgToggle" title="Switch background">?</button>
         <button class="bg-toggle" id="embedsToggle" title="Show/hide embeds">!</button>
+        <button class="bg-toggle" id="soundiMakerToggle" title="Soundi Maker">♪</button>
     </div>
     <div class="social-right">
     <a href="https://www.instagram.com/captainkirna/" target="_blank" class="social-fab insta-fab" aria-label="Follow on Instagram">
@@ -1612,6 +1826,28 @@
               d="M22,0 A22,22 0 1,0 22,44 A22,22 0 1,0 22,0 Z M22 5.9L5.9 22H15.1V38.1H28.9V22H38.1Z"/>
     </svg>
 </button>
+
+<!-- Soundi Maker — groovebox step sequencer overlay, built by JS below -->
+<div class="soundi-maker-overlay" id="soundiMakerOverlay">
+    <div class="soundi-maker-panel">
+        <div class="soundi-maker-header">
+            <h2 class="soundi-maker-title">SOUNDI MAKER</h2>
+            <div class="soundi-maker-transport">
+                <button class="sm-play-btn" id="smPlayBtn" aria-label="Play/stop">&#9654;</button>
+                <div class="sm-tempo">
+                    <label for="smBpm">BPM</label>
+                    <input type="range" id="smBpm" min="60" max="180" value="128">
+                    <span id="smBpmVal">128</span>
+                </div>
+            </div>
+            <button class="sm-close-btn" id="smCloseBtn" aria-label="Close Soundi Maker">&#10005;</button>
+        </div>
+        <div id="soundiMakerBody">
+            <div class="soundi-maker-loading" id="soundiMakerLoading">loading samples...</div>
+            <div class="soundi-maker-tracks" id="soundiMakerTracks" style="display:none;"></div>
+        </div>
+    </div>
+</div>
 
 <script>
     // Acid trip mode — tap/click the logo to toggle wild distortion, tap again to undo.
@@ -1971,8 +2207,18 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     });
 
+    // embeds-hidden is now driven by two independent switches — the "!"
+    // button and Soundi Maker mode (which forces it while active so the
+    // sequencer gets the full screen) — combined here so neither one
+    // clobbers the other's state.
+    let embedsManuallyHidden = false;
+    let soundiMakerActive = false;
+    function updateEmbedsHiddenClass() {
+        document.body.classList.toggle('embeds-hidden', embedsManuallyHidden || soundiMakerActive);
+    }
     document.getElementById('embedsToggle').addEventListener('click', () => {
-        document.body.classList.toggle('embeds-hidden');
+        embedsManuallyHidden = !embedsManuallyHidden;
+        updateEmbedsHiddenClass();
     });
 
     // === MODE 1: Geometric spirographs ===
@@ -3313,6 +3559,238 @@
         requestAnimationFrame(animate);
     }
     animate();
+
+    // ==================== SOUNDI MAKER ====================
+    // A groovebox-style 16-step sequencer. Uses the standard Web Audio
+    // "lookahead scheduler" pattern (schedule a little ahead of real time,
+    // re-check on a short interval) instead of triggering samples directly
+    // off setInterval — setInterval alone drifts/jitters under normal
+    // browser load, which is very audible as a wobbly beat.
+    const SM_TRACK_ORDER = ['kick', 'bass', 'sn', 'chh', 'oh'];
+    const SM_TRACK_META = {
+        kick: { label: 'KICK', color: 'var(--neon-pink)', samples: ['samples/kick01.WAV', 'samples/kick02.wav'], volume: 0.9 },
+        bass: { label: 'BASS', color: 'var(--neon-blue)', samples: ['samples/bass01.wav', 'samples/bass02.wav'], volume: 0.8 },
+        sn: { label: 'SNARE', color: 'var(--neon-green)', samples: ['samples/sn01.wav', 'samples/sn02.wav'], volume: 0.85 },
+        chh: { label: 'CHH', color: 'var(--neon-yellow)', samples: ['samples/chh01.wav'], volume: 0.6 },
+        oh: { label: 'OH', color: 'var(--neon-orange)', samples: ['samples/oh01.wav'], volume: 0.6 },
+    };
+    const SM_STEPS = 16;
+    // A starter four-on-the-floor pattern so opening Soundi Maker for the
+    // first time already makes a beat instead of dead silence.
+    const SM_DEFAULT_PATTERN = {
+        kick: [0, 4, 8, 12],
+        bass: [2, 6, 10, 14],
+        sn: [4, 12],
+        chh: [0, 2, 4, 6, 8, 10, 12, 14],
+        oh: [],
+    };
+
+    const soundiMakerToggle = document.getElementById('soundiMakerToggle');
+    const soundiMakerOverlay = document.getElementById('soundiMakerOverlay');
+    const soundiMakerLoading = document.getElementById('soundiMakerLoading');
+    const soundiMakerTracksEl = document.getElementById('soundiMakerTracks');
+    const smPlayBtn = document.getElementById('smPlayBtn');
+    const smBpmSlider = document.getElementById('smBpm');
+    const smBpmVal = document.getElementById('smBpmVal');
+    const smCloseBtn = document.getElementById('smCloseBtn');
+
+    let smInitialized = false;
+    let smAudioCtx = null;
+    let smMasterGain = null;
+    let smBufferCache = {}; // url -> decoded AudioBuffer
+    let smTracks = {}; // key -> { steps, stepEls, sampleIndex, gainNode, select }
+    let smIsPlaying = false;
+    let smCurrentStep = 0;
+    let smNextStepTime = 0;
+    let smBpm = 128;
+    let smSchedulerTimer = null;
+    let smPlayheadCol = -1;
+    const SM_LOOKAHEAD_MS = 25;
+    const SM_SCHEDULE_AHEAD = 0.1;
+
+    async function smLoadBuffer(url) {
+        if (smBufferCache[url]) return smBufferCache[url];
+        const res = await fetch(url);
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = await smAudioCtx.decodeAudioData(arrayBuffer);
+        smBufferCache[url] = buffer;
+        return buffer;
+    }
+
+    function smBuildTrackRow(key) {
+        const meta = SM_TRACK_META[key];
+        const row = document.createElement('div');
+        row.className = 'sm-track';
+        row.style.color = meta.color;
+
+        const controls = document.createElement('div');
+        controls.className = 'sm-track-controls';
+
+        const name = document.createElement('span');
+        name.className = 'sm-track-name';
+        name.textContent = meta.label;
+        controls.appendChild(name);
+
+        const select = document.createElement('select');
+        select.className = 'sm-sample-select';
+        meta.samples.forEach((path, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = path.split('/').pop().replace(/\.\w+$/i, '').toUpperCase();
+            select.appendChild(opt);
+        });
+        controls.appendChild(select);
+
+        const volume = document.createElement('input');
+        volume.type = 'range';
+        volume.className = 'sm-volume';
+        volume.min = '0';
+        volume.max = '1';
+        volume.step = '0.01';
+        volume.value = String(meta.volume);
+        controls.appendChild(volume);
+
+        row.appendChild(controls);
+
+        const stepsWrap = document.createElement('div');
+        stepsWrap.className = 'sm-steps';
+        const stepEls = [];
+        const activeSteps = new Set(SM_DEFAULT_PATTERN[key] || []);
+        for (let i = 0; i < SM_STEPS; i++) {
+            const step = document.createElement('div');
+            step.className = 'sm-step';
+            if (activeSteps.has(i)) step.classList.add('active');
+            step.addEventListener('click', () => {
+                step.classList.toggle('active');
+            });
+            stepsWrap.appendChild(step);
+            stepEls.push(step);
+        }
+        row.appendChild(stepsWrap);
+
+        const gainNode = smAudioCtx.createGain();
+        gainNode.gain.value = meta.volume;
+        gainNode.connect(smMasterGain);
+        volume.addEventListener('input', () => {
+            gainNode.gain.value = parseFloat(volume.value);
+        });
+
+        smTracks[key] = { stepEls, select, gainNode, sampleUrls: meta.samples };
+        soundiMakerTracksEl.appendChild(row);
+    }
+
+    async function initSoundiMaker() {
+        if (smInitialized) return;
+        smInitialized = true;
+        smAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        smMasterGain = smAudioCtx.createGain();
+        smMasterGain.connect(smAudioCtx.destination);
+
+        SM_TRACK_ORDER.forEach(smBuildTrackRow);
+
+        try {
+            const allUrls = SM_TRACK_ORDER.flatMap(key => SM_TRACK_META[key].samples);
+            await Promise.all(allUrls.map(smLoadBuffer));
+        } catch (e) {
+            soundiMakerLoading.textContent = 'could not load samples :(';
+            return;
+        }
+
+        soundiMakerLoading.style.display = 'none';
+        soundiMakerTracksEl.style.display = 'flex';
+    }
+
+    function smPlaySound(key, time) {
+        const track = smTracks[key];
+        const select = track.select;
+        const url = track.sampleUrls[parseInt(select.value, 10)];
+        const buffer = smBufferCache[url];
+        if (!buffer) return;
+        const source = smAudioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(track.gainNode);
+        source.start(time);
+    }
+
+    function smScheduleStep(stepIndex, time) {
+        SM_TRACK_ORDER.forEach(key => {
+            if (smTracks[key].stepEls[stepIndex].classList.contains('active')) {
+                smPlaySound(key, time);
+            }
+        });
+        const delayMs = Math.max(0, (time - smAudioCtx.currentTime) * 1000);
+        setTimeout(() => {
+            if (smPlayheadCol >= 0) {
+                SM_TRACK_ORDER.forEach(key => {
+                    smTracks[key].stepEls[smPlayheadCol].classList.remove('playhead');
+                });
+            }
+            SM_TRACK_ORDER.forEach(key => {
+                smTracks[key].stepEls[stepIndex].classList.add('playhead');
+            });
+            smPlayheadCol = stepIndex;
+        }, delayMs);
+    }
+
+    function smAdvanceStepTime() {
+        const secondsPerBeat = 60.0 / smBpm;
+        smNextStepTime += 0.25 * secondsPerBeat; // 16th notes
+    }
+
+    function smScheduler() {
+        while (smNextStepTime < smAudioCtx.currentTime + SM_SCHEDULE_AHEAD) {
+            smScheduleStep(smCurrentStep, smNextStepTime);
+            smAdvanceStepTime();
+            smCurrentStep = (smCurrentStep + 1) % SM_STEPS;
+        }
+        smSchedulerTimer = setTimeout(smScheduler, SM_LOOKAHEAD_MS);
+    }
+
+    function startSequencer() {
+        if (smIsPlaying || !smInitialized) return;
+        smAudioCtx.resume();
+        smIsPlaying = true;
+        smCurrentStep = 0;
+        smNextStepTime = smAudioCtx.currentTime + 0.05;
+        smPlayBtn.classList.add('playing');
+        smPlayBtn.innerHTML = '&#9632;';
+        smScheduler();
+    }
+
+    function stopSequencer() {
+        if (!smIsPlaying) return;
+        smIsPlaying = false;
+        clearTimeout(smSchedulerTimer);
+        smPlayBtn.classList.remove('playing');
+        smPlayBtn.innerHTML = '&#9654;';
+        if (smPlayheadCol >= 0) {
+            SM_TRACK_ORDER.forEach(key => {
+                smTracks[key].stepEls[smPlayheadCol].classList.remove('playhead');
+            });
+            smPlayheadCol = -1;
+        }
+    }
+
+    function setSoundiMakerActive(active) {
+        soundiMakerActive = active;
+        updateEmbedsHiddenClass();
+        soundiMakerOverlay.classList.toggle('active', active);
+        if (active) {
+            initSoundiMaker();
+        } else {
+            stopSequencer();
+        }
+    }
+
+    soundiMakerToggle.addEventListener('click', () => setSoundiMakerActive(!soundiMakerActive));
+    smCloseBtn.addEventListener('click', () => setSoundiMakerActive(false));
+    smPlayBtn.addEventListener('click', () => {
+        if (smIsPlaying) stopSequencer(); else startSequencer();
+    });
+    smBpmSlider.addEventListener('input', () => {
+        smBpm = parseInt(smBpmSlider.value, 10);
+        smBpmVal.textContent = smBpm;
+    });
 </script>
 
 </body>
