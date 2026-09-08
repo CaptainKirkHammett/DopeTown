@@ -1424,19 +1424,35 @@
             box-shadow: 0 0 8px var(--neon-orange);
         }
 
-        /* Slide-speed knob — a compact rotary-style control for how fast
-           tied bass notes glide between pitches. */
-        .sm-slide-knob {
+        /* Bass envelope knobs — compact controls for release (fade-out
+           length when a note is cut off) and slide speed (how fast tied
+           notes glide between pitches). */
+        .sm-knob {
             display: flex;
             align-items: center;
             gap: 0.4rem;
             font-family: 'Barrio', cursive;
             font-size: 0.75rem;
+        }
+        .sm-knob input[type="range"] {
+            width: 70px;
+            accent-color: currentColor;
+        }
+        /* The piano roll's REL/SLIDE knobs keep an explicit accent since
+           they don't sit inside a track row that already sets its own
+           color. Per-track knobs (.sm-track-knob) instead inherit
+           currentColor from .sm-track, so each matches its own track. */
+        .sm-pianoroll-header .sm-knob {
             color: var(--neon-orange);
         }
-        .sm-slide-knob input[type="range"] {
-            width: 70px;
-            accent-color: var(--neon-orange);
+        .sm-track-knob {
+            font-size: 0.65rem;
+        }
+        .sm-track-knob input[type="range"] {
+            width: 38px;
+        }
+        .sm-track-knob label {
+            width: 8px;
         }
 
         @media (max-width: 600px) {
@@ -2085,7 +2101,11 @@
     <div class="sm-pianoroll-panel">
         <div class="sm-pianoroll-header">
             <h3 class="sm-pianoroll-title">BASSLINE</h3>
-            <div class="sm-slide-knob">
+            <div class="sm-knob">
+                <label for="smBassRelease">REL</label>
+                <input type="range" id="smBassRelease" min="0" max="100" value="15">
+            </div>
+            <div class="sm-knob">
                 <label for="smSlideSpeed">SLIDE</label>
                 <input type="range" id="smSlideSpeed" min="0" max="100" value="30">
             </div>
@@ -3850,6 +3870,13 @@
     function smSlideDuration() {
         return 0.02 + smSlideSpeed * 0.3;
     }
+    // 0 (near-instant, still click-free) - 1 (long fade), set by the
+    // release knob. Applied when a bass note is cut off (not tied) so it
+    // fades out instead of clicking off.
+    let smBassRelease = 0.15;
+    function smBassReleaseDuration() {
+        return 0.01 + smBassRelease * 0.4;
+    }
     const SM_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const SM_PIANOROLL_ROOT_MIDI = 36; // C2 — the sample's assumed natural pitch (semitone 0)
     const SM_PIANOROLL_RANGE = 13; // 13 rows shown at once (one octave inclusive)
@@ -3887,6 +3914,7 @@
     // instead (see smPlaySound).
     let smBassActiveSource = null;
     let smBassActiveRate = 1;
+    let smBassActiveGain = null; // per-note envelope gain, for the release fade
     const SM_LOOKAHEAD_MS = 25;
     const SM_SCHEDULE_AHEAD = 0.1;
 
@@ -3922,6 +3950,42 @@
         }
         name.textContent = meta.label;
         controls.appendChild(name);
+
+        // Per-track decay (how long each hit rings before fading — low
+        // values clip it short and punchy, high values let the sample
+        // ring its full natural length) and pitch (semitone tune, ±12).
+        // Both apply to every track, bass included, where they layer on
+        // top of its per-step piano-roll notes and release knob rather
+        // than replacing them.
+        const decayWrap = document.createElement('div');
+        decayWrap.className = 'sm-knob sm-track-knob';
+        const decayLabel = document.createElement('label');
+        decayLabel.textContent = 'D';
+        decayLabel.title = 'Decay';
+        const decayInput = document.createElement('input');
+        decayInput.type = 'range';
+        decayInput.min = '0';
+        decayInput.max = '100';
+        decayInput.value = '70';
+        decayInput.title = 'Decay';
+        decayWrap.appendChild(decayLabel);
+        decayWrap.appendChild(decayInput);
+        controls.appendChild(decayWrap);
+
+        const pitchWrap = document.createElement('div');
+        pitchWrap.className = 'sm-knob sm-track-knob';
+        const pitchLabel = document.createElement('label');
+        pitchLabel.textContent = 'P';
+        pitchLabel.title = 'Pitch';
+        const pitchInput = document.createElement('input');
+        pitchInput.type = 'range';
+        pitchInput.min = '0';
+        pitchInput.max = '100';
+        pitchInput.value = '50';
+        pitchInput.title = 'Pitch';
+        pitchWrap.appendChild(pitchLabel);
+        pitchWrap.appendChild(pitchInput);
+        controls.appendChild(pitchWrap);
 
         const select = document.createElement('select');
         select.className = 'sm-sample-select';
@@ -3979,7 +4043,19 @@
             gainNode.gain.value = parseFloat(volume.value);
         });
 
-        smTracks[key] = { stepEls, select, gainNode, sampleUrls: meta.samples };
+        decayInput.addEventListener('input', () => {
+            smTracks[key].decay = parseInt(decayInput.value, 10) / 100;
+        });
+        pitchInput.addEventListener('input', () => {
+            // 0-100 -> -12..+12 semitones, centered at the default (50).
+            smTracks[key].pitchSemitones = (parseInt(pitchInput.value, 10) - 50) / 50 * 12;
+        });
+
+        smTracks[key] = {
+            stepEls, select, gainNode, sampleUrls: meta.samples,
+            decay: parseInt(decayInput.value, 10) / 100,
+            pitchSemitones: 0,
+        };
         soundiMakerTracksEl.appendChild(row);
     }
 
@@ -4079,11 +4155,24 @@
     smPianoRollClose.addEventListener('click', () => {
         smPianoRollOverlay.classList.remove('active');
     });
+    document.getElementById('smBassRelease').addEventListener('input', (e) => {
+        smBassRelease = parseInt(e.target.value, 10) / 100;
+    });
     document.getElementById('smSlideSpeed').addEventListener('input', (e) => {
         smSlideSpeed = parseInt(e.target.value, 10) / 100;
     });
 
+    // Every track's decay knob (0-100) maps to how long its hits ring
+    // before fading: short at the low end (punchy, artificially clipped),
+    // long enough at the high end (~0.6s) that it never actually catches
+    // up with the sample's own natural length for anything in this kit,
+    // i.e. "full decay" reads as no artificial shortening at all.
+    function smDecayDuration(decayValue) {
+        return 0.03 + decayValue * 0.57;
+    }
+
     function smPlaySound(key, time, stepIndex) {
+        const track = smTracks[key];
         if (key === 'bass') {
             const prevStep = (stepIndex - 1 + SM_STEPS) % SM_STEPS;
             const hasNote = smBassNoteOffsets[stepIndex] !== null;
@@ -4091,23 +4180,31 @@
             if (smBassTies[prevStep] && prevHadNote && smBassActiveSource && hasNote) {
                 // The previous step ties into this one: glide the still-
                 // ringing source to the new pitch instead of cutting it
-                // off and starting a fresh one-shot.
-                const rate = Math.pow(2, smBassNoteOffsets[stepIndex] / 12);
+                // off and starting a fresh one-shot. The track pitch knob
+                // is a global transpose layered on top of the per-step
+                // note.
+                const rate = Math.pow(2, (smBassNoteOffsets[stepIndex] + track.pitchSemitones) / 12);
                 smBassActiveSource.playbackRate.setValueAtTime(smBassActiveRate, time);
                 smBassActiveSource.playbackRate.linearRampToValueAtTime(rate, time + smSlideDuration());
                 smBassActiveRate = rate;
                 return;
             }
         }
-        const track = smTracks[key];
         const select = track.select;
         const url = track.sampleUrls[parseInt(select.value, 10)];
         const buffer = smBufferCache[url];
         if (!buffer) return;
         const source = smAudioCtx.createBufferSource();
         source.buffer = buffer;
+        // Every track's hits are shaped by its own decay envelope (via a
+        // per-note gain node) rather than always ringing out unshaped.
+        const envGain = smAudioCtx.createGain();
+        envGain.gain.setValueAtTime(1, time);
+        envGain.gain.linearRampToValueAtTime(0.0001, time + smDecayDuration(track.decay));
+        source.connect(envGain);
+        envGain.connect(track.gainNode);
         if (key === 'bass') {
-            const semitones = smBassNoteOffsets[stepIndex] || 0;
+            const semitones = (smBassNoteOffsets[stepIndex] || 0) + track.pitchSemitones;
             const rate = Math.pow(2, semitones / 12);
             source.playbackRate.value = rate;
             smBassActiveRate = rate;
@@ -4116,14 +4213,25 @@
             // its own, so there's still something to glide from when the
             // tied step after it arrives.
             if (smBassTies[stepIndex]) source.loop = true;
-            // Max 1 voice: cut off whatever bass note is still ringing
-            // at exactly the moment this new one starts.
+            // Max 1 voice: release (fade out) whatever bass note is still
+            // ringing instead of cutting it off with an instant stop(),
+            // which clicks — the release knob controls how long that
+            // fade takes, overriding whatever decay ramp was already in
+            // progress.
             if (smBassActiveSource) {
-                try { smBassActiveSource.stop(time); } catch (e) { /* already stopped */ }
+                try {
+                    const releaseEnd = time + smBassReleaseDuration();
+                    smBassActiveGain.gain.cancelScheduledValues(time);
+                    smBassActiveGain.gain.setValueAtTime(smBassActiveGain.gain.value, time);
+                    smBassActiveGain.gain.linearRampToValueAtTime(0.0001, releaseEnd);
+                    smBassActiveSource.stop(releaseEnd + 0.02);
+                } catch (e) { /* already stopped */ }
             }
             smBassActiveSource = source;
+            smBassActiveGain = envGain;
+        } else {
+            source.playbackRate.value = Math.pow(2, track.pitchSemitones / 12);
         }
-        source.connect(track.gainNode);
         source.start(time);
     }
 
