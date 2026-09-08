@@ -1238,7 +1238,7 @@
             color: #fff;
             font-size: 0.9rem;
         }
-        .sm-tempo input[type="range"] {
+        .sm-tempo input[type="range"], .sm-tempo .sm-popup-trigger {
             accent-color: var(--neon-yellow);
             width: 46px;
         }
@@ -1295,6 +1295,86 @@
         .sm-volume {
             width: 60px;
             accent-color: currentColor;
+        }
+
+        /* Every slider in Dope Box is set up (see smSetupPopupSlider) as
+           one of these buttons instead of a native <input type="range">
+           track — the real input stays in the DOM (hidden) as the actual
+           state/event source, so nothing else has to change. Pressing
+           and holding opens a bigger vertical .sm-popup-slider above it
+           for more precise dragging; releasing anywhere closes it. */
+        .sm-popup-trigger {
+            position: relative;
+            flex-shrink: 0;
+            height: 14px;
+            padding: 0;
+            border: none;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .sm-popup-trigger:active { filter: brightness(1.25); }
+        .sm-popup-trigger-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: var(--sm-popup-accent, currentColor);
+            pointer-events: none;
+        }
+
+        /* The popup itself lives in a fixed-position layer appended to
+           <body> (not wherever the button happens to sit) so it's never
+           clipped by a scrolling/overflow ancestor like the piano roll
+           grid, and always renders above every other Dope Box layer. */
+        .sm-popup-slider {
+            position: fixed;
+            z-index: 10050;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sm-popup-slider-value {
+            margin-bottom: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.75);
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 2px 8px;
+            white-space: nowrap;
+        }
+        .sm-popup-slider-track {
+            position: relative;
+            width: 34px;
+            height: 140px;
+            background: rgba(10, 0, 20, 0.92);
+            border: 3px solid #000;
+            border-radius: 17px;
+            box-shadow: 0 0 0 2px var(--sm-popup-accent, #fff), 0 6px 16px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+        .sm-popup-slider-fill {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--sm-popup-accent, currentColor);
+            opacity: 0.35;
+        }
+        .sm-popup-slider-thumb {
+            position: absolute;
+            left: 3px;
+            right: 3px;
+            height: 10px;
+            border-radius: 5px;
+            background: var(--sm-popup-accent, currentColor);
+            box-shadow: 0 0 8px var(--sm-popup-accent, currentColor), 0 2px 0 #000;
+            transform: translateY(50%);
         }
 
         .sm-steps {
@@ -1626,7 +1706,7 @@
             font-family: 'Barrio', cursive;
             font-size: 0.75rem;
         }
-        .sm-knob input[type="range"] {
+        .sm-knob input[type="range"], .sm-knob .sm-popup-trigger {
             width: 70px;
             accent-color: currentColor;
         }
@@ -1637,13 +1717,13 @@
         .sm-pianoroll-header .sm-knob {
             color: var(--neon-orange);
         }
-        .sm-pianoroll-header .sm-knob input[type="range"] {
+        .sm-pianoroll-header .sm-knob input[type="range"], .sm-pianoroll-header .sm-knob .sm-popup-trigger {
             width: 42px;
         }
         .sm-track-knob {
             font-size: 0.65rem;
         }
-        .sm-track-knob input[type="range"] {
+        .sm-track-knob input[type="range"], .sm-track-knob .sm-popup-trigger {
             width: 38px;
         }
         .sm-track-knob label {
@@ -1662,7 +1742,7 @@
                sliders than the roomier desktop layout needs. */
             .soundi-maker-transport { gap: 0.25rem; }
             .sm-tempo { gap: 0.25rem; font-size: 0.75rem; }
-            .sm-tempo input[type="range"] { width: 26px; }
+            .sm-tempo input[type="range"], .sm-tempo .sm-popup-trigger { width: 26px; }
             .sm-transport-undo-btn, .sm-clear-btn { width: 26px; height: 26px; }
             .sm-track { padding: 0.4rem 0.5rem; }
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
@@ -1694,7 +1774,7 @@
             .sm-dope-badge { width: 200px; }
             .sm-dope-badge-text { font-size: 2.2rem; transform: rotate(-4deg) translateY(-14px); }
             .soundi-maker-header { margin-top: 1.1rem; }
-            .sm-pianoroll-header .sm-knob input[type="range"] { width: 34px; }
+            .sm-pianoroll-header .sm-knob input[type="range"], .sm-pianoroll-header .sm-knob .sm-popup-trigger { width: 34px; }
             .sm-transpose-btn { min-width: 22px; font-size: 0.55rem; }
         }
 
@@ -4295,6 +4375,156 @@
     // on the step element itself (no separate array) — smStepState reads
     // it straight back off the DOM at playback time, same as the
     // existing .active/classList.contains pattern this replaces.
+    // Turns a plain <input type="range"> into a press-and-hold button: on
+    // press, a bigger vertical slider pops up above it for more precise
+    // dragging (that's the whole point — it can be sized much larger
+    // than any of these compact inline sliders without disturbing the
+    // surrounding layout); dragging updates the value live; releasing
+    // anywhere closes the popup. The original <input> is never removed,
+    // just hidden — it stays the real state, so every existing id lookup,
+    // closure reference, and 'input' listener elsewhere keeps working
+    // completely unchanged. Safe to call more than once on the same
+    // input (e.g. if a track were ever rebuilt).
+    function smSetupPopupSlider(input, colorOverride) {
+        if (input.dataset.smPopupReady) return;
+        input.dataset.smPopupReady = '1';
+
+        const min = parseFloat(input.min) || 0;
+        const max = parseFloat(input.max) || 100;
+        const step = parseFloat(input.step) || 1;
+        const decimals = (String(step).split('.')[1] || '').length;
+        const fmt = v => decimals ? v.toFixed(decimals) : String(Math.round(v));
+
+        // The accent color must be passed in explicitly rather than
+        // auto-detected: a native range input doesn't reliably reflect
+        // an inherited `color` or a currentColor accent-color back
+        // through getComputedStyle the way regular elements do, and the
+        // popup itself is appended to <body> anyway (outside this
+        // input's own color-inheriting context), so a plain
+        // 'currentColor' fallback wouldn't resolve correctly there
+        // either.
+        const accent = colorOverride || 'currentColor';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sm-popup-trigger';
+        btn.style.setProperty('--sm-popup-accent', accent);
+        const label = input.getAttribute('aria-label') || input.title || '';
+        if (label) { btn.title = label; btn.setAttribute('aria-label', label); }
+
+        const fill = document.createElement('div');
+        fill.className = 'sm-popup-trigger-fill';
+        btn.appendChild(fill);
+
+        input.parentNode.insertBefore(btn, input);
+        input.style.display = 'none';
+
+        function updateTriggerFill() {
+            const pct = (parseFloat(input.value) - min) / (max - min) * 100;
+            fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+        }
+        updateTriggerFill();
+        // Covers the (currently unused) case of the value changing from
+        // outside this control, so the resting trigger never goes stale.
+        input.addEventListener('input', updateTriggerFill);
+
+        let popup = null, track = null, popupFill = null, thumb = null, valueLabel = null, pointerId = null;
+
+        function renderPopup(v) {
+            const pct = (v - min) / (max - min) * 100;
+            thumb.style.bottom = pct + '%';
+            popupFill.style.height = pct + '%';
+            valueLabel.textContent = fmt(v);
+        }
+
+        function valueFromClientY(clientY) {
+            const rect = track.getBoundingClientRect();
+            const frac = Math.max(0, Math.min(1, (rect.bottom - clientY) / rect.height));
+            const raw = Math.round((min + frac * (max - min)) / step) * step;
+            return Math.max(min, Math.min(max, raw));
+        }
+
+        function setValue(v) {
+            input.value = v;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            updateTriggerFill();
+            if (track) renderPopup(v);
+        }
+
+        // Positions the track so the pixel corresponding to the input's
+        // CURRENT value lines up with the pointer's Y at the moment of
+        // the press — without this, the popup (drawn above or below the
+        // button, wherever there's room) would sit in a different place
+        // than the finger/cursor, so the very first read of
+        // valueFromClientY would snap the value to wherever the press
+        // happened to land on that unrelated track instead of leaving it
+        // where it was. Aligning them means a press-with-no-movement
+        // truly changes nothing, and dragging from there tracks 1:1.
+        function openPopup(pointerY) {
+            popup = document.createElement('div');
+            popup.className = 'sm-popup-slider';
+            popup.style.setProperty('--sm-popup-accent', accent);
+            valueLabel = document.createElement('div');
+            valueLabel.className = 'sm-popup-slider-value';
+            track = document.createElement('div');
+            track.className = 'sm-popup-slider-track';
+            popupFill = document.createElement('div');
+            popupFill.className = 'sm-popup-slider-fill';
+            thumb = document.createElement('div');
+            thumb.className = 'sm-popup-slider-thumb';
+            track.appendChild(popupFill);
+            track.appendChild(thumb);
+            popup.appendChild(valueLabel);
+            popup.appendChild(track);
+            document.body.appendChild(popup);
+
+            // Measured at whatever default position it just landed in —
+            // only used to learn the popup's own internal geometry
+            // (track size, and how much space the value label above it
+            // takes up) before we override with explicit coordinates.
+            const trackRect = track.getBoundingClientRect();
+            const popupRect = popup.getBoundingClientRect();
+            const labelSpace = trackRect.top - popupRect.top;
+
+            const currentFrac = (parseFloat(input.value) - min) / (max - min);
+            let trackTop = pointerY - (1 - currentFrac) * trackRect.height;
+            trackTop = Math.max(4 + labelSpace, Math.min(window.innerHeight - trackRect.height - 4, trackTop));
+
+            const btnRect = btn.getBoundingClientRect();
+            let left = btnRect.left + btnRect.width / 2 - trackRect.width / 2;
+            left = Math.max(4, Math.min(window.innerWidth - trackRect.width - 4, left));
+
+            popup.style.left = left + 'px';
+            popup.style.top = (trackTop - labelSpace) + 'px';
+
+            renderPopup(parseFloat(input.value));
+        }
+
+        function closePopup() {
+            if (popup) popup.remove();
+            popup = null; track = null; popupFill = null; thumb = null; valueLabel = null;
+        }
+
+        btn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            pointerId = e.pointerId;
+            try { btn.setPointerCapture(pointerId); } catch (err) { /* not supported */ }
+            openPopup(e.clientY);
+        });
+        btn.addEventListener('pointermove', (e) => {
+            if (e.pointerId !== pointerId || !track) return;
+            setValue(valueFromClientY(e.clientY));
+        });
+        function endDrag(e) {
+            if (pointerId === null || (e && e.pointerId !== pointerId)) return;
+            try { btn.releasePointerCapture(pointerId); } catch (err) { /* already released */ }
+            pointerId = null;
+            closePopup();
+        }
+        btn.addEventListener('pointerup', endDrag);
+        btn.addEventListener('pointercancel', endDrag);
+    }
+
     // Reads/writes a plain step element's off/normal/short/flam state via
     // its classes — shared by smCycleStepState, smStepState (playback),
     // and the pattern undo/clear machinery below so there's one place
@@ -4472,6 +4702,14 @@
             // 0-100 -> -12..+12 semitones, centered at the default (50).
             smTracks[key].pitchSemitones = (parseInt(pitchInput.value, 10) - 50) / 50 * 12;
         });
+        // Passed explicitly rather than auto-detected from the input's
+        // own computed style: native range inputs don't reliably reflect
+        // an inherited `color` (or a `currentColor` accent-color) back
+        // through getComputedStyle the way regular elements do, but the
+        // row's own color is right here already.
+        smSetupPopupSlider(volume, meta.color);
+        smSetupPopupSlider(pitchInput, meta.color);
+        smSetupPopupSlider(decayInput, meta.color);
 
         smTracks[key] = {
             stepEls, stepsWrap, select, gainNode, sampleUrls: meta.samples,
@@ -4747,6 +4985,8 @@
     document.getElementById('smSlideSpeed').addEventListener('input', (e) => {
         smSlideSpeed = parseInt(e.target.value, 10) / 100;
     });
+    smSetupPopupSlider(document.getElementById('smBassRelease'), 'var(--neon-orange)');
+    smSetupPopupSlider(document.getElementById('smSlideSpeed'), 'var(--neon-orange)');
 
     smUndoBtn.addEventListener('click', smUndoPattern);
     smTransportUndoBtn.addEventListener('click', smUndoPattern);
@@ -5043,6 +5283,8 @@
         smShuffleAmount = pct / 100;
         smShuffleVal.textContent = pct + '%';
     });
+    smSetupPopupSlider(smBpmSlider, 'var(--neon-yellow)');
+    smSetupPopupSlider(smShuffleSlider, 'var(--neon-orange)');
     const smStepCountBtn = document.getElementById('smStepCountBtn');
     smStepCountBtn.addEventListener('click', () => {
         const next = SM_STEPS === 16 ? 32 : 16;
