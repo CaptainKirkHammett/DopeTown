@@ -1237,15 +1237,6 @@
             min-width: 150px;
         }
 
-        .sm-track-name {
-            font-family: 'Barrio', cursive;
-            font-size: 0.95rem;
-            width: 62px;
-            flex-shrink: 0;
-            text-transform: uppercase;
-            text-shadow: 1.5px 1.5px 0 #000;
-        }
-
         .sm-sample-select {
             background: #10021f;
             color: #fff;
@@ -1253,7 +1244,12 @@
             border-radius: 8px;
             font-size: 0.75rem;
             padding: 2px 4px;
-            max-width: 90px;
+            box-sizing: border-box;
+            /* Fallback before smApplyUniformSelectWidth measures the
+               longest option label across every track and sets an
+               explicit width in its place, so every track's select lines
+               up at the same width regardless of its own labels. */
+            width: 90px;
         }
 
         .sm-volume {
@@ -1296,25 +1292,22 @@
         /* Bass track name doubles as the button that opens the piano
            roll — styled the same as a plain label but with an obvious
            clickable affordance. */
-        .sm-track-name-btn {
-            font-family: 'Barrio', cursive;
-            font-size: 0.95rem;
-            width: 62px;
+        .sm-track-piano-btn {
             flex-shrink: 0;
-            text-transform: uppercase;
-            text-shadow: 1.5px 1.5px 0 #000;
+            width: 24px;
+            height: 24px;
+            font-size: 0.9rem;
+            line-height: 1;
             background: none;
-            border: none;
+            border: 2px solid currentColor;
+            border-radius: 6px;
             color: inherit;
-            text-align: left;
-            padding: 0;
             cursor: pointer;
-            text-decoration: underline dotted;
-            text-underline-offset: 3px;
+            padding: 0;
         }
-        .sm-track-name-btn:hover { transform: scale(1.06); }
+        .sm-track-piano-btn:hover { transform: scale(1.1); }
 
-        /* Piano roll — opened by clicking the Bass track's name, for
+        /* Piano roll — opened by clicking the Bass track's 🎹 button, for
            dialing in exact note pitches per step instead of just on/off. */
         .sm-pianoroll-overlay {
             position: fixed;
@@ -3936,20 +3929,18 @@
         const controls = document.createElement('div');
         controls.className = 'sm-track-controls';
 
-        let name;
+        // The plain text title is gone — the sample select below (and the
+        // track's own accent color) identifies the row instead. Bass
+        // still needs a click target to open the piano roll for exact
+        // notes, so it gets a compact icon button in the title's old spot.
         if (key === 'bass') {
-            // Bass gets exact notes instead of plain on/off — its name
-            // doubles as the button that opens the piano roll editor.
-            name = document.createElement('button');
-            name.className = 'sm-track-name-btn';
-            name.title = 'Open piano roll for exact notes';
-            name.addEventListener('click', () => smOpenPianoRoll());
-        } else {
-            name = document.createElement('span');
-            name.className = 'sm-track-name';
+            const pianoBtn = document.createElement('button');
+            pianoBtn.className = 'sm-track-piano-btn';
+            pianoBtn.title = 'Open piano roll for exact notes';
+            pianoBtn.textContent = '🎹';
+            pianoBtn.addEventListener('click', () => smOpenPianoRoll());
+            controls.appendChild(pianoBtn);
         }
-        name.textContent = meta.label;
-        controls.appendChild(name);
 
         // Per-track decay (how long each hit rings before fading — low
         // values clip it short and punchy, high values let the sample
@@ -4059,6 +4050,33 @@
         soundiMakerTracksEl.appendChild(row);
     }
 
+    // The track title is gone (the sample select identifies the row now),
+    // so every select should line up at the same width instead of each
+    // shrinking to fit its own shortest/longest label. Measures the
+    // longest label actually used across every track's sample list with
+    // the select's real font, then applies that width to all of them.
+    function smApplyUniformSelectWidth() {
+        let longest = '';
+        SM_TRACK_ORDER.forEach(key => {
+            SM_TRACK_META[key].samples.forEach(path => {
+                const label = path.split('/').pop().replace(/\.\w+$/i, '').toUpperCase();
+                if (label.length > longest.length) longest = label;
+            });
+        });
+        const selects = document.querySelectorAll('.sm-sample-select');
+        if (!selects.length) return;
+        const probe = document.createElement('span');
+        probe.style.visibility = 'hidden';
+        probe.style.position = 'absolute';
+        probe.style.whiteSpace = 'nowrap';
+        probe.style.font = getComputedStyle(selects[0]).font;
+        probe.textContent = longest;
+        document.body.appendChild(probe);
+        const width = Math.ceil(probe.getBoundingClientRect().width) + 40; // + dropdown arrow/padding/border
+        document.body.removeChild(probe);
+        selects.forEach(sel => { sel.style.width = width + 'px'; });
+    }
+
     async function initSoundiMaker() {
         if (smInitialized) return;
         smInitialized = true;
@@ -4067,6 +4085,7 @@
         smMasterGain.connect(smAudioCtx.destination);
 
         SM_TRACK_ORDER.forEach(smBuildTrackRow);
+        smApplyUniformSelectWidth();
 
         try {
             const allUrls = SM_TRACK_ORDER.flatMap(key => SM_TRACK_META[key].samples);
