@@ -1040,7 +1040,11 @@
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
+            /* Extra top padding reserves the space the ?/!/♪ buttons live
+               in (measured ~59-195px from the viewport top on desktop),
+               so the panel — sized smaller for the same reason — never
+               grows up underneath them. */
+            padding: 205px 1rem 1rem;
             /* No blur and only a light dim — the psychedelic background is
                part of the fun, it should stay visible around the panel,
                not be obscured. */
@@ -1053,8 +1057,8 @@
         .soundi-maker-panel {
             position: relative;
             width: 100%;
-            max-width: 920px;
-            max-height: 92vh;
+            max-width: 760px;
+            max-height: 65vh;
             overflow-y: auto;
             background: linear-gradient(135deg, #2b0a4e, #5b0e6b 35%, #0d2b5c 70%, #0a1a3d);
             border: 5px solid #000;
@@ -1350,6 +1354,7 @@
         }
 
         @media (max-width: 600px) {
+            .soundi-maker-overlay { padding: 180px 0.75rem 0.75rem; }
             .soundi-maker-panel { padding: 1rem 0.75rem 1.25rem; border-width: 4px; }
             .sm-track { padding: 0.4rem 0.5rem; }
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
@@ -1529,6 +1534,15 @@
             .social-fab svg {
                 width: 18px;
                 height: 18px;
+            }
+
+            /* Match the top-left nav buttons (?/!/♪) to the top-right
+               social buttons' mobile size — they used to stay at the
+               desktop 40px while the social ones shrank to 34px. */
+            .bg-toggle {
+                width: 34px;
+                height: 34px;
+                font-size: 1rem;
             }
 
             .section { padding: 1rem 0.75rem; }
@@ -1964,8 +1978,8 @@
                 <button class="sm-play-btn" id="smPlayBtn" aria-label="Play/stop">&#9654;</button>
                 <div class="sm-tempo">
                     <label for="smBpm">BPM</label>
-                    <input type="range" id="smBpm" min="60" max="180" value="128">
-                    <span id="smBpmVal">128</span>
+                    <input type="range" id="smBpm" min="60" max="180" value="150">
+                    <span id="smBpmVal">150</span>
                 </div>
             </div>
             <button class="sm-close-btn" id="smCloseBtn" aria-label="Close Soundi Maker">&#10005;</button>
@@ -3725,14 +3739,22 @@
     };
 
     // Bass piano roll: each active step also carries a semitone offset
-    // (0 = the sample's own pitch) applied via playbackRate at trigger
-    // time, instead of just on/off like the other tracks. null = inactive.
+    // (0 = the sample's own natural pitch, negative = lower) applied via
+    // playbackRate at trigger time, instead of just on/off like the other
+    // tracks. null = inactive. The stored value is the actual semitone
+    // offset, not a position within the displayed row window, so moving
+    // the window (SM_PIANOROLL_MIN_SEMITONE) doesn't change already-set
+    // notes' pitch.
     let smBassNoteOffsets = new Array(SM_STEPS).fill(null);
     const SM_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const SM_PIANOROLL_BASE_MIDI = 36; // C2 — bottom row, offset 0
-    const SM_PIANOROLL_RANGE = 13; // one octave inclusive (C2..C3)
+    const SM_PIANOROLL_ROOT_MIDI = 36; // C2 — the sample's assumed natural pitch (semitone 0)
+    const SM_PIANOROLL_RANGE = 13; // 13 rows shown at once (one octave inclusive)
+    // Bottom row's semitone offset — two octaves (24 semitones) below the
+    // natural pitch, so the visible window is now -24..-12 instead of the
+    // original 0..+12.
+    const SM_PIANOROLL_MIN_SEMITONE = -24;
     function smMidiName(midi) {
-        return SM_NOTE_NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
+        return SM_NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
     }
 
     const soundiMakerToggle = document.getElementById('soundiMakerToggle');
@@ -3752,9 +3774,13 @@
     let smIsPlaying = false;
     let smCurrentStep = 0;
     let smNextStepTime = 0;
-    let smBpm = 128;
+    let smBpm = 150;
     let smSchedulerTimer = null;
     let smPlayheadCol = -1;
+    // Bass is monophonic (max 1 voice): the currently-ringing bass source
+    // gets cut off the instant the next bass note triggers, instead of
+    // letting overlapping steps stack multiple bass samples at once.
+    let smBassActiveSource = null;
     const SM_LOOKAHEAD_MS = 25;
     const SM_SCHEDULE_AHEAD = 0.1;
 
@@ -3879,13 +3905,14 @@
     function smRenderPianoRoll() {
         smPianoRollGrid.innerHTML = '';
         // High notes at top, like a real piano roll.
-        for (let offset = SM_PIANOROLL_RANGE - 1; offset >= 0; offset--) {
-            const midi = SM_PIANOROLL_BASE_MIDI + offset;
+        for (let i = SM_PIANOROLL_RANGE - 1; i >= 0; i--) {
+            const semitone = SM_PIANOROLL_MIN_SEMITONE + i;
+            const midi = SM_PIANOROLL_ROOT_MIDI + semitone;
             const name = smMidiName(midi);
             const row = document.createElement('div');
             row.className = 'sm-pianoroll-row';
             if (name.includes('#')) row.classList.add('sharp');
-            if (offset === 0) row.classList.add('root');
+            if (semitone === 0) row.classList.add('root');
 
             const keyLabel = document.createElement('span');
             keyLabel.className = 'sm-pianoroll-key';
@@ -3895,10 +3922,10 @@
             for (let step = 0; step < SM_STEPS; step++) {
                 const cell = document.createElement('div');
                 cell.className = 'sm-pianoroll-cell';
-                if (smBassNoteOffsets[step] === offset) cell.classList.add('active');
+                if (smBassNoteOffsets[step] === semitone) cell.classList.add('active');
                 cell.addEventListener('click', () => {
-                    const isActive = smBassNoteOffsets[step] === offset;
-                    smBassNoteOffsets[step] = isActive ? null : offset;
+                    const isActive = smBassNoteOffsets[step] === semitone;
+                    smBassNoteOffsets[step] = isActive ? null : semitone;
                     smRenderPianoRoll();
                     smSyncBassStepVisuals();
                 });
@@ -3938,6 +3965,12 @@
         if (key === 'bass') {
             const semitones = smBassNoteOffsets[stepIndex] || 0;
             source.playbackRate.value = Math.pow(2, semitones / 12);
+            // Max 1 voice: cut off whatever bass note is still ringing
+            // at exactly the moment this new one starts.
+            if (smBassActiveSource) {
+                try { smBassActiveSource.stop(time); } catch (e) { /* already stopped */ }
+            }
+            smBassActiveSource = source;
         }
         source.connect(track.gainNode);
         source.start(time);
