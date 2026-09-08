@@ -1049,15 +1049,33 @@
                part of the fun, it should stay visible around the panel,
                not be obscured. */
             background: rgba(10, 0, 20, 0.35);
+            /* The dim area outside the panel used to swallow every click
+               in the viewport (this div is inset:0), which silently broke
+               tapping the logo to start acid-trip mode while Soundi Maker
+               was open — the logo's click target sits at a much lower
+               z-index (5) so it never got the event. Turning this off and
+               re-enabling it only on the panel below lets clicks fall
+               through to the page underneath everywhere except the panel
+               itself. */
+            pointer-events: none;
         }
         .soundi-maker-overlay.active {
             display: flex;
         }
 
-        .soundi-maker-panel {
+        /* Wraps the panel (without clipping) so the DOPE badge can overlap
+           the panel's border and poke out above it — the panel itself
+           needs overflow-y: auto for tall content, which would otherwise
+           clip anything positioned outside its own box. */
+        .soundi-maker-panel-wrap {
             position: relative;
             width: 100%;
             max-width: 760px;
+        }
+
+        .soundi-maker-panel {
+            position: relative;
+            width: 100%;
             max-height: 65vh;
             overflow-y: auto;
             background: linear-gradient(135deg, #2b0a4e, #5b0e6b 35%, #0d2b5c 70%, #0a1a3d);
@@ -1065,6 +1083,22 @@
             border-radius: 38px 52px 40px 60px / 60px 40px 55px 35px;
             box-shadow: 0 0 0 3px var(--neon-pink), 0 0 40px rgba(255, 0, 255, 0.5), 0 0 80px rgba(0, 240, 255, 0.3);
             padding: 1.5rem 1.5rem 2rem;
+            pointer-events: auto;
+        }
+
+        /* Small cartoon-sticker badge overlapping the panel's top-right
+           corner, matching the flask logo's own "DOPE" wordmark. Sits on
+           the wrap (not the panel) so the panel's overflow-y: auto
+           doesn't clip it. */
+        .sm-dope-badge {
+            position: absolute;
+            top: -18px;
+            right: 26px;
+            width: 84px;
+            height: auto;
+            transform: rotate(8deg);
+            filter: drop-shadow(0 3px 0 #000) drop-shadow(0 0 10px rgba(255, 0, 255, 0.6));
+            pointer-events: none;
         }
 
         .soundi-maker-header {
@@ -1221,9 +1255,12 @@
         }
 
         .sm-step {
-            aspect-ratio: 1;
+            /* Wider than tall (was a square via aspect-ratio: 1) so each
+               track row takes up less vertical space and more of the
+               sequencer fits on screen without scrolling. */
+            aspect-ratio: 2.2 / 1;
             border: 2px solid #000;
-            border-radius: 6px;
+            border-radius: 5px;
             background: rgba(255, 255, 255, 0.08);
             cursor: pointer;
             transition: transform 0.1s ease, background 0.1s ease;
@@ -1273,12 +1310,16 @@
             justify-content: center;
             padding: 1rem;
             background: rgba(10, 0, 20, 0.55);
+            /* Same reasoning as .soundi-maker-overlay — don't let the dim
+               backdrop swallow clicks meant for the page underneath it. */
+            pointer-events: none;
         }
         .sm-pianoroll-overlay.active {
             display: flex;
         }
 
         .sm-pianoroll-panel {
+            pointer-events: auto;
             width: 100%;
             max-width: 640px;
             max-height: 90vh;
@@ -1331,7 +1372,7 @@
         }
 
         .sm-pianoroll-cell {
-            aspect-ratio: 1;
+            aspect-ratio: 2.2 / 1;
             border: 2px solid #000;
             border-radius: 4px;
             background: rgba(255, 255, 255, 0.06);
@@ -1361,6 +1402,7 @@
             .sm-steps { grid-template-columns: repeat(8, 1fr); flex-basis: 100%; min-width: 100%; }
             .sm-pianoroll-row { grid-template-columns: 28px repeat(16, 1fr); }
             .sm-pianoroll-key { font-size: 0.55rem; }
+            .sm-dope-badge { width: 56px; top: -12px; right: 14px; }
         }
 
         /* The "!" button hides the Bandcamp/Spotify/YouTube/SoundCloud
@@ -1971,7 +2013,9 @@
 
 <!-- Soundi Maker — groovebox step sequencer overlay, built by JS below -->
 <div class="soundi-maker-overlay" id="soundiMakerOverlay">
-    <div class="soundi-maker-panel">
+    <div class="soundi-maker-panel-wrap">
+        <img src="DOPEsmall.png" alt="Dope" class="sm-dope-badge">
+        <div class="soundi-maker-panel">
         <div class="soundi-maker-header">
             <h2 class="soundi-maker-title">SOUNDI MAKER</h2>
             <div class="soundi-maker-transport">
@@ -1987,6 +2031,7 @@
         <div id="soundiMakerBody">
             <div class="soundi-maker-loading" id="soundiMakerLoading">loading samples...</div>
             <div class="soundi-maker-tracks" id="soundiMakerTracks" style="display:none;"></div>
+        </div>
         </div>
     </div>
 </div>
@@ -3749,10 +3794,10 @@
     const SM_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const SM_PIANOROLL_ROOT_MIDI = 36; // C2 — the sample's assumed natural pitch (semitone 0)
     const SM_PIANOROLL_RANGE = 13; // 13 rows shown at once (one octave inclusive)
-    // Bottom row's semitone offset — two octaves (24 semitones) below the
-    // natural pitch, so the visible window is now -24..-12 instead of the
-    // original 0..+12.
-    const SM_PIANOROLL_MIN_SEMITONE = -24;
+    // Bottom row's semitone offset — one octave higher than the previous
+    // -24 start, so the visible window is -12..0 (one octave below the
+    // natural pitch, up to the natural pitch itself).
+    const SM_PIANOROLL_MIN_SEMITONE = -12;
     function smMidiName(midi) {
         return SM_NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
     }
