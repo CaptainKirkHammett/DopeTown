@@ -1428,8 +1428,24 @@
                 aspect-ratio: 1.5 / 1;
             }
         }
-        .sm-step:nth-child(4n+1):not(:first-child) {
-            margin-left: 6px;
+        /* Beat-grouping cue every 4 steps. This used to be a margin-left,
+           but a margin on a grid item inflates that column's minimum
+           track size (grid's 1fr tracks still respect each item's
+           min-content + margin), which pushed the whole row past its
+           container on narrow/landscape widths. A pseudo-element drawn
+           inside the already-existing 4px grid gap (via absolute
+           positioning, so it's out of flow and can't affect track
+           sizing) gives the same visual grouping with zero extra width. */
+        .sm-step:nth-child(4n+1):not(:first-child)::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            border-radius: 1px;
+            background: rgba(255, 255, 255, 0.3);
+            pointer-events: none;
         }
         .sm-step:hover { transform: scale(1.15); }
         .sm-step.active {
