@@ -5348,7 +5348,11 @@
             if (state === 'off') return;
             if (state === 'short') {
                 // Gated to half the step regardless of the decay knob.
-                smPlaySound(key, time, stepIndex, { forceGateDuration: stepDur * 0.5 });
+                // Every sampler but bass also drops to 70% volume, so the
+                // gated hit reads as a quieter accent rather than just a
+                // shorter one; bass keeps full velocity since it's judged
+                // by pitch/rhythm, not accenting.
+                smPlaySound(key, time, stepIndex, { forceGateDuration: stepDur * 0.5, velocity: key === 'bass' ? 1 : 0.7 });
             } else if (state === 'flam') {
                 // Two identical hits, each gated to a 1/32-step length
                 // (half of this 1/16 step) and played back-to-back, both
@@ -5539,7 +5543,7 @@
                 const state = smStepState(key, stepIndex);
                 if (state === 'off') return;
                 if (state === 'short') {
-                    playSound(key, time, stepIndex, { forceGateDuration: stepDur * 0.5 });
+                    playSound(key, time, stepIndex, { forceGateDuration: stepDur * 0.5, velocity: key === 'bass' ? 1 : 0.7 });
                 } else if (state === 'flam') {
                     const flamOffset = stepDur / 2;
                     playSound(key, time, stepIndex, { velocity: 0.7, forceGateDuration: flamOffset });
