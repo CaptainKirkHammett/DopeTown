@@ -1035,9 +1035,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
         }
 
-        .bg-toggle:hover {
-            opacity: 0.8;
-        }
 
         /* The Dope Box toggle's note glyph (♪) reads noticeably smaller
            than a typical letter/digit at the same font-size as the "?"
@@ -2251,6 +2248,7 @@
         <button class="bg-toggle" id="bgToggle" title="Switch background">?</button>
         <button class="bg-toggle" id="embedsToggle" title="Show/hide embeds">!</button>
         <button class="bg-toggle" id="soundiMakerToggle" title="Dope Box">♪</button>
+        <button class="bg-toggle" id="smMiniPlayToggle" title="Play Dope Box" aria-label="Play Dope Box" style="display: none;">&#9654;</button>
     </div>
     <div class="social-right">
     <a href="https://www.instagram.com/captainkirna/" target="_blank" class="social-fab insta-fab" aria-label="Follow on Instagram">
@@ -4425,6 +4423,10 @@
     let smBufferCache = {}; // url -> decoded AudioBuffer
     let smTracks = {}; // key -> { steps, stepEls, sampleIndex, gainNode, select }
     let smIsPlaying = false;
+    // Whether the small play/stop button in the top-left nav (shown once
+    // Dope Box is closed while still playing in the background) should
+    // currently be visible — see smUpdateMiniPlayBtn / setSoundiMakerActive.
+    let smMiniPlayVisible = false;
     let smCurrentStep = 0;
     let smNextStepTime = 0;
     let smBpm = 150;
@@ -5576,6 +5578,7 @@
         smPlayBtn.classList.add('playing');
         smPlayBtn.innerHTML = '&#9632;';
         smScheduler();
+        smUpdateMiniPlayBtn();
     }
 
     function stopSequencer() {
@@ -5594,7 +5597,27 @@
             });
             smPlayheadCol = -1;
         }
+        smUpdateMiniPlayBtn();
     }
+
+    // Small play/stop button that lives in the top-left nav next to the
+    // ♪ toggle. Dope Box keeps playing after it's closed (see
+    // setSoundiMakerActive below), so this is the only way to stop it —
+    // or start it again — without reopening the full panel. It only
+    // appears once there's something to control: right after closing
+    // while playing, and it stays visible (toggling icon with play
+    // state) until the panel is opened again.
+    const smMiniPlayBtn = document.getElementById('smMiniPlayToggle');
+    function smUpdateMiniPlayBtn() {
+        smMiniPlayBtn.style.display = smMiniPlayVisible ? 'inline-flex' : 'none';
+        smMiniPlayBtn.innerHTML = smIsPlaying ? '&#9632;' : '&#9654;';
+        const label = smIsPlaying ? 'Stop Dope Box' : 'Play Dope Box';
+        smMiniPlayBtn.title = label;
+        smMiniPlayBtn.setAttribute('aria-label', label);
+    }
+    smMiniPlayBtn.addEventListener('click', () => {
+        if (smIsPlaying) stopSequencer(); else startSequencer();
+    });
 
     function setSoundiMakerActive(active) {
         soundiMakerActive = active;
@@ -5607,9 +5630,15 @@
         soundiMakerToggle.title = active ? 'Close Dope Box' : 'Dope Box';
         if (active) {
             initSoundiMaker();
+            // The panel's own play/stop button takes over from here.
+            smMiniPlayVisible = false;
         } else {
-            stopSequencer();
+            // Closing no longer stops playback — leave it running in the
+            // background, and only surface the mini control if there's
+            // actually something playing to control.
+            smMiniPlayVisible = smIsPlaying;
         }
+        smUpdateMiniPlayBtn();
     }
 
     soundiMakerToggle.addEventListener('click', () => setSoundiMakerActive(!soundiMakerActive));
