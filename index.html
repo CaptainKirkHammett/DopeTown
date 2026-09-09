@@ -986,6 +986,22 @@
             pointer-events: none;
         }
 
+        /* Pinned to the viewport corner (rather than flowing with
+           .social-top-row) so the ?/!/♪ buttons stay reachable while
+           scrolling the page, not just at the top. .social-right keeps
+           its own margin-left:auto below so it still lands on the right
+           edge now that it's the row's only in-flow child. */
+        .social-left {
+            position: fixed;
+            top: 0.75rem;
+            left: 1rem;
+            z-index: 10001;
+        }
+
+        .social-right {
+            margin-left: auto;
+        }
+
         .social-fab {
             display: inline-flex;
             align-items: center;
@@ -2027,6 +2043,7 @@
 
             .social-top-row { padding: 0.5rem 0.75rem 0; }
             .social-left, .social-right { gap: 0.4rem; }
+            .social-left { top: 0.5rem; left: 0.75rem; }
 
             .social-fab {
                 width: 34px;
