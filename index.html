@@ -1332,6 +1332,18 @@
             pointer-events: none;
         }
 
+        /* Small pie-chart-style circle for the per-track VOL/NOTE/DCY
+           triggers — the value fill is drawn straight onto the button
+           via conic-gradient (see smSetupPopupSlider) instead of a
+           child element, since it's a full circle, not a bar. */
+        .sm-popup-trigger-pie {
+            border-radius: 50%;
+        }
+        .sm-track-knob .sm-popup-trigger.sm-popup-trigger-pie {
+            width: 20px;
+            height: 20px;
+        }
+
         /* The popup itself lives in a fixed-position layer appended to
            <body> (not wherever the button happens to sit) so it's never
            clipped by a scrolling/overflow ancestor like the piano roll
@@ -4435,9 +4447,10 @@
     // closure reference, and 'input' listener elsewhere keeps working
     // completely unchanged. Safe to call more than once on the same
     // input (e.g. if a track were ever rebuilt).
-    function smSetupPopupSlider(input, colorOverride) {
+    function smSetupPopupSlider(input, colorOverride, opts) {
         if (input.dataset.smPopupReady) return;
         input.dataset.smPopupReady = '1';
+        opts = opts || {};
 
         const min = parseFloat(input.min) || 0;
         const max = parseFloat(input.max) || 100;
@@ -4457,21 +4470,35 @@
 
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'sm-popup-trigger';
+        btn.className = opts.pie ? 'sm-popup-trigger sm-popup-trigger-pie' : 'sm-popup-trigger';
         btn.style.setProperty('--sm-popup-accent', accent);
         const label = input.getAttribute('aria-label') || input.title || '';
         if (label) { btn.title = label; btn.setAttribute('aria-label', label); }
 
-        const fill = document.createElement('div');
-        fill.className = 'sm-popup-trigger-fill';
-        btn.appendChild(fill);
+        // Per-track VOL/NOTE/DCY use a small pie-chart-style circle
+        // (the fill drawn straight onto the button via conic-gradient)
+        // instead of the wider horizontal fill-bar the transport/piano-
+        // roll knobs use — three of these sit in every track row
+        // fighting the step grid for width, so shrinking them to a
+        // ~20px circle each hands a good chunk of that row back to the
+        // steps instead.
+        let fill = null;
+        if (!opts.pie) {
+            fill = document.createElement('div');
+            fill.className = 'sm-popup-trigger-fill';
+            btn.appendChild(fill);
+        }
 
         input.parentNode.insertBefore(btn, input);
         input.style.display = 'none';
 
         function updateTriggerFill() {
-            const pct = (parseFloat(input.value) - min) / (max - min) * 100;
-            fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+            const pct = Math.max(0, Math.min(100, (parseFloat(input.value) - min) / (max - min) * 100));
+            if (opts.pie) {
+                btn.style.background = `conic-gradient(var(--sm-popup-accent, currentColor) ${pct}%, rgba(255, 255, 255, 0.15) ${pct}%)`;
+            } else {
+                fill.style.width = pct + '%';
+            }
         }
         updateTriggerFill();
         // Covers the (currently unused) case of the value changing from
@@ -4757,9 +4784,9 @@
         // an inherited `color` (or a `currentColor` accent-color) back
         // through getComputedStyle the way regular elements do, but the
         // row's own color is right here already.
-        smSetupPopupSlider(volume, meta.color);
-        smSetupPopupSlider(pitchInput, meta.color);
-        smSetupPopupSlider(decayInput, meta.color);
+        smSetupPopupSlider(volume, meta.color, { pie: true });
+        smSetupPopupSlider(pitchInput, meta.color, { pie: true });
+        smSetupPopupSlider(decayInput, meta.color, { pie: true });
 
         smTracks[key] = {
             stepEls, stepsWrap, select, gainNode, sampleUrls: meta.samples,
