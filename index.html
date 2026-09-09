@@ -1397,6 +1397,15 @@
             cursor: pointer;
             transition: transform 0.1s ease, background 0.1s ease;
         }
+        /* Thicker (taller) steps whenever there's landscape width to
+           spare — covers both desktop and a phone rotated sideways —
+           while portrait mobile keeps the thinner ratio above, since
+           that's already tuned for its much tighter vertical space. */
+        @media (orientation: landscape) {
+            .sm-step {
+                aspect-ratio: 1.5 / 1;
+            }
+        }
         .sm-step:nth-child(4n+1):not(:first-child) {
             margin-left: 6px;
         }
