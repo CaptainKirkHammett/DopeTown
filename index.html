@@ -4312,6 +4312,10 @@
         chh: { 0: 'flam' },
         sn: { 15: 'short' },
     };
+    // Bass steps (0-indexed) that start tied/slid into the next step by
+    // default — see smBassTies. Step 7 (index 6) is one of the pattern's
+    // default active notes.
+    const SM_DEFAULT_BASS_TIES = [6];
 
     // Bass piano roll: each active step also carries a semitone offset
     // (0 = the sample's own natural pitch, negative = lower) applied via
@@ -4824,6 +4828,7 @@
             bassPreview.addEventListener('click', () => smOpenPianoRoll());
             const activeSteps = new Set(SM_DEFAULT_PATTERN.bass || []);
             activeSteps.forEach(i => { smBassNoteOffsets[i] = 0; }); // root note by default
+            SM_DEFAULT_BASS_TIES.forEach(i => { smBassTies[i] = true; });
             row.appendChild(bassPreview);
         } else {
             stepsWrap = document.createElement('div');
