@@ -1359,6 +1359,18 @@
             width: 20px;
             height: 20px;
         }
+        /* Same circular treatment for the piano roll's REL/SLIDE knobs
+           and the transport's shuffle knob — each overrides its normal
+           bar-shaped width/height since the base .sm-popup-trigger is
+           short and wide, not square. */
+        .sm-pianoroll-header .sm-knob .sm-popup-trigger.sm-popup-trigger-pie {
+            width: 22px;
+            height: 22px;
+        }
+        .sm-tempo.sm-shuffle .sm-popup-trigger.sm-popup-trigger-pie {
+            width: 18px;
+            height: 18px;
+        }
 
         /* The popup itself lives in a fixed-position layer appended to
            <body> (not wherever the button happens to sit) so it's never
@@ -1845,6 +1857,7 @@
             .soundi-maker-transport { gap: 2px; }
             .sm-tempo { gap: 0.25rem; font-size: 0.75rem; }
             .sm-tempo input[type="range"], .sm-tempo .sm-popup-trigger { width: 22px; }
+            .sm-tempo.sm-shuffle .sm-popup-trigger.sm-popup-trigger-pie { width: 16px; height: 16px; }
             .sm-transport-undo-btn, .sm-clear-btn, .sm-export-btn { width: 26px; height: 26px; }
             .sm-track { padding: 0.4rem 0.5rem; }
             .sm-track-controls { min-width: 100%; justify-content: space-between; }
@@ -1877,6 +1890,7 @@
             .sm-dope-badge-text { font-size: 2.2rem; transform: rotate(-4deg) translateY(-14px); }
             .soundi-maker-header { margin-top: 1.1rem; }
             .sm-pianoroll-header .sm-knob input[type="range"], .sm-pianoroll-header .sm-knob .sm-popup-trigger { width: 34px; }
+            .sm-pianoroll-header .sm-knob .sm-popup-trigger.sm-popup-trigger-pie { width: 18px; height: 18px; }
             .sm-transpose-btn { min-width: 22px; font-size: 0.55rem; }
         }
 
@@ -4531,8 +4545,11 @@
         // fighting the step grid for width, so shrinking them to a
         // ~20px circle each hands a good chunk of that row back to the
         // steps instead.
+        // opts.plain skips the fill/pie meter entirely — for BPM, the
+        // adjacent numeric readout already shows the value, so a second
+        // visual indicator on the trigger button is redundant.
         let fill = null;
-        if (!opts.pie) {
+        if (!opts.pie && !opts.plain) {
             fill = document.createElement('div');
             fill.className = 'sm-popup-trigger-fill';
             btn.appendChild(fill);
@@ -4542,6 +4559,7 @@
         input.style.display = 'none';
 
         function updateTriggerFill() {
+            if (opts.plain) return;
             const pct = Math.max(0, Math.min(100, (parseFloat(input.value) - min) / (max - min) * 100));
             if (opts.pie) {
                 btn.style.background = `conic-gradient(var(--sm-popup-accent, currentColor) ${pct}%, rgba(255, 255, 255, 0.15) ${pct}%)`;
@@ -5125,8 +5143,8 @@
     document.getElementById('smSlideSpeed').addEventListener('input', (e) => {
         smSlideSpeed = parseInt(e.target.value, 10) / 100;
     });
-    smSetupPopupSlider(document.getElementById('smBassRelease'), 'var(--neon-orange)');
-    smSetupPopupSlider(document.getElementById('smSlideSpeed'), 'var(--neon-orange)');
+    smSetupPopupSlider(document.getElementById('smBassRelease'), 'var(--neon-orange)', { pie: true });
+    smSetupPopupSlider(document.getElementById('smSlideSpeed'), 'var(--neon-orange)', { pie: true });
 
     smUndoBtn.addEventListener('click', smUndoPattern);
     smTransportUndoBtn.addEventListener('click', smUndoPattern);
@@ -5616,8 +5634,8 @@
         smShuffleAmount = pct / 100;
         smShuffleVal.textContent = pct + '%';
     });
-    smSetupPopupSlider(smBpmSlider, 'var(--neon-yellow)');
-    smSetupPopupSlider(smShuffleSlider, 'var(--neon-orange)');
+    smSetupPopupSlider(smBpmSlider, 'var(--neon-yellow)', { plain: true });
+    smSetupPopupSlider(smShuffleSlider, 'var(--neon-orange)', { pie: true });
     const smStepCountBtn = document.getElementById('smStepCountBtn');
     smStepCountBtn.addEventListener('click', () => {
         const next = SM_STEPS === 16 ? 32 : 16;
