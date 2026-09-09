@@ -1386,7 +1386,10 @@
 
         .sm-steps {
             display: grid;
-            grid-template-columns: repeat(var(--sm-step-count, 16), 1fr);
+            /* Capped at 16 (not the raw step count) so a 32-step pattern
+               wraps into 2 rows of 16 instead of squeezing 32 half-width
+               columns into one row — see smUpdateStepCountVars. */
+            grid-template-columns: repeat(var(--sm-step-columns, 16), 1fr);
             gap: 4px;
             flex: 1;
             min-width: 260px;
@@ -4795,6 +4798,20 @@
         selects.forEach(sel => { sel.style.width = width + 'px'; });
     }
 
+    // --sm-step-count drives the piano roll's own grid (one column per
+    // step, always a single row — it already scrolls horizontally for
+    // 32 steps) and stays a straight mirror of SM_STEPS. The plain step
+    // tracks (.sm-steps) instead use --sm-step-columns, capped at 16, so
+    // a 32-step pattern wraps into 2 rows of 16 instead of squeezing 32
+    // half-width columns into the same row — the same trick the mobile
+    // breakpoint's hardcoded repeat(8, 1fr) already relies on for its
+    // own row-wrapping, just with a wider cap since landscape has more
+    // width to spare.
+    function smUpdateStepCountVars() {
+        document.documentElement.style.setProperty('--sm-step-count', SM_STEPS);
+        document.documentElement.style.setProperty('--sm-step-columns', Math.min(SM_STEPS, 16));
+    }
+
     // Switches the pattern between 16 and 32 steps by growing/shrinking
     // every track's step array in place — dropping the tail when
     // shrinking, rather than rebuilding the whole UI, so every existing
@@ -4807,7 +4824,7 @@
         if (!smInitialized || newCount === SM_STEPS) return;
         const oldCount = SM_STEPS;
         SM_STEPS = newCount;
-        document.documentElement.style.setProperty('--sm-step-count', SM_STEPS);
+        smUpdateStepCountVars();
         if (newCount > oldCount) {
             for (let i = oldCount; i < newCount; i++) {
                 const srcIdx = i - oldCount;
@@ -4856,7 +4873,7 @@
         smMasterGain = smAudioCtx.createGain();
         smMasterGain.connect(smAudioCtx.destination);
 
-        document.documentElement.style.setProperty('--sm-step-count', SM_STEPS);
+        smUpdateStepCountVars();
         SM_TRACK_ORDER.forEach(smBuildTrackRow);
         smApplyUniformSelectWidth();
 
