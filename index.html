@@ -1029,6 +1029,13 @@
             opacity: 0.8;
         }
 
+        /* The Dope Box toggle's note glyph (♪) reads noticeably smaller
+           than a typical letter/digit at the same font-size as the "?"
+           and "!" buttons it sits next to, so it gets its own bump. */
+        #soundiMakerToggle {
+            font-size: 1.7rem;
+        }
+
         /* Dope Box — a groovebox-style step sequencer mode. Forces the
            same embeds-hidden state as the "!" button (combined in JS via
            updateEmbedsHiddenClass) so the background gets the full screen,
@@ -1990,6 +1997,9 @@
                 width: 34px;
                 height: 34px;
                 font-size: 1rem;
+            }
+            #soundiMakerToggle {
+                font-size: 1.4rem;
             }
 
             .section { padding: 1rem 0.75rem; }
