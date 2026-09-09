@@ -1447,6 +1447,22 @@
             background: rgba(255, 255, 255, 0.3);
             pointer-events: none;
         }
+        /* The pattern's very first step is also a beat start, but it has
+           no grid gap before it to draw the marker in (it's the row's
+           leading edge, not a gap between columns) — sits in the row's
+           own padding/gap space instead, and gets a warm tint rather
+           than white so it doubles as a "pattern start" indicator. */
+        .sm-step:first-child::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            border-radius: 1px;
+            background: rgba(255, 200, 60, 0.55);
+            pointer-events: none;
+        }
         .sm-step:hover { transform: scale(1.15); }
         .sm-step.active {
             background: currentColor;
