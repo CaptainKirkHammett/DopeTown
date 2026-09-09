@@ -4298,10 +4298,19 @@
     const SM_DEFAULT_PATTERN = {
         kick: [0, 4, 8, 12],
         bass: [2, 6, 10, 14],
-        sn: [4, 12],
+        sn: [4, 12, 15],
         sn2: [],
         chh: [0, 2, 4, 6, 8, 10, 12, 14],
         oh: [],
+    };
+    // Non-'normal' starting states for specific default-pattern steps
+    // (index -> 'short' | 'flam'), layered on top of SM_DEFAULT_PATTERN's
+    // plain on/off list — applied via smSetStepElState once each track's
+    // step elements exist. CHH's first hit reads as a flam (grace + main
+    // hit); the snare's 16th step is gated to half length ("50%").
+    const SM_DEFAULT_STEP_STATES = {
+        chh: { 0: 'flam' },
+        sn: { 15: 'short' },
     };
 
     // Bass piano roll: each active step also carries a semitone offset
@@ -4823,6 +4832,13 @@
             const activeSteps = new Set(SM_DEFAULT_PATTERN[key] || []);
             for (let i = 0; i < SM_STEPS; i++) {
                 stepEls.push(smCreateStepEl(stepsWrap, activeSteps.has(i)));
+            }
+            const stateOverrides = SM_DEFAULT_STEP_STATES[key];
+            if (stateOverrides) {
+                Object.keys(stateOverrides).forEach(idxStr => {
+                    const idx = parseInt(idxStr, 10);
+                    if (stepEls[idx]) smSetStepElState(stepEls[idx], stateOverrides[idx]);
+                });
             }
             row.appendChild(stepsWrap);
         }
