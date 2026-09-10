@@ -1309,6 +1309,27 @@
             width: 90px;
         }
 
+        /* Mute toggle — an LED-style round button right next to the
+           sample select. Green when the track plays normally, red once
+           muted; the color itself is the only state indicator (like a
+           mixer's mute LED), no icon swap needed. */
+        .sm-mute-btn {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            background: var(--neon-green);
+            box-shadow: 0 0 5px var(--neon-green);
+            cursor: pointer;
+            padding: 0;
+            transition: background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .sm-mute-btn.muted {
+            background: #ff3b3b;
+            box-shadow: 0 0 5px #ff3b3b;
+        }
+
         .sm-volume {
             width: 60px;
             accent-color: currentColor;
@@ -4753,6 +4774,13 @@
         });
         controls.appendChild(select);
 
+        const muteBtn = document.createElement('button');
+        muteBtn.type = 'button';
+        muteBtn.className = 'sm-mute-btn';
+        muteBtn.title = 'Mute';
+        muteBtn.setAttribute('aria-label', 'Mute ' + meta.label);
+        controls.appendChild(muteBtn);
+
         const volumeWrap = document.createElement('div');
         volumeWrap.className = 'sm-knob sm-track-knob';
         const volumeLabel = document.createElement('label');
@@ -4856,8 +4884,19 @@
         const gainNode = smAudioCtx.createGain();
         gainNode.gain.value = meta.volume;
         gainNode.connect(smMasterGain);
-        volume.addEventListener('input', () => {
-            gainNode.gain.value = parseFloat(volume.value);
+        // Mute just zeroes the gain node rather than tracking a separate
+        // flag — the volume slider's own value is untouched while muted,
+        // so unmuting restores exactly where it was, and the WAV export
+        // (which mirrors gainNode.gain.value into its own offline track
+        // gain) picks up mute for free with no extra wiring.
+        function smApplyTrackGain() {
+            gainNode.gain.value = muteBtn.classList.contains('muted') ? 0 : parseFloat(volume.value);
+        }
+        volume.addEventListener('input', smApplyTrackGain);
+        muteBtn.addEventListener('click', () => {
+            const muted = muteBtn.classList.toggle('muted');
+            muteBtn.title = muted ? 'Unmute' : 'Mute';
+            smApplyTrackGain();
         });
 
         decayInput.addEventListener('input', () => {
