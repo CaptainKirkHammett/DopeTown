@@ -1036,11 +1036,17 @@
         }
 
 
-        /* The Dope Box toggle's note glyph (♪) reads noticeably smaller
-           than a typical letter/digit at the same font-size as the "?"
-           and "!" buttons it sits next to, so it gets its own bump. */
+        /* Only matters while the button shows its plain-text "close" X
+           (see setSoundiMakerActive) — the drum-machine icon shown the
+           rest of the time is sized directly via its own svg width/
+           height instead, since that glyph read noticeably smaller than
+           a typical letter/digit at the same font-size as the "?" and
+           "!" buttons it sits next to. */
         #soundiMakerToggle {
             font-size: 1.7rem;
+        }
+        #soundiMakerToggle svg {
+            display: block;
         }
 
         /* Dope Box — a groovebox-style step sequencer mode. Forces the
@@ -2129,6 +2135,10 @@
             #soundiMakerToggle {
                 font-size: 1.4rem;
             }
+            #soundiMakerToggle svg {
+                width: 17px;
+                height: 17px;
+            }
 
             .section { padding: 1rem 0.75rem; }
 
@@ -2307,7 +2317,17 @@
     <div class="social-left">
         <button class="bg-toggle" id="bgToggle" title="Switch background">?</button>
         <button class="bg-toggle" id="embedsToggle" title="Show/hide embeds">!</button>
-        <button class="bg-toggle" id="soundiMakerToggle" title="Dope Box">♪</button>
+        <button class="bg-toggle" id="soundiMakerToggle" title="Dope Box">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+                <rect x="2.5" y="4" width="19" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                <rect x="5" y="7.5" width="3.4" height="3.4" rx="0.8" fill="currentColor"/>
+                <rect x="10.3" y="7.5" width="3.4" height="3.4" rx="0.8" fill="currentColor"/>
+                <rect x="15.6" y="7.5" width="3.4" height="3.4" rx="0.8" fill="currentColor"/>
+                <rect x="5" y="13" width="3.4" height="3.4" rx="0.8" fill="currentColor"/>
+                <rect x="10.3" y="13" width="3.4" height="3.4" rx="0.8" fill="currentColor"/>
+                <rect x="15.6" y="13" width="3.4" height="3.4" rx="0.8" fill="currentColor"/>
+            </svg>
+        </button>
         <button class="bg-toggle" id="smMiniPlayToggle" title="Play Dope Box" aria-label="Play Dope Box" style="display: none;">&#9654;</button>
     </div>
     <div class="social-right">
@@ -4493,6 +4513,11 @@
     }
 
     const soundiMakerToggle = document.getElementById('soundiMakerToggle');
+    // Saved so setSoundiMakerActive can restore it after swapping in the
+    // plain "close" X — innerHTML rather than the button's own original
+    // markup string, since it's simplest to just read back what's
+    // already sitting in the DOM at load time.
+    const SM_TOGGLE_ICON_HTML = soundiMakerToggle.innerHTML;
     const soundiMakerOverlay = document.getElementById('soundiMakerOverlay');
     const soundiMakerLoading = document.getElementById('soundiMakerLoading');
     const soundiMakerTracksEl = document.getElementById('soundiMakerTracks');
@@ -5814,8 +5839,8 @@
         soundiMakerOverlay.classList.toggle('active', active);
         // The toggle button is now the only way to close Dope Box (its
         // own X button was removed), so it doubles as an exit affordance:
-        // shows an X while open instead of the musical note.
-        soundiMakerToggle.textContent = active ? '✕' : '♪';
+        // shows a plain X while open instead of the drum-machine icon.
+        soundiMakerToggle.innerHTML = active ? '✕' : SM_TOGGLE_ICON_HTML;
         soundiMakerToggle.title = active ? 'Close Dope Box' : 'Dope Box';
         if (active) {
             initSoundiMaker();
