@@ -1218,6 +1218,9 @@
         .sm-step-count-btn.active-32 {
             background: var(--neon-orange);
         }
+        .sm-step-count-btn.active-64 {
+            background: var(--neon-pink);
+        }
 
         .sm-play-btn {
             width: 38px;
@@ -2505,7 +2508,7 @@
         <div class="soundi-maker-panel">
         <div class="soundi-maker-header">
             <div class="soundi-maker-transport">
-                <button class="sm-step-count-btn" id="smStepCountBtn" aria-label="Toggle 16/32 step pattern" title="Toggle 16/32 step pattern">16</button>
+                <button class="sm-step-count-btn" id="smStepCountBtn" aria-label="Toggle 16/32/64 step pattern" title="Toggle 16/32/64 step pattern">16</button>
                 <button class="sm-play-btn" id="smPlayBtn" aria-label="Play/stop">&#9654;</button>
                 <div class="sm-tempo">
                     <label for="smBpm">BPM</label>
@@ -4411,11 +4414,13 @@
     }
     const SM_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const SM_PIANOROLL_ROOT_MIDI = 36; // C2 — the sample's assumed natural pitch (semitone 0)
-    const SM_PIANOROLL_RANGE = 25; // 25 rows: 3 octaves inclusive, A0-A2
-    // Bottom row's semitone offset — A0 is MIDI 21, 15 semitones below the
-    // C2 natural-pitch reference (MIDI 36), so the visible window is
-    // -15..+9, i.e. A0 up to A2.
-    const SM_PIANOROLL_MIN_SEMITONE = -15;
+    const SM_PIANOROLL_RANGE = 37; // 37 rows: 3 octaves inclusive, C0-C3
+    // Bottom row's semitone offset — C0 is MIDI 12, 24 semitones below the
+    // C2 natural-pitch reference (MIDI 36), so the full scrollable range is
+    // -24..+12, i.e. C0 up to C3. Only 13 rows (one octave) show at once
+    // regardless of this range — see smUpdatePianoRollHeight's fixed
+    // visibleRows — so widening it just adds more to scroll through.
+    const SM_PIANOROLL_MIN_SEMITONE = -24;
     function smMidiName(midi) {
         return SM_NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
     }
@@ -5683,12 +5688,14 @@
     });
     smSetupPopupSlider(smBpmSlider, 'var(--neon-yellow)', { plain: true });
     smSetupPopupSlider(smShuffleSlider, 'var(--neon-orange)', { pie: true });
+    const SM_STEP_COUNT_CYCLE = [16, 32, 64];
     const smStepCountBtn = document.getElementById('smStepCountBtn');
     smStepCountBtn.addEventListener('click', () => {
-        const next = SM_STEPS === 16 ? 32 : 16;
+        const next = SM_STEP_COUNT_CYCLE[(SM_STEP_COUNT_CYCLE.indexOf(SM_STEPS) + 1) % SM_STEP_COUNT_CYCLE.length];
         smSetStepCount(next);
         smStepCountBtn.textContent = next;
         smStepCountBtn.classList.toggle('active-32', next === 32);
+        smStepCountBtn.classList.toggle('active-64', next === 64);
     });
 </script>
 
