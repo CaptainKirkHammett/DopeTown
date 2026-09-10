@@ -1589,7 +1589,13 @@
             inset: 0;
             z-index: 10002;
             display: none;
-            align-items: center;
+            /* flex-start (not center) so the panel's vertical position is
+               purely a function of its own padding-top — smOpenPianoRoll
+               sets that inline, tall enough to clear the Dope Box
+               transport's play/pause button underneath, which used to sit
+               right under the piano roll (blocking clicks on it) whenever
+               this was vertically centered instead. */
+            align-items: flex-start;
             justify-content: center;
             padding: 1rem;
             background: rgba(10, 0, 20, 0.55);
@@ -5217,6 +5223,25 @@
         }
     }
 
+    // Pushes the piano roll panel down (via the overlay's own padding-top,
+    // since it's align-items:flex-start) far enough to clear the Dope Box
+    // transport's play/pause button, measured live rather than a guessed
+    // fixed offset — the button's screen position varies with viewport
+    // size (the Dope Box panel underneath is itself vertically centered
+    // in the leftover space below the top nav row). Clamped against the
+    // piano roll panel's own (already-rendered) height so a short
+    // viewport still keeps the whole panel on-screen instead of pushing
+    // it down past the bottom edge.
+    function smPositionPianoRollBelowPlayBtn() {
+        const gap = 12;
+        const basePaddingTop = 16; // matches the overlay's own 1rem default
+        const playBtnBottom = smPlayBtn.getBoundingClientRect().bottom;
+        const panelHeight = smPianoRollOverlay.querySelector('.sm-pianoroll-panel').getBoundingClientRect().height;
+        const maxTop = Math.max(basePaddingTop, window.innerHeight - panelHeight - basePaddingTop);
+        const desiredTop = Math.min(playBtnBottom + gap, maxTop);
+        smPianoRollOverlay.style.paddingTop = Math.max(basePaddingTop, desiredTop) + 'px';
+    }
+
     function smOpenPianoRoll() {
         if (!smInitialized) return; // tracks not built yet
         // The overlay must already be visible before rendering, since
@@ -5224,6 +5249,9 @@
         // rendered row height to work from.
         smPianoRollOverlay.classList.add('active');
         smRenderPianoRoll();
+        // Positioned after rendering so the panel's real height (which
+        // the clamp above depends on) is already settled.
+        smPositionPianoRollBelowPlayBtn();
         smCenterPianoRollOn(SM_PIANOROLL_OPEN_SEMITONE);
         smUpdateUndoBtn();
     }
