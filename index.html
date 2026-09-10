@@ -1699,6 +1699,22 @@
         }
         .sm-undo-btn:hover { transform: scale(1.1) rotate(-15deg); }
         .sm-undo-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
+
+        .sm-random-btn {
+            flex-shrink: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #000;
+            background: var(--neon-pink);
+            font-size: 1rem;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #000;
+            transition: transform 0.15s ease;
+        }
+        .sm-random-btn:hover { transform: scale(1.1) rotate(8deg); }
+        .sm-random-btn:active { transform: scale(0.95); box-shadow: 0 1px 0 #000; }
         .sm-undo-btn:disabled {
             opacity: 0.35;
             cursor: default;
@@ -2603,6 +2619,7 @@
                     <button class="sm-transpose-btn" id="smTransposeUp" aria-label="Transpose up a semitone" title="Transpose +1 semitone">+1</button>
                     <button class="sm-transpose-btn" id="smTransposeOctUp" aria-label="Transpose up an octave" title="Transpose +1 octave">+12</button>
                 </div>
+                <button class="sm-random-btn" id="smBassRandomBtn" aria-label="Randomize bassline notes" title="Randomize bassline notes">&#127922;</button>
                 <button class="sm-undo-btn" id="smUndoBtn" aria-label="Undo last edit" title="Undo last edit" disabled>&#8634;</button>
             </div>
         </div>
@@ -5303,6 +5320,34 @@
     document.getElementById('smTransposeUp').addEventListener('click', () => smTransposeBass(1));
     document.getElementById('smTransposeOctDown').addEventListener('click', () => smTransposeBass(-12));
     document.getElementById('smTransposeOctUp').addEventListener('click', () => smTransposeBass(12));
+
+    // G1 to C2 inclusive — the range the random-fill button below picks
+    // from. G1 is 5 semitones below the C2 root (MIDI 31 vs the root's 36).
+    const SM_RANDOM_BASS_MIN_SEMITONE = -5; // G1
+    const SM_RANDOM_BASS_MAX_SEMITONE = 0;  // C2
+
+    // Fills steps 2-4 of the first 4-step bar with fresh random notes
+    // (between G1 and C2), then copies that same 3-note fill into every
+    // subsequent bar across the current pattern length — a 16-step
+    // pattern gets 4 bars all sharing the fill, 32 gets 8, 64 gets 16.
+    // Each bar's own first step is left untouched.
+    function smRandomizeBassPattern() {
+        smPushUndoSnapshot();
+        const range = SM_RANDOM_BASS_MAX_SEMITONE - SM_RANDOM_BASS_MIN_SEMITONE + 1;
+        const fill = [1, 2, 3].map(() => SM_RANDOM_BASS_MIN_SEMITONE + Math.floor(Math.random() * range));
+        for (let barStart = 0; barStart < SM_STEPS; barStart += 4) {
+            [1, 2, 3].forEach((posInBar, i) => {
+                const idx = barStart + posInBar;
+                if (idx >= SM_STEPS) return;
+                smBassNoteOffsets[idx] = fill[i];
+                smBassStepStates[idx] = 'normal';
+                smBassTies[idx] = false;
+            });
+        }
+        smRenderPianoRoll();
+        smRenderBassPreview();
+    }
+    document.getElementById('smBassRandomBtn').addEventListener('click', smRandomizeBassPattern);
 
     // Every track's decay knob (0-100) maps to how long its hits ring
     // before fading: short at the low end (punchy, artificially clipped),
