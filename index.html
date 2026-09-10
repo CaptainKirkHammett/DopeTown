@@ -1608,6 +1608,7 @@
         }
 
         .sm-pianoroll-panel {
+            position: relative;
             pointer-events: auto;
             width: 100%;
             max-width: 640px;
@@ -1620,6 +1621,18 @@
             padding: 1.25rem;
         }
 
+        /* Pinned to the panel's own top-right corner instead of sitting
+           inline at the end of the header controls row — a floating "X"
+           there is the more familiar place to look for a modal's close
+           button. .sm-pianoroll-header reserves matching space on its
+           right so the title/controls row never runs underneath it. */
+        .sm-pianoroll-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 2;
+        }
+
         .sm-pianoroll-header {
             display: flex;
             align-items: center;
@@ -1627,6 +1640,7 @@
             flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1rem;
+            padding-right: 3rem;
         }
 
         .sm-pianoroll-title {
@@ -2571,6 +2585,7 @@
 <!-- Bass piano roll — opened by clicking the Bass track's name in Dope Box -->
 <div class="sm-pianoroll-overlay" id="smPianoRollOverlay">
     <div class="sm-pianoroll-panel">
+        <button class="sm-close-btn sm-pianoroll-close" id="smPianoRollClose" aria-label="Close piano roll">&#10005;</button>
         <div class="sm-pianoroll-header">
             <h3 class="sm-pianoroll-title">BASSLINE</h3>
             <div class="sm-pianoroll-controls">
@@ -2589,7 +2604,6 @@
                     <button class="sm-transpose-btn" id="smTransposeOctUp" aria-label="Transpose up an octave" title="Transpose +1 octave">+12</button>
                 </div>
                 <button class="sm-undo-btn" id="smUndoBtn" aria-label="Undo last edit" title="Undo last edit" disabled>&#8634;</button>
-                <button class="sm-close-btn" id="smPianoRollClose" aria-label="Close piano roll">&#10005;</button>
             </div>
         </div>
         <div class="sm-pianoroll-grid" id="smPianoRollGrid"></div>
