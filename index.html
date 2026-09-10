@@ -4442,6 +4442,15 @@
     // regardless of this range — see smUpdatePianoRollHeight's fixed
     // visibleRows — so widening it just adds more to scroll through.
     const SM_PIANOROLL_MIN_SEMITONE = -24;
+    // How many rows show at once regardless of the full scrollable
+    // range above — shared by smUpdatePianoRollHeight (sizes the
+    // viewport to exactly this many rows) and smCenterPianoRollOn
+    // (centers a given note within that same viewport on open).
+    const SM_PIANOROLL_VISIBLE_ROWS = 13;
+    // A1 (3 semitones below the C2 root) — a reasonable mid-range
+    // starting note for a bassline, so the piano roll opens centered
+    // there instead of always scrolled to the top of the full range.
+    const SM_PIANOROLL_OPEN_SEMITONE = -3;
     function smMidiName(midi) {
         return SM_NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
     }
@@ -5141,8 +5150,31 @@
         const rowHeight = firstRow.getBoundingClientRect().height;
         if (!rowHeight) return; // overlay isn't visible yet — nothing to measure
         const gap = parseFloat(getComputedStyle(smPianoRollGrid).rowGap) || 0;
-        const visibleRows = 13; // 1 octave inclusive (12 semitones + 1)
-        smPianoRollGrid.style.maxHeight = Math.round((rowHeight + gap) * visibleRows - gap) + 'px';
+        smPianoRollGrid.style.maxHeight = Math.round((rowHeight + gap) * SM_PIANOROLL_VISIBLE_ROWS - gap) + 'px';
+    }
+
+    // Scrolls the piano roll grid so the given semitone's row sits in the
+    // middle of the visible window, instead of wherever a fresh render
+    // happens to leave scrollTop (0, i.e. the very top of the range).
+    // Only called right after opening — edits re-render the grid too, but
+    // leaving their scroll position alone (as today) avoids yanking the
+    // view back to a fixed note mid-edit.
+    function smCenterPianoRollOn(semitone) {
+        const grid = smPianoRollGrid;
+        const firstRow = grid.querySelector('.sm-pianoroll-row:not(.sm-pianoroll-tie-row)');
+        if (!firstRow) return;
+        const rowHeight = firstRow.getBoundingClientRect().height;
+        if (!rowHeight) return;
+        const gap = parseFloat(getComputedStyle(grid).rowGap) || 0;
+        const rowStep = rowHeight + gap;
+        // Rows render top-to-bottom from the highest semitone down (see
+        // smRenderPianoRoll's i from RANGE-1 to 0), so the target's
+        // distance from the top is the range's own top offset minus how
+        // far below the max this semitone sits.
+        const rowIndexFromTop = (SM_PIANOROLL_MIN_SEMITONE + SM_PIANOROLL_RANGE - 1) - semitone;
+        const centerOffset = Math.floor((SM_PIANOROLL_VISIBLE_ROWS - 1) / 2);
+        const maxScroll = grid.scrollHeight - grid.clientHeight;
+        grid.scrollTop = Math.max(0, Math.min(maxScroll, rowStep * (rowIndexFromTop - centerOffset)));
     }
 
     // Keeps the main Bass row's step highlighting in sync with whatever
@@ -5192,6 +5224,7 @@
         // rendered row height to work from.
         smPianoRollOverlay.classList.add('active');
         smRenderPianoRoll();
+        smCenterPianoRollOn(SM_PIANOROLL_OPEN_SEMITONE);
         smUpdateUndoBtn();
     }
     smPianoRollClose.addEventListener('click', () => {
