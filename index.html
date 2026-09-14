@@ -1782,9 +1782,21 @@
 
         .sm-pianoroll-row {
             display: grid;
-            grid-template-columns: 40px repeat(var(--sm-step-count, 16), 1fr);
+            /* Fixed step width (not 1fr) so cells stay the same size
+               regardless of step count instead of shrinking as more
+               steps are packed into the same row width — 32/64-step
+               patterns used to render steps so narrow they were hard to
+               see or tap. width:max-content lets the row grow past the
+               panel's own width once there are enough steps, and
+               .sm-pianoroll-grid's overflow:auto (already relied on for
+               vertical scrolling) picks up the horizontal scroll for
+               free. Matches the same fixed-width-plus-scroll approach
+               the mobile breakpoint below already used. */
+            grid-template-columns: 40px repeat(var(--sm-step-count, 16), 31px);
             gap: 3px;
             align-items: center;
+            flex-shrink: 0;
+            width: max-content;
         }
 
         .sm-pianoroll-key {
@@ -1793,6 +1805,16 @@
             color: #fff;
             text-align: right;
             padding-right: 4px;
+            /* Pinned to the left edge of the scrolling grid so the pitch
+               label stays visible while scrolling through steps
+               horizontally — needed on desktop now too since fixed-width
+               step columns (see .sm-pianoroll-row) make 32/64-step
+               patterns wider than the panel there as well, not just on
+               the mobile breakpoint below. */
+            position: sticky;
+            left: 0;
+            background: #1c1450;
+            z-index: 1;
         }
         .sm-pianoroll-row.sharp .sm-pianoroll-key {
             color: #999;
@@ -1934,13 +1956,6 @@
             }
             .sm-pianoroll-key {
                 font-size: 0.62rem;
-                /* Pinned to the left edge of the scrolling grid so the
-                   pitch label stays visible while scrolling through
-                   steps horizontally. */
-                position: sticky;
-                left: 0;
-                background: #1c1450;
-                z-index: 1;
             }
             .sm-dope-badge-wrap { top: -34px; right: -6px; }
             .sm-dope-badge { width: 200px; }
