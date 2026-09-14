@@ -1778,6 +1778,30 @@
                32-step pattern on mobile) scrolls instead of cramming
                everything into view at once. */
             overflow: auto;
+            /* Custom scrollbar styling (matching .bandcamp-scroll et al)
+               isn't just cosmetic here — a custom-styled scrollbar is
+               permanently visible instead of the OS's overlay/auto-hide
+               style some desktop browsers use, which otherwise made it
+               easy to miss that a wide (32/64-step) or tall pattern had
+               more to scroll to. */
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-blue) rgba(0, 0, 0, 0.3);
+        }
+        .sm-pianoroll-grid::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .sm-pianoroll-grid::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+        .sm-pianoroll-grid::-webkit-scrollbar-thumb {
+            background: var(--neon-blue);
+            border-radius: 4px;
+            box-shadow: 0 0 6px var(--neon-blue);
+        }
+        .sm-pianoroll-grid::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-pink);
         }
 
         .sm-pianoroll-row {
