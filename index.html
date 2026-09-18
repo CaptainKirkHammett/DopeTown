@@ -478,10 +478,18 @@
             text-align: left;
         }
 
-        .vst-screenshot-link {
+        .vst-left {
             flex-shrink: 0;
-            display: block;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.2rem;
             width: 320px;
+        }
+
+        .vst-screenshot-link {
+            display: block;
+            width: 100%;
         }
 
         .vst-screenshot {
@@ -2388,7 +2396,7 @@
                 align-items: center;
             }
 
-            .vst-screenshot-link {
+            .vst-left {
                 width: 70%;
                 max-width: 320px;
             }
@@ -2505,21 +2513,24 @@
 
 <!-- DOPE MAKER VST -->
 <section class="section vst-section">
-    <span class="section-title green">Dope Maker VST</span>
+    <a href="DopeMakerDL/" target="_blank" class="section-title-link green tooltip-wrap"><span class="tooltip">Open downloads</span><span>Dope Maker VST</span></a>
     <div class="vst-row">
-        <a href="DopeMakerScreenshot.png" target="_blank" class="vst-screenshot-link">
-            <img src="DopeMakerScreenshot.png" alt="Dope Maker VST Plugin Interface" class="vst-screenshot">
-        </a>
+        <div class="vst-left">
+            <a href="DopeMakerScreenshot.png" target="_blank" class="vst-screenshot-link">
+                <img src="DopeMakerScreenshot.png" alt="Dope Maker VST Plugin Interface" class="vst-screenshot">
+            </a>
+            <a href="DopeMakerDL/" target="_blank" class="vst-download-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
+                Download
+            </a>
+        </div>
         <div class="vst-description">
-            <p>a creative sampler VST that started as a simple idea &mdash; randomize sample start position on each note &mdash; and then it spiralled beautifully out of control. very useful for rhythmic patterns, creating evolving movement with possibilities for extreme modulation that will melt your neurons in the best way possible.</p>
-            <p style="margin-top:1rem;">features duck modes for reverb &amp; delay, stutter, comb filter, sidechain-esque volume &amp; FX modulation, and much more weird stuff hiding under every knob. whether you&rsquo;re cooking up psytrance forest madness, IDM brainfood, breakcore chaos, or just some nice housey grooves &mdash; this thing will take you places you didn&rsquo;t know existed.</p>
-            <p style="margin-top:1rem;">factory bank included &mdash; use the presets as-is or as launchpads for your own samples to get the creative juices flowing. there is a lot more to be discovered as well. have fun :]</p>
+            <p>Creative sampler VST, with the main idea of randomizing sample start position on each note. The idea sprouted branches of more ideas, and they all went on a bender.</p>
+            <p style="margin-top:1rem;">Dope Maker is very useful for rhythmic stuff by creating evolving movement, which of course does not need to be rhythmic. There is of course extreme modulation and specialty features like duck modes for reverb and delay.</p>
+            <p style="margin-top:1rem;">We have stutter, comb filter, granulizer, and sidechain-a-like volume and FX modulation. There is a lot to be discovered!</p>
+            <p style="margin-top:1rem;">Check out the provided factory preset bank to get the juices flowing, and try to replace default samples with your own.</p>
         </div>
     </div>
-    <a href="DopeMakerDL/" target="_blank" class="vst-download-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
-        Download
-    </a>
 </section>
 
 <div class="divider"></div>
