@@ -2423,6 +2423,39 @@
             .footer { padding: 1.75rem 1rem; }
         }
 
+        /* VST title marquee */
+        .vst-marquee-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+            padding: 0.6rem 0;
+            cursor: pointer;
+            border-top: 1px solid rgba(57, 255, 20, 0.15);
+            border-bottom: 1px solid rgba(57, 255, 20, 0.15);
+            background: rgba(0, 0, 0, 0.25);
+            transition: background 0.3s;
+        }
+        .vst-marquee-wrap:hover {
+            background: rgba(57, 255, 20, 0.06);
+        }
+        .vst-marquee {
+            display: inline-block;
+            animation: marqueeScroll 20s linear infinite;
+            font-family: 'Barrio', cursive;
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--neon-green);
+            text-shadow: 0 0 20px var(--neon-green);
+        }
+        .vst-marquee span {
+            margin: 0 2rem;
+        }
+        body.acid-bg .vst-marquee {
+            animation: marqueeScroll 20s linear infinite, titleShiver 0.12s linear infinite;
+        }
+
         /* Download popup overlay */
         .dl-popup-overlay {
             display: none;
@@ -2592,7 +2625,9 @@
 
 <!-- DOPE MAKER VST -->
 <section class="section vst-section">
-    <a href="#" class="section-title-link green tooltip-wrap" data-dl-popup><span class="tooltip">Open downloads</span><span>Dope Maker VST</span></a>
+    <div class="vst-marquee-wrap" data-dl-popup>
+        <div class="vst-marquee"><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span></div>
+    </div>
     <div class="vst-row">
         <div class="vst-left">
             <a href="DopeMakerScreenshot.png" target="_blank" class="vst-screenshot-link">
