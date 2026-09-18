@@ -2422,6 +2422,85 @@
             .visitor-counter { padding: 1rem 1rem; }
             .footer { padding: 1.75rem 1rem; }
         }
+
+        /* Download popup overlay */
+        .dl-popup-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .dl-popup-overlay.open { display: flex; }
+
+        .dl-popup {
+            background: #1a0033;
+            border: 2px solid var(--neon-green);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 60px rgba(57, 255, 20, 0.3);
+            position: relative;
+        }
+
+        .dl-popup h2 {
+            font-family: 'Barrio', cursive;
+            color: var(--neon-green);
+            text-shadow: 0 0 15px var(--neon-green);
+            font-size: 1.4rem;
+            margin-bottom: 1.2rem;
+            text-align: center;
+        }
+
+        .dl-popup-close {
+            position: absolute;
+            top: 0.8rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #c8b8e8;
+            font-size: 1.6rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .dl-popup-close:hover { color: #fff; }
+
+        .dl-popup-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .dl-popup-list a {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.9rem 1.2rem;
+            margin-bottom: 0.5rem;
+            background: rgba(57, 255, 20, 0.08);
+            border: 1px solid rgba(57, 255, 20, 0.2);
+            border-radius: 8px;
+            color: var(--neon-green);
+            text-decoration: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            transition: all 0.25s ease;
+        }
+        .dl-popup-list a:hover {
+            background: rgba(57, 255, 20, 0.18);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
+        }
+        .dl-popup-list svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--neon-green);
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
@@ -2513,13 +2592,13 @@
 
 <!-- DOPE MAKER VST -->
 <section class="section vst-section">
-    <a href="DopeMakerDL/" target="_blank" class="section-title-link green tooltip-wrap"><span class="tooltip">Open downloads</span><span>Dope Maker VST</span></a>
+    <a href="#" class="section-title-link green tooltip-wrap" data-dl-popup><span class="tooltip">Open downloads</span><span>Dope Maker VST</span></a>
     <div class="vst-row">
         <div class="vst-left">
             <a href="DopeMakerScreenshot.png" target="_blank" class="vst-screenshot-link">
                 <img src="DopeMakerScreenshot.png" alt="Dope Maker VST Plugin Interface" class="vst-screenshot">
             </a>
-            <a href="DopeMakerDL/" target="_blank" class="vst-download-btn">
+            <a href="#" class="vst-download-btn" data-dl-popup>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
                 Download
             </a>
@@ -6050,6 +6129,54 @@
         smStepCountBtn.classList.toggle('active-32', next === 32);
         smStepCountBtn.classList.toggle('active-64', next === 64);
     });
+</script>
+
+<!-- Download popup -->
+<div class="dl-popup-overlay" id="dlPopupOverlay">
+    <div class="dl-popup">
+        <button class="dl-popup-close" id="dlPopupClose">&times;</button>
+        <h2>Dope Maker VST Downloads</h2>
+        <ul class="dl-popup-list">
+            <li><a href="DopeMakerDL/DopeMaker_v0.2780.0.3_Setup.exe" download id="dlExeLink">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
+                DopeMaker_v0.2780.0.3_Setup.exe
+            </a></li>
+        </ul>
+    </div>
+</div>
+<script>
+(function() {
+    var overlay = document.getElementById('dlPopupOverlay');
+    var closeBtn = document.getElementById('dlPopupClose');
+
+    document.querySelectorAll('[data-dl-popup]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.preventDefault();
+            overlay.classList.add('open');
+        });
+    });
+
+    closeBtn.addEventListener('click', function() {
+        overlay.classList.remove('open');
+    });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.classList.remove('open');
+    });
+
+    // GA4 download tracking
+    document.querySelectorAll('.dl-popup-list a[download]').forEach(function(a) {
+        a.addEventListener('click', function() {
+            if (typeof gtag === 'function') {
+                gtag('event', 'file_download', {
+                    file_name: a.textContent.trim(),
+                    file_extension: '.exe',
+                    link_url: a.href
+                });
+            }
+        });
+    });
+})();
 </script>
 
 </body>
