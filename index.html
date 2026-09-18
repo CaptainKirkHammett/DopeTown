@@ -464,6 +464,69 @@
         a.section-title-link.yellow { color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow); }
         a.section-title-link.yellow::after { background: linear-gradient(90deg, transparent, var(--neon-yellow), transparent); }
 
+        /* Dope Maker VST section */
+        .vst-section {
+            text-align: center;
+        }
+
+        .vst-screenshot {
+            max-width: 800px;
+            width: 100%;
+            border-radius: 12px;
+            border: 2px solid var(--neon-green);
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.3), 0 0 60px rgba(57, 255, 20, 0.1);
+            margin-bottom: 2rem;
+            transition: box-shadow 0.4s ease, border-color 0.4s ease;
+        }
+
+        .vst-screenshot:hover {
+            box-shadow: 0 0 50px rgba(57, 255, 20, 0.5), 0 0 100px rgba(0, 240, 255, 0.2);
+            border-color: var(--neon-blue);
+        }
+
+        .vst-description {
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            color: #c8b8e8;
+            line-height: 1.7;
+            text-align: left;
+            padding: 1.5rem;
+            background: rgba(26, 0, 51, 0.6);
+            border-radius: 10px;
+            border: 1px solid rgba(57, 255, 20, 0.15);
+        }
+
+        .vst-download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 1.2rem 3rem;
+            background: linear-gradient(135deg, var(--neon-green), #00cc44, var(--neon-blue));
+            color: #000;
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.4);
+        }
+
+        .vst-download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 50px rgba(57, 255, 20, 0.6), 0 0 100px rgba(0, 240, 255, 0.3);
+        }
+
+        .vst-download-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #000;
+        }
+
         /* SoundCloud artist title links (column-level) */
         a.artist-title-link {
             font-family: 'Barrio', cursive;
@@ -2308,6 +2371,15 @@
                 height: 200px !important;
             }
 
+            .vst-download-btn {
+                padding: 0.9rem 1.8rem;
+                font-size: 0.9rem;
+            }
+
+            .vst-description {
+                padding: 1rem;
+            }
+
             .large-embed iframe {
                 height: 200px;
             }
@@ -2408,6 +2480,25 @@
 <div class="logo-click-target" id="logoClickTarget" aria-hidden="true"></div>
 
 <div class="divider" id="headerDivider"></div>
+
+<!-- DOPE MAKER VST -->
+<section class="section vst-section">
+    <span class="section-title green">Dope Maker VST</span>
+    <div>
+        <img src="DopeMakerScreenshot.png" alt="Dope Maker VST Plugin Interface" class="vst-screenshot">
+    </div>
+    <div class="vst-description">
+        <p>a creative sampler VST that started as a simple idea &mdash; randomize sample start position on each note &mdash; and then it spiralled beautifully out of control. very useful for rhythmic patterns, creating evolving movement with possibilities for extreme modulation that will melt your neurons in the best way possible.</p>
+        <p style="margin-top:1rem;">features duck modes for reverb &amp; delay, stutter, comb filter, sidechain-esque volume &amp; FX modulation, and much more weird stuff hiding under every knob. whether you&rsquo;re cooking up psytrance forest madness, IDM brainfood, breakcore chaos, or just some nice housey grooves &mdash; this thing will take you places you didn&rsquo;t know existed.</p>
+        <p style="margin-top:1rem;">factory bank included &mdash; use the presets as-is or as launchpads for your own samples to get the creative juices flowing. there is a lot more to be discovered as well. have fun :]</p>
+    </div>
+    <a href="DopeMakerDL/DopeMaker_v0.2780.0.3_Setup.exe" download class="vst-download-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
+        Download
+    </a>
+</section>
+
+<div class="divider"></div>
 
 <!-- BANDCAMP + SPOTIFY SIDE BY SIDE -->
 <section class="section">
