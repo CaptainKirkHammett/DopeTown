@@ -6171,22 +6171,55 @@
     <div class="dl-popup">
         <button class="dl-popup-close" id="dlPopupClose">&times;</button>
         <h2>Dope Maker VST Downloads</h2>
-        <ul class="dl-popup-list">
-            <li><a href="DopeMakerDL/DopeMaker_v0.2780.0.3_Setup.exe" download id="dlExeLink">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
-                DopeMaker_v0.2780.0.3_Setup.exe
-            </a></li>
-        </ul>
+        <ul class="dl-popup-list" id="dlPopupList"></ul>
     </div>
 </div>
 <script>
 (function() {
     var overlay = document.getElementById('dlPopupOverlay');
     var closeBtn = document.getElementById('dlPopupClose');
+    var list = document.getElementById('dlPopupList');
+    var fetched = false;
+
+    var svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>';
+
+    function loadFiles() {
+        if (fetched) return;
+        fetched = true;
+        fetch('DopeMakerDL/')
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var links = doc.querySelectorAll('.file-list a[download]');
+                list.innerHTML = '';
+                links.forEach(function(src) {
+                    var name = src.querySelector('.file-name');
+                    var label = name ? name.textContent.trim() : src.textContent.trim();
+                    var li = document.createElement('li');
+                    var a = document.createElement('a');
+                    a.href = 'DopeMakerDL/' + label;
+                    a.download = '';
+                    a.innerHTML = svgIcon + ' ' + label;
+                    a.addEventListener('click', function() {
+                        if (typeof gtag === 'function') {
+                            var ext = label.substring(label.lastIndexOf('.'));
+                            gtag('event', 'file_download', {
+                                file_name: label,
+                                file_extension: ext,
+                                link_url: a.href
+                            });
+                        }
+                    });
+                    li.appendChild(a);
+                    list.appendChild(li);
+                });
+            });
+    }
 
     document.querySelectorAll('[data-dl-popup]').forEach(function(el) {
         el.addEventListener('click', function(e) {
             e.preventDefault();
+            loadFiles();
             overlay.classList.add('open');
         });
     });
@@ -6197,19 +6230,6 @@
 
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) overlay.classList.remove('open');
-    });
-
-    // GA4 download tracking
-    document.querySelectorAll('.dl-popup-list a[download]').forEach(function(a) {
-        a.addEventListener('click', function() {
-            if (typeof gtag === 'function') {
-                gtag('event', 'file_download', {
-                    file_name: a.textContent.trim(),
-                    file_extension: '.exe',
-                    link_url: a.href
-                });
-            }
-        });
     });
 })();
 </script>
