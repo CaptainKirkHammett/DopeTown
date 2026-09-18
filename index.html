@@ -551,12 +551,13 @@
         .vst-player {
             width: 100%;
             background: rgba(26, 0, 51, 0.7);
-            border: 1px solid rgba(57, 255, 20, 0.2);
-            border-radius: 10px;
+            border: 2px solid var(--neon-green);
+            border-radius: 12px;
             padding: 0.6rem 0.8rem;
             display: flex;
             align-items: center;
             gap: 0.6rem;
+            box-sizing: border-box;
         }
 
         .vst-player-btn {
@@ -6359,7 +6360,7 @@
 <!-- VST demo player -->
 <script>
 (function() {
-    var audio = new Audio('DopeMakerDL/DOPE SAMPLER DEMO.mp3');
+    var audio = new Audio('DopeMakerDL/DOPE%20SAMPLER%20DEMO.mp3');
     audio.preload = 'metadata';
     var btn = document.getElementById('vstPlayBtn');
     var icon = document.getElementById('vstPlayIcon');
