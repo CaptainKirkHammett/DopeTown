@@ -2533,15 +2533,20 @@
             white-space: nowrap;
             max-width: 1200px;
             margin: 0 auto 2rem;
-            padding: 0.6rem 0;
+            padding: 0.6rem 0 1rem;
             cursor: pointer;
-            border-top: 1px solid rgba(57, 255, 20, 0.15);
-            border-bottom: 1px solid rgba(57, 255, 20, 0.15);
-            background: rgba(0, 0, 0, 0.25);
-            transition: background 0.3s;
+            position: relative;
         }
-        .vst-marquee-wrap:hover {
-            background: rgba(57, 255, 20, 0.06);
+        .vst-marquee-wrap::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-green), var(--neon-blue), transparent);
+            animation: lineGlow 3s ease-in-out infinite;
         }
         .vst-marquee {
             display: inline-block;
