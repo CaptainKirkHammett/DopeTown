@@ -3411,6 +3411,9 @@
         bgModeIndex = (bgModeIndex + 1) % bgModes.length;
         bgMode = bgModes[bgModeIndex];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (typeof gtag === 'function') {
+            gtag('event', 'background_change', { event_category: 'engagement', event_label: bgMode });
+        }
     });
 
     // embeds-hidden is now driven by two independent switches — the "!"
@@ -6252,6 +6255,9 @@
         soundiMakerToggle.title = active ? 'Close Dope Box' : 'Dope Box';
         if (active) {
             initSoundiMaker();
+            if (typeof gtag === 'function') {
+                gtag('event', 'dope_box_open', { event_category: 'engagement', event_label: 'Dope Box' });
+            }
             // The panel's own play/stop button takes over from here.
             smMiniPlayVisible = false;
         } else {
@@ -6390,6 +6396,9 @@
             audio.play();
             playing = true;
             icon.innerHTML = '<path d="' + stopPath + '"/>';
+            if (typeof gtag === 'function') {
+                gtag('event', 'demo_play', { event_category: 'engagement', event_label: 'Dope Sampler Demo' });
+            }
         }
     });
 
