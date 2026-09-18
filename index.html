@@ -3091,6 +3091,9 @@
         acidClickTarget.addEventListener('click', () => {
             const nowActive = !acidLogo.classList.contains('acid-trip');
             acidLayers.forEach(el => el.classList.toggle('acid-trip', nowActive));
+            if (typeof gtag === 'function') {
+                gtag('event', 'acid_mode', { event_category: 'engagement', event_label: nowActive ? 'on' : 'off' });
+            }
             if (nowActive) {
                 // Fresh random offset into the noise field each time it's
                 // switched on, so no two activations look the same.
@@ -6426,6 +6429,17 @@
         audio.volume = vol.value / 100;
     });
 })();
+</script>
+
+<!-- GA4: social link clicks -->
+<script>
+document.querySelectorAll('.social-fab').forEach(function(a) {
+    a.addEventListener('click', function() {
+        if (typeof gtag === 'function') {
+            gtag('event', 'social_click', { event_category: 'engagement', event_label: a.getAttribute('aria-label') || 'unknown' });
+        }
+    });
+});
 </script>
 
 </body>
