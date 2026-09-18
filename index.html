@@ -526,28 +526,30 @@
             width: 100%;
             box-sizing: border-box;
             padding: 1.2rem 3rem;
-            background: linear-gradient(135deg, var(--neon-green), #00cc44, var(--neon-blue));
-            color: #000;
+            background: linear-gradient(135deg, rgba(57, 255, 20, 0.3), rgba(0, 204, 68, 0.3), rgba(0, 240, 255, 0.3));
+            color: var(--neon-green);
             text-decoration: none;
             font-family: 'Orbitron', sans-serif;
             font-size: 1.1rem;
             font-weight: 700;
             letter-spacing: 0.15em;
             text-transform: uppercase;
-            border-radius: 50px;
+            border: 2px solid var(--neon-green);
+            border-radius: 12px;
             transition: all 0.3s ease;
             box-shadow: 0 0 30px rgba(57, 255, 20, 0.4);
         }
 
         .vst-download-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 50px rgba(57, 255, 20, 0.6), 0 0 100px rgba(0, 240, 255, 0.3);
+            transform: scale(1.02);
+            background: linear-gradient(135deg, rgba(57, 255, 20, 0.45), rgba(0, 204, 68, 0.45), rgba(0, 240, 255, 0.45));
+            box-shadow: 0 0 40px rgba(57, 255, 20, 0.4), 0 0 80px rgba(0, 240, 255, 0.2);
         }
 
         .vst-download-btn svg {
             width: 24px;
             height: 24px;
-            fill: #000;
+            fill: var(--neon-green);
         }
 
         /* VST demo player */
