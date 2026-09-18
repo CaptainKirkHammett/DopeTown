@@ -547,6 +547,110 @@
             fill: #000;
         }
 
+        /* VST demo player */
+        .vst-player {
+            width: 100%;
+            background: rgba(26, 0, 51, 0.7);
+            border: 1px solid rgba(57, 255, 20, 0.2);
+            border-radius: 10px;
+            padding: 0.6rem 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .vst-player-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--neon-green);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: box-shadow 0.2s;
+        }
+        .vst-player-btn:hover {
+            box-shadow: 0 0 12px rgba(57, 255, 20, 0.5);
+        }
+        .vst-player-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: #000;
+        }
+
+        .vst-player-seek {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .vst-player-seek input,
+        .vst-player-vol input {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            cursor: pointer;
+        }
+        .vst-player-seek input::-webkit-slider-thumb,
+        .vst-player-vol input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            cursor: pointer;
+        }
+        .vst-player-seek input::-moz-range-thumb,
+        .vst-player-vol input::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            border: none;
+            cursor: pointer;
+        }
+        .vst-player-seek input::-moz-range-track,
+        .vst-player-vol input::-moz-range-track {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .vst-player-time {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: #c8b8e8;
+            flex-shrink: 0;
+            min-width: 3.2em;
+            text-align: center;
+        }
+
+        .vst-player-vol {
+            width: 50px;
+            flex-shrink: 0;
+        }
+
+        .vst-player-vol-icon {
+            width: 14px;
+            height: 14px;
+            fill: #c8b8e8;
+            flex-shrink: 0;
+        }
+
+        .vst-player-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            color: rgba(200, 184, 232, 0.5);
+            text-align: center;
+            margin-top: 0.3rem;
+        }
+
         /* SoundCloud artist title links (column-level) */
         a.artist-title-link {
             font-family: 'Barrio', cursive;
@@ -2633,6 +2737,20 @@
             <a href="DopeMakerScreenshot.png" target="_blank" class="vst-screenshot-link">
                 <img src="DopeMakerScreenshot.png" alt="Dope Maker VST Plugin Interface" class="vst-screenshot">
             </a>
+            <div class="vst-player" id="vstPlayer">
+                <button class="vst-player-btn" id="vstPlayBtn" aria-label="Play/Stop">
+                    <svg id="vstPlayIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <div class="vst-player-seek">
+                    <input type="range" id="vstSeek" min="0" max="100" value="0" step="0.1">
+                </div>
+                <span class="vst-player-time" id="vstTime">0:00</span>
+                <svg class="vst-player-vol-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                <div class="vst-player-vol">
+                    <input type="range" id="vstVol" min="0" max="100" value="80">
+                </div>
+            </div>
+            <div class="vst-player-label">DOPE SAMPLER DEMO</div>
             <a href="#" class="vst-download-btn" data-dl-popup>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
                 Download
@@ -6230,6 +6348,66 @@
 
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) overlay.classList.remove('open');
+    });
+})();
+</script>
+
+<!-- VST demo player -->
+<script>
+(function() {
+    var audio = new Audio('DopeMakerDL/DOPE SAMPLER DEMO.mp3');
+    audio.preload = 'metadata';
+    var btn = document.getElementById('vstPlayBtn');
+    var icon = document.getElementById('vstPlayIcon');
+    var seek = document.getElementById('vstSeek');
+    var time = document.getElementById('vstTime');
+    var vol = document.getElementById('vstVol');
+    var playing = false;
+
+    var playPath = 'M8 5v14l11-7z';
+    var stopPath = 'M6 6h12v12H6z';
+
+    function fmt(s) {
+        var m = Math.floor(s / 60);
+        var sec = Math.floor(s % 60);
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    btn.addEventListener('click', function() {
+        if (playing) {
+            audio.pause();
+            audio.currentTime = 0;
+            playing = false;
+            icon.innerHTML = '<path d="' + playPath + '"/>';
+        } else {
+            audio.play();
+            playing = true;
+            icon.innerHTML = '<path d="' + stopPath + '"/>';
+        }
+    });
+
+    audio.addEventListener('timeupdate', function() {
+        if (!audio.duration) return;
+        seek.value = (audio.currentTime / audio.duration) * 100;
+        time.textContent = fmt(audio.currentTime);
+    });
+
+    audio.addEventListener('ended', function() {
+        playing = false;
+        seek.value = 0;
+        time.textContent = '0:00';
+        icon.innerHTML = '<path d="' + playPath + '"/>';
+    });
+
+    seek.addEventListener('input', function() {
+        if (audio.duration) {
+            audio.currentTime = (seek.value / 100) * audio.duration;
+        }
+    });
+
+    audio.volume = 0.8;
+    vol.addEventListener('input', function() {
+        audio.volume = vol.value / 100;
     });
 })();
 </script>
