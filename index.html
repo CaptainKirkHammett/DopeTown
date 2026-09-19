@@ -6337,7 +6337,21 @@
                     a.addEventListener('click', function() {
                         if (typeof gtag === 'function') {
                             var ext = label.substring(label.lastIndexOf('.'));
-                            gtag('event', 'file_download', {
+                            // Per-file event name (not just a shared
+                            // "file_download" event distinguished by the
+                            // file_name param) so each file's download
+                            // count shows up as its own row in GA4
+                            // without needing file_name registered as a
+                            // custom dimension first — same reasoning as
+                            // the per-platform social_click_* events.
+                            var slug = label
+                                .toLowerCase()
+                                .replace(/\.[^.]+$/, '')
+                                .replace(/[^a-z0-9]+/g, '_')
+                                .replace(/^_+|_+$/g, '')
+                                .slice(0, 24);
+                            gtag('event', 'file_download_' + slug, {
+                                event_category: 'engagement',
                                 file_name: label,
                                 file_extension: ext,
                                 link_url: a.href
