@@ -2535,12 +2535,14 @@
 
         /* VST title marquee */
         .vst-marquee-wrap {
+            display: block;
             overflow: hidden;
             white-space: nowrap;
             max-width: 1200px;
             margin: 0 auto 2rem;
             padding: 0.6rem 0;
             cursor: pointer;
+            text-decoration: none;
         }
         .vst-marquee {
             display: inline-block;
@@ -2727,10 +2729,10 @@
 <div class="divider" id="headerDivider"></div>
 
 <!-- DOPE MAKER VST -->
-<section class="section vst-section">
-    <div class="vst-marquee-wrap" data-dl-popup>
+<section class="section vst-section" id="dopemaker">
+    <a href="#dopemaker" class="vst-marquee-wrap">
         <div class="vst-marquee"><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span><span>Dope Maker VST</span><span>✦</span></div>
-    </div>
+    </a>
     <div class="vst-row">
         <div class="vst-left">
             <a href="DopeMakerScreenshot.png" target="_blank" class="vst-screenshot-link">
