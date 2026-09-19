@@ -517,6 +517,13 @@
             border-radius: 10px;
             border: 1px solid rgba(57, 255, 20, 0.15);
         }
+        .vst-description a {
+            color: var(--neon-green);
+            text-decoration: underline;
+        }
+        .vst-description a:hover {
+            color: #fff;
+        }
 
         .vst-download-btn {
             display: flex;
@@ -2761,6 +2768,7 @@
             <p style="margin-top:1rem;">Dope Maker is very good for rhythmic stuff by creating evolving movement. Evolving movement does not need to be rhythmic either, so pick your poison. There is an abundance of extreme modulation possibilities, and of course specialty features such as duck modes for reverb and delay.</p>
             <p style="margin-top:1rem;">We have stutter, comb filter, granulizer, and sidechain-a-like volume and FX modulation. There is a lot to be discovered!</p>
             <p style="margin-top:1rem;">Check out the provided factory preset bank to get the juices flowing, and try to replace default samples with your own.</p>
+            <p style="margin-top:1rem;"><a href="https://www.kvraudio.com/product/dope-maker-by-dope-science" target="_blank" rel="noopener">View Dope Maker on KVR Audio</a></p>
         </div>
     </div>
 </section>
@@ -6172,6 +6180,13 @@
             a.click();
             a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 10000);
+            if (typeof gtag === 'function') {
+                gtag('event', 'file_download_dope_box_pattern_wav', {
+                    event_category: 'engagement',
+                    file_name: 'dope-box-pattern.wav',
+                    file_extension: '.wav',
+                });
+            }
         } catch (e) {
             alert('Could not render the pattern: ' + e.message);
         } finally {
