@@ -6367,6 +6367,11 @@
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) overlay.classList.remove('open');
     });
+
+    if (window.location.hash === '#download') {
+        loadFiles();
+        overlay.classList.add('open');
+    }
 })();
 </script>
 
