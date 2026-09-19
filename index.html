@@ -3422,6 +3422,9 @@
     document.getElementById('embedsToggle').addEventListener('click', () => {
         embedsManuallyHidden = !embedsManuallyHidden;
         updateEmbedsHiddenClass();
+        if (typeof gtag === 'function') {
+            gtag('event', 'embeds_hide', { event_category: 'engagement', event_label: embedsManuallyHidden ? 'hidden' : 'shown' });
+        }
     });
 
     // === MODE 1: Geometric spirographs ===
@@ -6198,6 +6201,9 @@
         smPlayBtn.innerHTML = '&#9632;';
         smScheduler();
         smUpdateMiniPlayBtn();
+        if (typeof gtag === 'function') {
+            gtag('event', 'dope_box_play', { event_category: 'engagement', event_label: 'Dope Box' });
+        }
     }
 
     function stopSequencer() {
@@ -6217,6 +6223,9 @@
             smPlayheadCol = -1;
         }
         smUpdateMiniPlayBtn();
+        if (typeof gtag === 'function') {
+            gtag('event', 'dope_box_stop', { event_category: 'engagement', event_label: 'Dope Box' });
+        }
     }
 
     // Small play/stop button that lives in the top-left nav next to the
@@ -6422,12 +6431,17 @@
 })();
 </script>
 
-<!-- GA4: social link clicks -->
+<!-- GA4: social link clicks — each platform gets its own event name
+     (derived from its own "<platform>-fab" class) rather than a single
+     shared "social_click" event distinguished only by label, so each
+     button shows up as its own row in GA4 reports. -->
 <script>
 document.querySelectorAll('.social-fab').forEach(function(a) {
     a.addEventListener('click', function() {
         if (typeof gtag === 'function') {
-            gtag('event', 'social_click', { event_category: 'engagement', event_label: a.getAttribute('aria-label') || 'unknown' });
+            const platformClass = [...a.classList].find(c => c.endsWith('-fab') && c !== 'social-fab');
+            const platform = platformClass ? platformClass.replace('-fab', '') : 'unknown';
+            gtag('event', 'social_click_' + platform, { event_category: 'engagement', event_label: a.getAttribute('aria-label') || 'unknown' });
         }
     });
 });
