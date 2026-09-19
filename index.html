@@ -506,6 +506,80 @@
             border-color: var(--neon-blue);
         }
 
+        /* Screenshot lightbox */
+        .img-lightbox-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            backdrop-filter: blur(6px);
+        }
+        .img-lightbox-overlay.open { display: flex; }
+
+        .img-lightbox {
+            position: relative;
+            max-width: 95vw;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .img-lightbox-close {
+            position: absolute;
+            top: -2rem;
+            right: -0.5rem;
+            background: none;
+            border: none;
+            color: #c8b8e8;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+            z-index: 1;
+        }
+        .img-lightbox-close:hover { color: #fff; }
+
+        .img-lightbox-main {
+            max-width: 95vw;
+            max-height: 85vh;
+            border-radius: 12px;
+            border: 2px solid var(--neon-green);
+            box-shadow: 0 0 60px rgba(57, 255, 20, 0.3);
+            object-fit: contain;
+        }
+
+        .img-lightbox-thumbs {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .img-lightbox-thumb {
+            width: 80px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 2px solid rgba(57, 255, 20, 0.3);
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.25s ease;
+        }
+        .img-lightbox-thumb:hover {
+            opacity: 0.8;
+            border-color: var(--neon-blue);
+        }
+        .img-lightbox-thumb.active {
+            opacity: 1;
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.4);
+        }
+
         .vst-description {
             flex: 1;
             font-family: 'Space Mono', monospace;
@@ -2742,7 +2816,7 @@
     </a>
     <div class="vst-row">
         <div class="vst-left">
-            <a href="DopeMakerScreenshot.png" target="_blank" class="vst-screenshot-link">
+            <a href="#" class="vst-screenshot-link" id="vstScreenshotLink">
                 <img src="DopeMakerScreenshot.png" alt="Dope Maker VST Plugin Interface" class="vst-screenshot">
             </a>
             <div class="vst-player" id="vstPlayer">
@@ -6315,6 +6389,47 @@
         smStepCountBtn.classList.toggle('active-32', next === 32);
         smStepCountBtn.classList.toggle('active-64', next === 64);
     });
+</script>
+
+<!-- Screenshot lightbox -->
+<div class="img-lightbox-overlay" id="imgLightbox">
+    <div class="img-lightbox">
+        <button class="img-lightbox-close" id="imgLightboxClose">&times;</button>
+        <img src="DopeMakerScreenshot.png" alt="Dope Maker VST Plugin Interface" class="img-lightbox-main" id="imgLightboxMain">
+        <div class="img-lightbox-thumbs">
+            <img src="DopeMakerScreenshot.png" alt="Plugin Interface" class="img-lightbox-thumb active" data-full="DopeMakerScreenshot.png">
+            <img src="signal_path_simple.png" alt="Signal Path" class="img-lightbox-thumb" data-full="signal_path_simple.png">
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var overlay = document.getElementById('imgLightbox');
+    var mainImg = document.getElementById('imgLightboxMain');
+    var thumbs = overlay.querySelectorAll('.img-lightbox-thumb');
+
+    document.getElementById('vstScreenshotLink').addEventListener('click', function(e) {
+        e.preventDefault();
+        overlay.classList.add('open');
+    });
+
+    document.getElementById('imgLightboxClose').addEventListener('click', function() {
+        overlay.classList.remove('open');
+    });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.classList.remove('open');
+    });
+
+    thumbs.forEach(function(thumb) {
+        thumb.addEventListener('click', function() {
+            mainImg.src = thumb.dataset.full;
+            mainImg.alt = thumb.alt;
+            thumbs.forEach(function(t) { t.classList.remove('active'); });
+            thumb.classList.add('active');
+        });
+    });
+})();
 </script>
 
 <!-- Download popup -->
