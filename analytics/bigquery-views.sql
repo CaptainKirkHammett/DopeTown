@@ -132,6 +132,38 @@ FROM `PROJECT_ID.DATASET_ID.events_*`
 WHERE event_name = 'demo_play';
 
 
+-- ----------------------------------------------------------------------------
+-- 6b. Music platform link clicks (Bandcamp, Spotify, YouTube, SoundCloud)
+--     Covers: bandcamp_click, spotify_click, youtube_click, soundcloud_click_*
+--     NOTE: playing a track/video inside an on-page embed (SoundCloud,
+--     YouTube, or Spotify) fires the exact same event name + label as
+--     clicking the equivalent outbound link, by design — this view (and
+--     GA4 itself) cannot tell an embed play apart from a real link click.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_music_link_clicks` AS
+SELECT
+  event_date,
+  TIMESTAMP_MICROS(event_timestamp)                                      AS event_time,
+  event_name,
+  CASE
+    WHEN event_name = 'bandcamp_click'             THEN 'Bandcamp'
+    WHEN event_name = 'spotify_click'               THEN 'Spotify'
+    WHEN event_name = 'youtube_click'               THEN 'YouTube'
+    WHEN event_name LIKE 'soundcloud_click_%'       THEN 'SoundCloud'
+  END                                                                    AS platform,
+  CASE
+    WHEN event_name LIKE 'soundcloud_click_%'
+      THEN REPLACE(event_name, 'soundcloud_click_', '')
+  END                                                                    AS artist_slug,
+  (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'event_label')      AS link_label,
+  geo.country                                                            AS country,
+  device.category                                                        AS device_category,
+  user_pseudo_id
+FROM `PROJECT_ID.DATASET_ID.events_*`
+WHERE event_name IN ('bandcamp_click', 'spotify_click', 'youtube_click')
+   OR event_name LIKE 'soundcloud_click_%';
+
+
 -- ============================================================================
 -- SUMMARY / KPI QUERIES
 -- Use these directly in Looker Studio as "Custom Query" data sources,
@@ -146,12 +178,14 @@ CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_daily_overview` AS
 SELECT
   event_date,
   CASE
-    WHEN event_name LIKE 'file_download_%'  THEN 'Downloads'
-    WHEN event_name LIKE 'social_click_%'   THEN 'Social Clicks'
-    WHEN event_name LIKE 'dope_box_%'       THEN 'Dope Box'
-    WHEN event_name = 'demo_play'           THEN 'Demo Plays'
+    WHEN event_name LIKE 'file_download_%'      THEN 'Downloads'
+    WHEN event_name LIKE 'social_click_%'       THEN 'Social Clicks'
+    WHEN event_name LIKE 'dope_box_%'           THEN 'Dope Box'
+    WHEN event_name = 'demo_play'               THEN 'Demo Plays'
     WHEN event_name IN ('acid_mode', 'background_change', 'embeds_hide')
-                                            THEN 'UI Engagement'
+                                                THEN 'UI Engagement'
+    WHEN event_name IN ('bandcamp_click', 'spotify_click', 'youtube_click')
+      OR event_name LIKE 'soundcloud_click_%'   THEN 'Music Link Clicks'
     ELSE 'Other'
   END                                                                    AS event_group,
   event_name,
@@ -161,10 +195,11 @@ FROM `PROJECT_ID.DATASET_ID.events_*`
 WHERE event_name IN (
   'acid_mode', 'background_change', 'embeds_hide',
   'dope_box_open', 'dope_box_play', 'dope_box_stop',
-  'demo_play'
+  'demo_play', 'bandcamp_click', 'spotify_click', 'youtube_click'
 )
 OR event_name LIKE 'file_download_%'
 OR event_name LIKE 'social_click_%'
+OR event_name LIKE 'soundcloud_click_%'
 GROUP BY event_date, event_group, event_name;
 
 
