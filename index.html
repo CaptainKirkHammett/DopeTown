@@ -6619,31 +6619,35 @@ document.querySelectorAll('[data-ga-event]').forEach(function(a) {
 });
 </script>
 
-<!-- GA4: SoundCloud embed play tracking, per artist. Each artist's
-     tracks live inside a .soundcloud-column carrying a data-artist-slug
-     (kirna / sonicbandits / kyrileskobar) — wrap every iframe inside
-     with the SoundCloud Widget API and fire a per-artist event
-     (soundcloud_embed_play_<slug>) on PLAY, same grouping as the
-     existing soundcloud_click_<slug> link events. The track name in
-     event_label is read back off the iframe's own src (the ?url= query
-     param), not hardcoded, so this works for every track without
-     per-iframe markup changes. -->
+<!-- GA4: SoundCloud embed interactions count as the same tag as
+     clicking that artist's SoundCloud link — playing a track or using
+     one of the widget's own click-through links (download/buy/share)
+     fires the exact same event name + label as soundcloud_click_<slug>
+     on the artist-title-link, so GA4 can't tell them apart from a real
+     link click. (A click that just opens the track/profile on
+     soundcloud.com in a new tab happens inside the iframe's
+     cross-origin content and isn't exposed to us at all — PLAY plus the
+     three CLICK_*/OPEN_SHARE_PANEL events are everything the Widget API
+     itself surfaces.) -->
 <script>
 function __dtSetupSoundCloudTracking() {
     if (typeof SC === 'undefined') return;
     document.querySelectorAll('.soundcloud-column[data-artist-slug]').forEach(function(column) {
         var slug = column.dataset.artistSlug;
+        var link = column.querySelector('[data-ga-event]');
+        var label = link ? link.dataset.gaLabel : slug;
+        var eventName = 'soundcloud_click_' + slug;
+        function fire() {
+            if (typeof gtag === 'function') {
+                gtag('event', eventName, { event_category: 'engagement', event_label: label });
+            }
+        }
         column.querySelectorAll('iframe').forEach(function(iframe) {
             var widget = SC.Widget(iframe);
-            widget.bind(SC.Widget.Events.PLAY, function() {
-                if (typeof gtag !== 'function') return;
-                var track = 'unknown';
-                try {
-                    var trackUrl = decodeURIComponent(new URL(iframe.src).searchParams.get('url') || '');
-                    track = trackUrl.split('/').pop() || 'unknown';
-                } catch (e) {}
-                gtag('event', 'soundcloud_embed_play_' + slug, { event_category: 'engagement', event_label: track });
-            });
+            widget.bind(SC.Widget.Events.PLAY, fire);
+            widget.bind(SC.Widget.Events.CLICK_DOWNLOAD, fire);
+            widget.bind(SC.Widget.Events.CLICK_BUY, fire);
+            widget.bind(SC.Widget.Events.OPEN_SHARE_PANEL, fire);
         });
     });
 }
