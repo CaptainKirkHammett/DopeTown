@@ -2891,7 +2891,11 @@
         <div class="music-column">
             <a href="https://open.spotify.com/playlist/1vQQcHHxrwmN13oKKtIj0R" target="_blank" class="section-title-link green tooltip-wrap" data-ga-event="spotify_click" data-ga-label="playlist"><span class="tooltip">Open playlist on Spotify</span><span>Spotify Playlist</span></a>
             <div class="spotify-wrapper">
-                <iframe src="https://open.spotify.com/embed/playlist/1vQQcHHxrwmN13oKKtIj0R?utm_source=generator&theme=0" frameBorder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                <!-- Populated by Spotify's iFrame API (see the script near
+                     the end of the page) instead of a plain <iframe src>,
+                     since play tracking needs the API's own controller —
+                     the API replaces this div's contents with its embed. -->
+                <div id="spotifyEmbedPlaceholder"></div>
             </div>
         </div>
     </div>
@@ -2904,11 +2908,11 @@
     <a href="https://www.youtube.com/playlist?list=PLVbC7883e3Zw" target="_blank" class="section-title-link blue tooltip-wrap" data-ga-event="youtube_click" data-ga-label="playlist"><span class="tooltip">Open playlist on YouTube</span><span>YouTube Playlist</span></a>
     <div class="embed-grid two-col">
         <div class="embed-card">
-            <iframe loading="lazy" width="100%" height="350" src="https://www.youtube.com/embed/JMJkHQIgqCY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
+            <iframe id="ytEmbedDentamental" loading="lazy" width="100%" height="350" src="https://www.youtube.com/embed/JMJkHQIgqCY?enablejsapi=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
             <div class="embed-label">Dentamental</div>
         </div>
         <div class="embed-card">
-            <iframe loading="lazy" width="100%" height="350" src="https://www.youtube.com/embed/rxashm7zbjo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
+            <iframe id="ytEmbedSpongyCompany" loading="lazy" width="100%" height="350" src="https://www.youtube.com/embed/rxashm7zbjo?enablejsapi=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:8px;"></iframe>
             <div class="embed-label">Spongy Company</div>
         </div>
     </div>
@@ -2920,7 +2924,7 @@
 <section class="section">
     <div class="soundcloud-row">
         <!-- Kirna -->
-        <div class="soundcloud-column">
+        <div class="soundcloud-column" data-artist-slug="kirna">
             <a href="https://soundcloud.com/kirna" target="_blank" class="artist-title-link pink tooltip-wrap" data-ga-event="soundcloud_click_kirna" data-ga-label="Kirna"><span class="tooltip">Open Kirna on SoundCloud</span>Kirna</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
@@ -2957,7 +2961,7 @@
         </div>
 
         <!-- Sonic Bandits -->
-        <div class="soundcloud-column">
+        <div class="soundcloud-column" data-artist-slug="sonicbandits">
             <a href="https://soundcloud.com/sonic-bandits" target="_blank" class="artist-title-link green tooltip-wrap" data-ga-event="soundcloud_click_sonicbandits" data-ga-label="Sonic Bandits"><span class="tooltip">Open Sonic Bandits on SoundCloud</span>Sonic Bandits</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
@@ -2985,7 +2989,7 @@
         </div>
 
         <!-- Kyril & Eskobar -->
-        <div class="soundcloud-column">
+        <div class="soundcloud-column" data-artist-slug="kyrileskobar">
             <a href="https://soundcloud.com/kyril-eskobar" target="_blank" class="artist-title-link blue tooltip-wrap" data-ga-event="soundcloud_click_kyrileskobar" data-ga-label="Kyril &amp; Eskobar"><span class="tooltip">Open Kyril &amp; Eskobar on SoundCloud</span>Kyril &amp; Eskobar</a>
             <div class="soundcloud-scroll">
                 <div class="embed-card">
@@ -6614,6 +6618,91 @@ document.querySelectorAll('[data-ga-event]').forEach(function(a) {
     });
 });
 </script>
+
+<!-- GA4: SoundCloud embed play tracking, per artist. Each artist's
+     tracks live inside a .soundcloud-column carrying a data-artist-slug
+     (kirna / sonicbandits / kyrileskobar) — wrap every iframe inside
+     with the SoundCloud Widget API and fire a per-artist event
+     (soundcloud_embed_play_<slug>) on PLAY, same grouping as the
+     existing soundcloud_click_<slug> link events. The track name in
+     event_label is read back off the iframe's own src (the ?url= query
+     param), not hardcoded, so this works for every track without
+     per-iframe markup changes. -->
+<script>
+function __dtSetupSoundCloudTracking() {
+    if (typeof SC === 'undefined') return;
+    document.querySelectorAll('.soundcloud-column[data-artist-slug]').forEach(function(column) {
+        var slug = column.dataset.artistSlug;
+        column.querySelectorAll('iframe').forEach(function(iframe) {
+            var widget = SC.Widget(iframe);
+            widget.bind(SC.Widget.Events.PLAY, function() {
+                if (typeof gtag !== 'function') return;
+                var track = 'unknown';
+                try {
+                    var trackUrl = decodeURIComponent(new URL(iframe.src).searchParams.get('url') || '');
+                    track = trackUrl.split('/').pop() || 'unknown';
+                } catch (e) {}
+                gtag('event', 'soundcloud_embed_play_' + slug, { event_category: 'engagement', event_label: track });
+            });
+        });
+    });
+}
+</script>
+<script src="https://w.soundcloud.com/player/api.js" onload="__dtSetupSoundCloudTracking()"></script>
+
+<!-- GA4: YouTube embed play tracking. Both video iframes already have
+     an id and enablejsapi=1 on their src; the IFrame API's global
+     onYouTubeIframeAPIReady callback (called automatically once the API
+     script loads) wraps each one and fires youtube_embed_play the
+     moment its state becomes PLAYING, labeled with the video's own
+     .embed-label text (e.g. "Dentamental"). -->
+<script>
+function onYouTubeIframeAPIReady() {
+    ['ytEmbedDentamental', 'ytEmbedSpongyCompany'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var labelEl = el.closest('.embed-card') && el.closest('.embed-card').querySelector('.embed-label');
+        var label = labelEl ? labelEl.textContent.trim() : id;
+        new YT.Player(id, {
+            events: {
+                onStateChange: function(event) {
+                    if (event.data === YT.PlayerState.PLAYING && typeof gtag === 'function') {
+                        gtag('event', 'youtube_embed_play', { event_category: 'engagement', event_label: label });
+                    }
+                }
+            }
+        });
+    });
+}
+</script>
+<script src="https://www.youtube.com/iframe_api" async></script>
+
+<!-- GA4: Spotify embed play tracking. The Spotify iFrame API manages
+     the embed itself (see #spotifyEmbedPlaceholder above) rather than a
+     plain <iframe src>, since that's the only way to get a playback
+     controller to listen to. onSpotifyIframeApiReady is called
+     automatically once the API script loads. playback_update fires
+     repeatedly during playback (with position updates), so wasPaused
+     edge-detects the actual pause->play transition instead of firing on
+     every update. -->
+<script>
+window.onSpotifyIframeApiReady = function(IFrameAPI) {
+    var element = document.getElementById('spotifyEmbedPlaceholder');
+    if (!element) return;
+    var options = { uri: 'spotify:playlist:1vQQcHHxrwmN13oKKtIj0R' };
+    IFrameAPI.createController(element, options, function(EmbedController) {
+        var wasPaused = true;
+        EmbedController.addListener('playback_update', function(e) {
+            var isPaused = e.data.isPaused;
+            if (wasPaused && !isPaused && typeof gtag === 'function') {
+                gtag('event', 'spotify_embed_play', { event_category: 'engagement', event_label: 'playlist' });
+            }
+            wasPaused = isPaused;
+        });
+    });
+};
+</script>
+<script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
 
 </body>
 </html>
