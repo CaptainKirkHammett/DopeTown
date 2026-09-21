@@ -24,6 +24,7 @@ CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_all_events` AS
 SELECT
   event_date,
   TIMESTAMP_MICROS(event_timestamp)                                      AS event_time,
+  DATETIME(TIMESTAMP_MICROS(event_timestamp))                            AS event_datetime,
   event_name,
   (SELECT value.string_value  FROM UNNEST(event_params) WHERE key = 'event_category')  AS event_category,
   (SELECT value.string_value  FROM UNNEST(event_params) WHERE key = 'event_label')     AS event_label,
@@ -50,6 +51,7 @@ CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_file_downloads` AS
 SELECT
   event_date,
   TIMESTAMP_MICROS(event_timestamp)                                      AS event_time,
+  DATETIME(TIMESTAMP_MICROS(event_timestamp))                            AS event_datetime,
   event_name,
   (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'file_name')        AS file_name,
   (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'file_extension')   AS file_extension,
@@ -70,6 +72,7 @@ CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_social_clicks` AS
 SELECT
   event_date,
   TIMESTAMP_MICROS(event_timestamp)                                      AS event_time,
+  DATETIME(TIMESTAMP_MICROS(event_timestamp))                            AS event_datetime,
   event_name,
   REPLACE(event_name, 'social_click_', '')                               AS platform,
   (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'event_label')      AS link_label,
@@ -88,6 +91,7 @@ CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_dope_box` AS
 SELECT
   event_date,
   TIMESTAMP_MICROS(event_timestamp)                                      AS event_time,
+  DATETIME(TIMESTAMP_MICROS(event_timestamp))                            AS event_datetime,
   event_name,
   CASE event_name
     WHEN 'dope_box_open'  THEN 'open'
@@ -110,6 +114,7 @@ CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_ui_engagement` AS
 SELECT
   event_date,
   TIMESTAMP_MICROS(event_timestamp)                                      AS event_time,
+  DATETIME(TIMESTAMP_MICROS(event_timestamp))                            AS event_datetime,
   event_name,
   (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'event_label')      AS label,
   geo.country                                                            AS country,
@@ -127,6 +132,7 @@ CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_demo_plays` AS
 SELECT
   event_date,
   TIMESTAMP_MICROS(event_timestamp)                                      AS event_time,
+  DATETIME(TIMESTAMP_MICROS(event_timestamp))                            AS event_datetime,
   (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'event_label')      AS demo_name,
   geo.country                                                            AS country,
   device.category                                                        AS device_category,
@@ -148,6 +154,7 @@ CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_music_link_clicks` AS
 SELECT
   event_date,
   TIMESTAMP_MICROS(event_timestamp)                                      AS event_time,
+  DATETIME(TIMESTAMP_MICROS(event_timestamp))                            AS event_datetime,
   event_name,
   CASE
     WHEN event_name = 'bandcamp_click'             THEN 'Bandcamp'
@@ -181,6 +188,11 @@ WHERE event_name IN ('bandcamp_click', 'spotify_click', 'youtube_click')
 CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_daily_overview` AS
 SELECT
   event_date,
+  -- This view is pre-aggregated to one row per day, so the finest
+  -- granularity available is midnight of that day (not a real event
+  -- time) - use v_all_events or another row-level view above if you
+  -- need Looker granularity finer than a day.
+  DATETIME(PARSE_DATE('%Y%m%d', event_date))                             AS event_datetime,
   CASE
     WHEN event_name LIKE 'file_download_%'      THEN 'Downloads'
     WHEN event_name LIKE 'social_click_%'       THEN 'Social Clicks'
@@ -213,6 +225,7 @@ GROUP BY event_date, event_group, event_name;
 CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.v_download_funnel` AS
 SELECT
   event_date,
+  DATETIME(PARSE_DATE('%Y%m%d', event_date))                             AS event_datetime,
   COUNT(DISTINCT CASE WHEN event_name = 'page_view'  THEN user_pseudo_id END) AS visitors,
   COUNT(DISTINCT CASE WHEN event_name = 'demo_play'  THEN user_pseudo_id END) AS demo_listeners,
   COUNT(DISTINCT CASE WHEN event_name LIKE 'file_download_%'
