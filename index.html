@@ -6657,21 +6657,20 @@ function __dtSetupSoundCloudTracking() {
 <!-- GA4: YouTube embed play tracking. Both video iframes already have
      an id and enablejsapi=1 on their src; the IFrame API's global
      onYouTubeIframeAPIReady callback (called automatically once the API
-     script loads) wraps each one and fires youtube_embed_play the
-     moment its state becomes PLAYING, labeled with the video's own
-     .embed-label text (e.g. "Dentamental"). -->
+     script loads) wraps each one and fires the exact same youtube_click
+     event (label "playlist") as the YouTube playlist link, so playing
+     either embedded video counts the same as an outbound YouTube click
+     instead of a separate youtube_embed_play event. -->
 <script>
 function onYouTubeIframeAPIReady() {
     ['ytEmbedDentamental', 'ytEmbedSpongyCompany'].forEach(function(id) {
         var el = document.getElementById(id);
         if (!el) return;
-        var labelEl = el.closest('.embed-card') && el.closest('.embed-card').querySelector('.embed-label');
-        var label = labelEl ? labelEl.textContent.trim() : id;
         new YT.Player(id, {
             events: {
                 onStateChange: function(event) {
                     if (event.data === YT.PlayerState.PLAYING && typeof gtag === 'function') {
-                        gtag('event', 'youtube_embed_play', { event_category: 'engagement', event_label: label });
+                        gtag('event', 'youtube_click', { event_category: 'engagement', event_label: 'playlist' });
                     }
                 }
             }
@@ -6688,7 +6687,9 @@ function onYouTubeIframeAPIReady() {
      automatically once the API script loads. playback_update fires
      repeatedly during playback (with position updates), so wasPaused
      edge-detects the actual pause->play transition instead of firing on
-     every update. -->
+     every update. Fires the same spotify_click event (label "playlist")
+     as the Spotify playlist link instead of a separate
+     spotify_embed_play event. -->
 <script>
 window.onSpotifyIframeApiReady = function(IFrameAPI) {
     var element = document.getElementById('spotifyEmbedPlaceholder');
@@ -6699,7 +6700,7 @@ window.onSpotifyIframeApiReady = function(IFrameAPI) {
         EmbedController.addListener('playback_update', function(e) {
             var isPaused = e.data.isPaused;
             if (wasPaused && !isPaused && typeof gtag === 'function') {
-                gtag('event', 'spotify_embed_play', { event_category: 'engagement', event_label: 'playlist' });
+                gtag('event', 'spotify_click', { event_category: 'engagement', event_label: 'playlist' });
             }
             wasPaused = isPaused;
         });
