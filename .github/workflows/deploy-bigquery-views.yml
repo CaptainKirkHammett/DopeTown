@@ -1,0 +1,53 @@
+name: Deploy BigQuery views
+
+# Runs analytics/bigquery-views.sql against BigQuery directly whenever it
+# changes on main, so views never need to be copy-pasted into the BigQuery
+# console by hand. CREATE OR REPLACE VIEW is non-destructive (it only
+# redefines a view's query, never touches the underlying event data), so
+# this is safe to run automatically on every push.
+#
+# One-time setup required in the repo's GitHub Settings -> Secrets and
+# variables -> Actions (see README section this workflow links to):
+#   GCP_SA_KEY        - JSON key for a service account with BigQuery Data
+#                        Editor + BigQuery Job User roles on the project
+#   GCP_PROJECT_ID     - the Google Cloud project ID the GA4 BigQuery
+#                        export lives in
+#   GCP_BQ_DATASET_ID  - the analytics_XXXXXXXXX dataset ID GA4 created
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'analytics/bigquery-views.sql'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Render views SQL with real project/dataset IDs
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          DATASET_ID: ${{ secrets.GCP_BQ_DATASET_ID }}
+        run: |
+          set -euo pipefail
+          sed -e "s/PROJECT_ID/${PROJECT_ID}/g" -e "s/DATASET_ID/${DATASET_ID}/g" \
+            analytics/bigquery-views.sql > /tmp/bigquery-views.rendered.sql
+
+      - name: Apply views to BigQuery
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          bq query \
+            --project_id="${PROJECT_ID}" \
+            --use_legacy_sql=false < /tmp/bigquery-views.rendered.sql

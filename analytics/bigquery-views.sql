@@ -4,11 +4,15 @@
 -- Prerequisites:
 --   1. Link your GA4 property (G-SDGS7PLXHZ) to BigQuery in GA4 Admin
 --      Admin → Product Links → BigQuery Links → Link
---   2. Replace PROJECT_ID and DATASET_ID below with your actual values:
---      - PROJECT_ID  = your Google Cloud project ID
---      - DATASET_ID  = analytics_XXXXXXXXX (GA4 fills this in automatically)
---   3. Run each CREATE VIEW statement in the BigQuery console
---   4. Connect Looker / Looker Studio to these views as data sources
+--   2. Connect Looker / Looker Studio to these views as data sources
+--
+-- Deployment: PROJECT_ID and DATASET_ID below are placeholders, not real
+-- values, on purpose - .github/workflows/deploy-bigquery-views.yml
+-- substitutes them from GitHub secrets and runs this whole file against
+-- BigQuery automatically on every push to main that touches this file.
+-- Edit this file, push to main, and the views update themselves - no
+-- copy-pasting into the BigQuery console needed. See that workflow file
+-- for the one-time GCP service account setup it requires.
 -- ============================================================================
 
 
