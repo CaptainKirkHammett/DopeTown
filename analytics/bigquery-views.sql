@@ -13,6 +13,19 @@
 -- Edit this file, push to main, and the views update themselves - no
 -- copy-pasting into the BigQuery console needed. See that workflow file
 -- for the one-time GCP service account setup it requires.
+--
+-- Retention: this dataset was found (2026-09) to have a dataset-level
+-- "Default table expiration" of ~61 days, which every events_YYYYMMDD /
+-- pseudonymous_users_YYYYMMDD table silently inherits at creation - left
+-- alone, each daily table auto-deletes itself ~2 months after it's
+-- created. For permanent retention: (1) clear the dataset's own
+-- "Default table expiration" field once, by hand, in the BigQuery
+-- console (Dataset -> Details -> Edit details) - this can't be
+-- automated from here since it needs bigquery.datasets.update, a
+-- permission the deploy service account deliberately doesn't have; (2)
+-- run .github/workflows/clear-bigquery-table-expiration.yml
+-- (workflow_dispatch) to strip the expiration off tables that already
+-- have one baked in from before step 1.
 -- ============================================================================
 
 

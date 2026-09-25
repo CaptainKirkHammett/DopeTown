@@ -1,0 +1,65 @@
+name: Clear BigQuery table expiration
+
+# One-off maintenance workflow: removes the expiration timestamp from
+# every already-created events_YYYYMMDD and pseudonymous_users_YYYYMMDD
+# table in the GA4 export dataset, so they're retained permanently
+# instead of being auto-deleted (this dataset had a "Default table
+# expiration" of ~61 days set on it at some point, which every daily
+# table created since then silently inherited).
+#
+# Manual trigger only (Actions tab -> this workflow -> Run workflow) -
+# this is a one-off rescue for tables that already have an expiration
+# baked in, not something that needs to run on every push.
+#
+# IMPORTANT - this does NOT stop new tables from getting an expiration
+# in the first place. That requires clearing the dataset's own "Default
+# table expiration" setting once, by hand, in the BigQuery console
+# (click the dataset -> Details tab -> Edit details -> clear that
+# field). Changing a dataset's own settings needs the
+# bigquery.datasets.update permission (e.g. BigQuery Data Owner), which
+# the deploy service account deliberately does NOT have - it only has
+# BigQuery Data Editor, enough to fix individual tables (this workflow)
+# but not the dataset's own configuration. Run this workflow again for
+# any table created before that console fix is made.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  clear-expiration:
+    runs-on: ubuntu-latest
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Remove expiration from existing daily export tables
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          DATASET_ID: ${{ secrets.GCP_BQ_DATASET_ID }}
+        run: |
+          set -euo pipefail
+          tables=$(bq ls --project_id="${PROJECT_ID}" --format=json --max_results=10000 "${DATASET_ID}" \
+            | python3 -c "
+          import json, sys, re
+          tables = json.load(sys.stdin)
+          pattern = re.compile(r'^(events|pseudonymous_users)_[0-9]{8}\$')
+          for t in tables:
+              if t.get('type') != 'TABLE':
+                  continue
+              table_id = t['tableReference']['tableId']
+              if pattern.match(table_id):
+                  print(table_id)
+          ")
+          if [ -z "$tables" ]; then
+            echo "No matching tables found."
+            exit 0
+          fi
+          echo "Clearing expiration on:"
+          echo "$tables"
+          echo "$tables" | while IFS= read -r table; do
+            bq update --project_id="${PROJECT_ID}" --expiration 0 "${DATASET_ID}.${table}"
+          done
