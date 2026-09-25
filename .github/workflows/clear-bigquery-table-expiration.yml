@@ -63,3 +63,24 @@ jobs:
           echo "$tables" | while IFS= read -r table; do
             bq update --project_id="${PROJECT_ID}" --expiration 0 "${DATASET_ID}.${table}"
           done
+          echo "$tables" > /tmp/cleared_tables.txt
+
+      - name: Verify tables now have no expiration
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          DATASET_ID: ${{ secrets.GCP_BQ_DATASET_ID }}
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r table; do
+            [ -z "$table" ] && continue
+            expiration=$(bq show --project_id="${PROJECT_ID}" --format=json "${DATASET_ID}.${table}" \
+              | python3 -c "import json, sys; print(json.load(sys.stdin).get('expirationTime', 'NONE'))")
+            if [ "$expiration" = "NONE" ]; then
+              echo "OK: ${table} has no expiration"
+            else
+              echo "STILL EXPIRING: ${table} -> expirationTime=${expiration}"
+              fail=1
+            fi
+          done < /tmp/cleared_tables.txt
+          exit "$fail"
