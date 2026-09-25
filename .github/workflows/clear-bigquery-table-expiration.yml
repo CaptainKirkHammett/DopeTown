@@ -1,11 +1,18 @@
 name: Clear BigQuery table expiration
 
 # One-off maintenance workflow: removes the expiration timestamp from
-# every already-created events_YYYYMMDD and pseudonymous_users_YYYYMMDD
-# table in the GA4 export dataset, so they're retained permanently
-# instead of being auto-deleted (this dataset had a "Default table
-# expiration" of ~61 days set on it at some point, which every daily
-# table created since then silently inherited).
+# every already-created events_YYYYMMDD / pseudonymous_users_YYYYMMDD
+# table AND every view in the GA4 export dataset, so they're retained
+# permanently instead of being auto-deleted. Root cause: this project
+# ran in BigQuery "sandbox mode" (no billing account) for a while, which
+# force-caps every table/view created during that time to a <=60-day
+# expiration regardless of any dataset setting - that cap cannot be
+# raised until billing is enabled, and even after it is, anything
+# already created while in sandbox mode keeps its stale expiration until
+# explicitly cleared (this workflow). Views get recreated by
+# deploy-bigquery-views.yml on every push that touches the SQL file, so
+# if that runs while still in sandbox mode, the views pick up a fresh
+# cap too - hence covering both tables and views here.
 #
 # Manual trigger only (Actions tab -> this workflow -> Run workflow) -
 # this is a one-off rescue for tables that already have an expiration
@@ -36,7 +43,7 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Remove expiration from existing daily export tables
+      - name: Remove expiration from existing tables and views
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           DATASET_ID: ${{ secrets.GCP_BQ_DATASET_ID }}
@@ -46,16 +53,15 @@ jobs:
             | python3 -c "
           import json, sys, re
           tables = json.load(sys.stdin)
-          pattern = re.compile(r'^(events|pseudonymous_users)_[0-9]{8}\$')
+          daily_table_pattern = re.compile(r'^(events|pseudonymous_users)_[0-9]{8}\$')
           for t in tables:
-              if t.get('type') != 'TABLE':
-                  continue
               table_id = t['tableReference']['tableId']
-              if pattern.match(table_id):
+              kind = t.get('type')
+              if kind == 'VIEW' or (kind == 'TABLE' and daily_table_pattern.match(table_id)):
                   print(table_id)
           ")
           if [ -z "$tables" ]; then
-            echo "No matching tables found."
+            echo "No matching tables/views found."
             exit 0
           fi
           echo "Clearing expiration on:"
