@@ -6456,30 +6456,25 @@
     function loadFiles() {
         if (fetched) return;
         fetched = true;
-        fetch('DopeMakerDL/')
-            .then(function(r) { return r.text(); })
-            .then(function(html) {
-                var doc = new DOMParser().parseFromString(html, 'text/html');
-                var links = doc.querySelectorAll('.file-list a[download]');
+        list.innerHTML = '<li style="color:#8a7aaa;font-style:italic">Loading...</li>';
+        fetch('https://api.github.com/repos/CaptainKirkHammett/DopeMakerVST/releases/latest')
+            .then(function(r) { return r.json(); })
+            .then(function(release) {
                 list.innerHTML = '';
-                links.forEach(function(src) {
-                    var name = src.querySelector('.file-name');
-                    var label = name ? name.textContent.trim() : src.textContent.trim();
+                var assets = release.assets || [];
+                if (!assets.length) {
+                    list.innerHTML = '<li style="color:#8a7aaa">No downloads found. <a href="https://github.com/CaptainKirkHammett/DopeMakerVST/releases/latest" style="color:#00f0ff">View on GitHub</a></li>';
+                    return;
+                }
+                assets.forEach(function(asset) {
+                    var label = asset.name;
                     var li = document.createElement('li');
                     var a = document.createElement('a');
-                    a.href = 'DopeMakerDL/' + label;
-                    a.download = '';
+                    a.href = asset.browser_download_url;
                     a.innerHTML = svgIcon + ' ' + label;
                     a.addEventListener('click', function() {
                         if (typeof gtag === 'function') {
                             var ext = label.substring(label.lastIndexOf('.'));
-                            // Per-file event name (not just a shared
-                            // "file_download" event distinguished by the
-                            // file_name param) so each file's download
-                            // count shows up as its own row in GA4
-                            // without needing file_name registered as a
-                            // custom dimension first — same reasoning as
-                            // the per-platform social_click_* events.
                             var slug = label
                                 .toLowerCase()
                                 .replace(/\.[^.]+$/, '')
@@ -6497,6 +6492,9 @@
                     li.appendChild(a);
                     list.appendChild(li);
                 });
+            })
+            .catch(function() {
+                list.innerHTML = '<li style="color:#8a7aaa">Could not load downloads. <a href="https://github.com/CaptainKirkHammett/DopeMakerVST/releases/latest" style="color:#00f0ff">Download from GitHub</a></li>';
             });
     }
 
