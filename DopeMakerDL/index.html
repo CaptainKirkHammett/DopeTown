@@ -20,16 +20,33 @@
             font-size: 2rem;
             color: #39ff14;
             text-shadow: 0 0 20px rgba(57,255,20,0.5);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .version {
+            color: #39ff14;
+            font-size: 0.95rem;
+            opacity: 0.7;
+            margin-bottom: 0.25rem;
         }
         .subtitle {
             color: #8a7aaa;
             margin-bottom: 2rem;
         }
+        .platform-section {
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 1.5rem;
+        }
+        .platform-title {
+            font-size: 1.1rem;
+            color: #c8b8e8;
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+        }
+        .platform-title .icon { margin-right: 0.4rem; }
         .file-list {
             list-style: none;
             width: 100%;
-            max-width: 600px;
         }
         .file-list a {
             display: flex;
@@ -54,32 +71,113 @@
             fill: #39ff14;
             flex-shrink: 0;
         }
-        .file-name { font-weight: 600; }
+        .file-info { display: flex; flex-direction: column; }
+        .file-name { font-weight: 600; font-size: 0.95rem; }
+        .file-desc { font-size: 0.78rem; color: #8a7aaa; margin-top: 0.15rem; }
         .back-link {
             margin-top: 2rem;
             color: #00f0ff;
             text-decoration: none;
         }
         .back-link:hover { text-decoration: underline; }
+        .loading {
+            color: #8a7aaa;
+            margin: 2rem 0;
+            font-style: italic;
+        }
+        .error-msg {
+            color: #ff4444;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <h1>Dope Maker VST</h1>
+    <p class="version" id="version-label"></p>
     <p class="subtitle">Downloads</p>
-    <ul class="file-list">
-        <li>
-            <a href="DopeMaker_v0.2780.0.3_Setup.exe" download>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
-                <span class="file-name">DopeMaker_v0.2780.0.3_Setup.exe</span>
-            </a>
-        </li>
-        <li>
-            <a href="DopeMaker_v0.2780.0.3.zip" download>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>
-                <span class="file-name">DopeMaker_v0.2780.0.3.zip</span>
-            </a>
-        </li>
-    </ul>
+
+    <div id="downloads-container">
+        <p class="loading">Loading latest release...</p>
+    </div>
+
     <a href="../" class="back-link">&larr; back to dope.town</a>
+
+    <script>
+        const REPO = 'CaptainKirkHammett/DopeMakerVST';
+        const DL_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>';
+
+        const FILE_META = {
+            '_Windows_Setup.exe': { platform: 'windows', desc: 'Installer — copies plugin, presets & samples automatically' },
+            '_Windows.zip':       { platform: 'windows', desc: 'Manual install — VST3 + presets + samples + README' },
+            '_macOS.pkg':         { platform: 'macos',   desc: 'Installer — copies plugin, presets & samples automatically' },
+            '_macOS.zip':         { platform: 'macos',   desc: 'Manual install — VST3 + AU + presets + samples + README' }
+        };
+
+        function classifyAsset(name) {
+            for (const [suffix, meta] of Object.entries(FILE_META)) {
+                if (name.endsWith(suffix)) return meta;
+            }
+            return null;
+        }
+
+        function makeLink(asset, desc) {
+            return `<li><a href="${asset.browser_download_url}">
+                ${DL_ICON}
+                <span class="file-info">
+                    <span class="file-name">${asset.name}</span>
+                    <span class="file-desc">${desc}</span>
+                </span>
+            </a></li>`;
+        }
+
+        async function loadRelease() {
+            const container = document.getElementById('downloads-container');
+            const versionLabel = document.getElementById('version-label');
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
+                if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+                const release = await res.json();
+
+                versionLabel.textContent = release.tag_name;
+
+                const windows = [];
+                const macos = [];
+
+                for (const asset of release.assets) {
+                    const meta = classifyAsset(asset.name);
+                    if (!meta) continue;
+                    const link = makeLink(asset, meta.desc);
+                    if (meta.platform === 'windows') windows.push(link);
+                    else macos.push(link);
+                }
+
+                let html = '';
+
+                if (windows.length) {
+                    html += `<div class="platform-section">
+                        <p class="platform-title"><span class="icon">&#x1f5a5;</span>Windows</p>
+                        <ul class="file-list">${windows.join('')}</ul>
+                    </div>`;
+                }
+
+                if (macos.length) {
+                    html += `<div class="platform-section">
+                        <p class="platform-title"><span class="icon">&#xf8ff;</span>macOS</p>
+                        <ul class="file-list">${macos.join('')}</ul>
+                    </div>`;
+                }
+
+                if (!html) html = '<p class="error-msg">No downloadable files found in the latest release.</p>';
+                container.innerHTML = html;
+
+            } catch (err) {
+                container.innerHTML = `<p class="error-msg">Could not load releases. <a href="https://github.com/${REPO}/releases/latest" style="color:#00f0ff;">Download from GitHub</a></p>`;
+            }
+        }
+
+        loadRelease();
+    </script>
 </body>
 </html>
