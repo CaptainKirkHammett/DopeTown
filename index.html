@@ -2662,9 +2662,39 @@
             padding: 2rem;
             max-width: 500px;
             width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
             box-shadow: 0 0 60px rgba(57, 255, 20, 0.3);
             position: relative;
         }
+
+        .dl-changelog {
+            margin-top: 1.2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(57, 255, 20, 0.15);
+        }
+        .dl-changelog-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: #c8b8e8;
+            margin-bottom: 0.6rem;
+        }
+        .dl-changelog-body {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            color: #a89cc8;
+            white-space: pre-line;
+        }
+        .dl-changelog-body h1,
+        .dl-changelog-body h2,
+        .dl-changelog-body h3 {
+            color: var(--neon-green);
+            font-size: 0.8rem;
+            margin: 0.6rem 0 0.2rem;
+        }
+        .dl-changelog-body ul { padding-left: 1.2rem; list-style: disc; }
+        .dl-changelog-body li { margin-bottom: 0.15rem; color: #a89cc8; }
 
         .dl-popup h2 {
             font-family: 'Barrio', cursive;
@@ -6442,6 +6472,10 @@
         <button class="dl-popup-close" id="dlPopupClose">&times;</button>
         <h2>Dope Maker VST Downloads</h2>
         <ul class="dl-popup-list" id="dlPopupList"></ul>
+        <div class="dl-changelog" id="dlChangelog" style="display:none">
+            <p class="dl-changelog-title">What's New</p>
+            <div class="dl-changelog-body" id="dlChangelogBody"></div>
+        </div>
     </div>
 </div>
 <script>
@@ -6452,6 +6486,18 @@
     var fetched = false;
 
     var svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>';
+
+    function mdToHtml(md) {
+        return md
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    }
 
     function loadFiles() {
         if (fetched) return;
@@ -6466,6 +6512,15 @@
                     list.innerHTML = '<li style="color:#8a7aaa">No downloads found. <a href="https://github.com/CaptainKirkHammett/DopeMakerVST/releases/latest" style="color:#00f0ff">View on GitHub</a></li>';
                     return;
                 }
+
+                // Show changelog
+                if (release.body) {
+                    var cl = document.getElementById('dlChangelog');
+                    var clBody = document.getElementById('dlChangelogBody');
+                    clBody.innerHTML = mdToHtml(release.body);
+                    cl.style.display = '';
+                }
+
                 assets.forEach(function(asset) {
                     var label = asset.name;
                     var li = document.createElement('li');
