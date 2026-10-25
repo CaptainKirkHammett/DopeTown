@@ -4754,7 +4754,7 @@
         ctx.font = `${fontSize}px monospace`;
         ctx.textBaseline = 'top';
         for (let c = 0; c < cols; c++) {
-            const speed = (0.5 + labRand(c * 3.1) * 1.3) * (1.6 + sf * 1.8);
+            const speed = (0.5 + labRand(c * 3.1) * 1.3) * (2.3 + sf * 1.8);
             const headRow = (time * speed + labRand(c * 7.7) * rowsPerCol) % rowsPerCol;
             const x = c * colWidth;
             for (let i = 0; i < trailLen; i++) {
