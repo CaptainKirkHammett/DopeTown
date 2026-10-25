@@ -3398,7 +3398,9 @@
     let bgHueClock = 0;
     let waveLineClock = 0;
     const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal','matrix'];
-    let bgModeIndex = Math.floor(Math.random() * bgModes.length);
+    // Always open on the Matrix mode rather than a random one; the "?"
+    // toggle still cycles through the rest from there.
+    let bgModeIndex = bgModes.indexOf('matrix');
     let bgMode = bgModes[bgModeIndex];
 
     // Mobile browsers slide their own nav/address bar away as you scroll,
