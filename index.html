@@ -3397,7 +3397,7 @@
     let acidClock = 0;
     let bgHueClock = 0;
     let waveLineClock = 0;
-    const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal'];
+    const bgModes = ['geometric','tentacles','space','vegetation','pcb','machinery','forest','underwater','laboratory','mushrooms','neural','crystal','matrix'];
     let bgModeIndex = Math.floor(Math.random() * bgModes.length);
     let bgMode = bgModes[bgModeIndex];
 
@@ -4732,12 +4732,74 @@
         }
     }
 
+    // === MODE 13: Matrix (code rain) ===
+    // Deliberately kept anchored near green instead of the full hue
+    // sweep every other mode does — the whole point of this one is to
+    // read as the Matrix movies' digital rain, which only works if it
+    // stays recognizably green. Each column explicitly draws its own
+    // head-to-tail fade (rather than leaning on the shared frame-clear
+    // alpha for the trail, like drawPCBDataPulses does) so a slow column
+    // still reads as discrete falling glyphs instead of smearing into a
+    // solid streak when its head barely moves between frames.
+    const matrixChars = 'ンヲァィゥェォャュョッアイウエオカキクケコサシスセソタチツテト0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    function drawMatrix() {
+        const sf = scrollFactor;
+        const fontSize = Math.round(14 + sf * 5);
+        const colWidth = fontSize;
+        const cols = Math.ceil(canvas.width / colWidth);
+        const trailLen = 14 + Math.floor(sf * 10);
+        const rowsPerCol = canvas.height / fontSize + trailLen;
+        ctx.font = `${fontSize}px monospace`;
+        ctx.textBaseline = 'top';
+        for (let c = 0; c < cols; c++) {
+            const speed = (0.5 + labRand(c * 3.1) * 1.3) * (1.6 + sf * 1.8);
+            const headRow = (time * speed + labRand(c * 7.7) * rowsPerCol) % rowsPerCol;
+            const x = c * colWidth;
+            for (let i = 0; i < trailLen; i++) {
+                const row = Math.floor(headRow) - i;
+                if (row < 0) continue;
+                const y = row * fontSize;
+                if (y > canvas.height) continue;
+                // Flicker: each glyph slot only re-rolls its character a
+                // few times a second (not every frame), so it reads as
+                // characters occasionally changing rather than static.
+                const flickerStep = Math.floor(time * 6 + row * 0.7);
+                const ch = matrixChars[Math.floor(labRand(c * 97.7 + row * 13.3 + flickerStep * 0.011) * matrixChars.length)];
+                const fade = 1 - i / trailLen;
+                const isHead = i === 0;
+                const hue = 115 + sf * 15 + Math.sin(time * 0.2 + c) * 8;
+                const alpha = isHead ? 0.95 : 0.55 * fade * fade;
+                const light = isHead ? 88 : 38 + fade * 22;
+                ctx.fillStyle = `hsla(${hue}, 90%, ${light}%, ${alpha})`;
+                ctx.fillText(ch, x, y);
+            }
+        }
+        drawBonusLayer(() => drawMatrixGlitchBursts(cols, colWidth, fontSize));
+    }
+    // Bonus layer: a handful of columns briefly flash bright white-green,
+    // like a glitch in the feed — same embeds-hidden/acid-mode payoff
+    // every other mode's bonus layer gives.
+    function drawMatrixGlitchBursts(cols, colWidth, fontSize) {
+        const burstCount = 5;
+        for (let b = 0; b < burstCount; b++) {
+            const period = 2.5 + labRand(b * 9.1) * 2;
+            const phase = (time + labRand(b * 4.4) * period) % period;
+            if (phase > 0.15) continue;
+            const col = Math.floor(labRand(b * 17.3 + Math.floor(time / period)) * cols);
+            const x = col * colWidth;
+            const burstAlpha = 1 - phase / 0.15;
+            ctx.fillStyle = `hsla(100, 100%, 92%, ${burstAlpha * 0.5})`;
+            ctx.fillRect(x, 0, colWidth, canvas.height);
+        }
+    }
+
     // === Main animation loop ===
     const drawFns = {
         geometric: drawGeometric, tentacles: drawTentacles, space: drawSpace,
         vegetation: drawVegetation, pcb: drawPCB, machinery: drawMachinery,
         forest: drawForest, underwater: drawUnderwater, laboratory: drawLaboratory,
-        mushrooms: drawMushrooms, neural: drawNeural, crystal: drawCrystal
+        mushrooms: drawMushrooms, neural: drawNeural, crystal: drawCrystal,
+        matrix: drawMatrix
     };
 
     // Organic, non-repeating motion for acid-trip mode: sum a few sine
